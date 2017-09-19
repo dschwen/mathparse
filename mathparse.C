@@ -26,7 +26,7 @@ bool MathParse::isDigit()
 
 bool MathParse::isOperator()
 {
-  const std::string operator_char("+-*/^!%");
+  const std::string operator_char("+-*/^!%<>=?:");
   return operator_char.find_first_of(*_c) != std::string::npos;
 }
 
@@ -76,7 +76,14 @@ MathParse::Token MathParse::getToken()
     return Token(TokenType::END, "");
 
   if (isOperator())
-    return Token(TokenType::OPERATOR, *(_c++));
+  {
+    std::string op(1, *(_c++));
+    // parse >= <= == but NOT *-
+    while (*_c == '=')
+      op += *(_c++);
+    return Token(TokenType::OPERATOR, op);
+  }
+
   if (isOpenParenthesis())
     return Token(TokenType::OPEN_PARENS, *(_c++));
   if (isCloseParenthesis())
@@ -118,22 +125,22 @@ MathParse::Token MathParse::getToken()
         decimals += (*(_c++) - '0') * factor;
         factor *= 0.1;
       }
+    }
 
-      // scientific notation exponent
-      if (*_c == 'e' || *_c == 'E')
-      {
+    // scientific notation exponent
+    if (*_c == 'e' || *_c == 'E')
+    {
+      ++_c;
+      bool positive = true;
+      if (*_c == '+')
         ++_c;
-        bool positive = true;
-        if (*_c == '+')
-          ++_c;
-        else if (*_c == '-')
-        {
-          positive = false;
-          ++_c;
-        }
-
-        exponent = getInteger() * (positive ? 1 : -1);
+      else if (*_c == '-')
+      {
+        positive = false;
+        ++_c;
       }
+
+      exponent = getInteger() * (positive ? 1 : -1);
     }
 
     if (decimals == 0.0 && exponent == 0)

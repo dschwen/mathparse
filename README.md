@@ -1,2 +1,34 @@
 # mathparse
-Mathematical expression parser that builds an AST
+Mathematical expression parser that builds an AST.
+
+## Example
+
+```
+> ./mathparse '3.324 + 5e2*-3 - sin(3 + 3.44e-2) * {1,2+a,3} <= 7 '
+NUMBER  	3.324000
+OPERATOR	+
+NUMBER  	500.000000
+OPERATOR	*
+OPERATOR	-
+NUMBER  	3
+OPERATOR	-
+FUNCTION	sin
+OPEN_PARENS	(
+NUMBER  	3
+OPERATOR	+
+NUMBER  	0.034400
+CLOSE_PARENS	)
+OPERATOR	*
+OPEN_PARENS	{
+NUMBER  	1
+COMMA
+NUMBER  	2
+OPERATOR	+
+VARIABLE	a
+COMMA
+NUMBER  	3
+CLOSE_PARENS	}
+OPERATOR	<=
+NUMBER  	7
+END
+```
