@@ -1,6 +1,7 @@
 #include "mathparse.h"
 #include <vector>
 #include <iostream>
+#include <cmath>
 
 typedef double Real;
 
@@ -51,6 +52,14 @@ bool MathParse::isAlphaCont()
   return isAlphaFirst() || isDigit() || *_c == '_';
 }
 
+int MathParse::getInteger()
+{
+  int integer = 0;
+  while (isDigit())
+    integer = 10 * integer + (*(_c++) - '0');
+  return integer;
+}
+
 void MathParse::skipWhite()
 {
   // skip whitespace
@@ -89,10 +98,11 @@ MathParse::Token MathParse::getToken()
   // consume number
   if (isDigit() || *_c == '.')
   {
-    int integer = 0;
-    Real decimals = 0;
-    while (isDigit())
-      integer = 10 * integer + (*(_c++) - '0');
+    int integer = getInteger();
+    int exponent = 0;
+    Real decimals = 0.0;
+
+    // decimal fraction
     if (*_c == '.')
     {
       ++_c;
@@ -102,10 +112,25 @@ MathParse::Token MathParse::getToken()
         decimals += (*(_c++) - '0') * factor;
         factor *= 0.1;
       }
-      // could distinguish between returning integer and reals...
+
+      // scientific notation exponent
+      if (*_c == 'e' || *_c == 'E')
+      {
+        ++_c;
+        bool positive = true;
+        if (*_c == '+')
+          ++_c;
+        else if (*_c == '-')
+        {
+          positive = false;
+          ++_c;
+        }
+
+        exponent = getInteger() * (positive ? 1 : -1);
+      }
     }
     // no scientific notation yet!
-    return Token(TokenType::NUMBER, std::to_string(integer + decimals));
+    return Token(TokenType::NUMBER, std::to_string((integer + decimals) * std::pow(10.0, exponent)));
   }
 
   // unable to parse

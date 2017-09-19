@@ -28,6 +28,7 @@ protected:
   bool isAlphaFirst();
   bool isAlphaCont();
 
+  int getInteger();
   void skipWhite();
 
   struct Token
