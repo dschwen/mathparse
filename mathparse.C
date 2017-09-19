@@ -7,8 +7,8 @@ typedef double Real;
 
 MathParse::MathParse(const std::string expression) : _expression(expression + '\0'), _c(_expression.begin())
 {
-  const std::vector<std::string> type = {"OPERATOR", "FUNCTION", "OPEN_PARENS", "CLOSE_PARENS",
-                                         "NUMBER  ", "VARIABLE", "INVALID ",    "END"};
+  const std::vector<std::string> type = {"OPERATOR", "FUNCTION", "COMMA   ", "OPEN_PARENS", "CLOSE_PARENS",
+                                         "NUMBER  ", "VARIABLE", "INVALID ", "END"};
 
   Token token;
   do
@@ -82,6 +82,12 @@ MathParse::Token MathParse::getToken()
   if (isCloseParenthesis())
     return Token(TokenType::CLOSE_PARENS, *(_c++));
 
+  if (*_c == ',')
+  {
+    _c++;
+    return Token(TokenType::COMMA, "");
+  }
+
   // consume symbol
   if (isAlphaFirst())
   {
@@ -129,8 +135,11 @@ MathParse::Token MathParse::getToken()
         exponent = getInteger() * (positive ? 1 : -1);
       }
     }
-    // no scientific notation yet!
-    return Token(TokenType::NUMBER, std::to_string((integer + decimals) * std::pow(10.0, exponent)));
+
+    if (decimals == 0.0 && exponent == 0)
+      return Token(TokenType::NUMBER, std::to_string(integer));
+    else
+      return Token(TokenType::NUMBER, std::to_string((integer + decimals) * std::pow(10.0, exponent)));
   }
 
   // unable to parse

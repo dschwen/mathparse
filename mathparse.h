@@ -13,6 +13,7 @@ protected:
   {
     OPERATOR,
     FUNCTION,
+    COMMA,
     OPEN_PARENS,
     CLOSE_PARENS,
     NUMBER,
