@@ -14,6 +14,9 @@ public:
 private:
   const std::string _mpa_expression;
 
+  /// format a token for debugging purposes
+  std::string formatToken(const Token & token);
+
   /// format a given error message with an ecpression excerpt and a visual pointer to the error position
   std::string formatError(std::size_t pos, const std::string & message, std::size_t width = 80);
 };

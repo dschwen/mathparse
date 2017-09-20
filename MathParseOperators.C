@@ -18,8 +18,7 @@ const std::vector<MathParseOperators::OperatorProperties> MathParseOperators::_o
     {9, true, "=="},
     {9, true, "!="},
     {13, true, "&"},
-    {14, true, "|"},
-    {17, true, ","}};
+    {14, true, "|"}};
 
 MathParseOperators::OperatorType
 MathParseOperators::identifyOperator(const std::string & op)

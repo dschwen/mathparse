@@ -17,6 +17,7 @@ MathParseAST::MathParseAST(const std::string expression)
   do
   {
     token = getToken();
+    std::cout << "got token " << formatToken(token) << '\n';
 
     //
     // Validation
@@ -65,6 +66,14 @@ MathParseAST::MathParseAST(const std::string expression)
       throw std::domain_error("operator");
     }
 
+    // check closing bracket state
+    if (token._type == TokenType::CLOSE_PARENS &&
+        (last_token._type == TokenType::OPERATOR || last_token._type == TokenType::COMMA))
+    {
+      std::cerr << formatError(token._pos, "Did not expect closing bracket here");
+      throw std::domain_error("operator");
+    }
+
     // need to validate symbols
 
     //
@@ -85,9 +94,59 @@ MathParseAST::MathParseAST(const std::string expression)
       }
       operator_stack.push(token);
     }
+    else if (token._type == TokenType::FUNCTION)
+      operator_stack.push(token);
     else if (token._type == TokenType::OPEN_PARENS)
       operator_stack.push(token);
     else if (token._type == TokenType::CLOSE_PARENS)
+    {
+      if (last_token._type != TokenType::OPEN_PARENS)
+      {
+        // bracket pair containing an expression
+        while (!operator_stack.empty() && operator_stack.top()._type != TokenType::OPEN_PARENS)
+        {
+          output_stack.push(operator_stack.top());
+          operator_stack.pop();
+        }
+        if (operator_stack.empty())
+        {
+          std::cerr << formatError(token._pos, "Unmatched closing bracket");
+          throw std::domain_error("parenthesis");
+        }
+        auto open_parens = operator_stack.top();
+        operator_stack.pop();
+
+        // check if this bracket pair was a function argument list
+        if (!operator_stack.empty() && operator_stack.top()._type == TokenType::FUNCTION)
+        {
+          std::cout << "POPPING FUNCTION WITH " << open_parens._integer + 1 << " ARGUMENTS\n";
+          output_stack.push(operator_stack.top());
+          operator_stack.pop();
+        }
+      }
+      else
+      {
+        // empty bracket pair
+        auto open_parens = operator_stack.top();
+        if (open_parens._type != TokenType::OPEN_PARENS)
+        {
+          std::cerr << "Internal error\n";
+          throw std::domain_error("parenthesis");
+        }
+        operator_stack.pop();
+
+        if (operator_stack.empty() || operator_stack.top()._type != TokenType::FUNCTION)
+        {
+          std::cerr << formatError(open_parens._pos,
+                                   "Empty bracket pairs are only allowed after functions");
+          throw std::domain_error("parenthesis");
+        }
+        std::cout << "POPPING FUNCTION WITHOUT ARGUMENTS\n";
+        output_stack.push(operator_stack.top());
+        operator_stack.pop();
+      }
+    }
+    else if (token._type == TokenType::COMMA)
     {
       while (!operator_stack.empty() && operator_stack.top()._type != TokenType::OPEN_PARENS)
       {
@@ -96,10 +155,13 @@ MathParseAST::MathParseAST(const std::string expression)
       }
       if (operator_stack.empty())
       {
-        std::cerr << formatError(token._pos, "Unmatched closing bracket");
+        std::cerr << formatError(token._pos, "Comma outside of brackets");
         throw std::domain_error("parenthesis");
       }
-      operator_stack.pop();
+
+      // count the function arguments encountered for validation purposes
+      // assert(operator_stack.top()._type != TokenType::OPEN_PARENS)
+      operator_stack.top()._integer++;
     }
 
     // needed to discriminate unary plus and minus
@@ -125,24 +187,31 @@ MathParseAST::MathParseAST(const std::string expression)
   {
     auto token = output_stack.top();
     output_stack.pop();
+    std::cout << formatToken(token) << '\n';
+  }
+}
 
-    switch (token._type)
-    {
-      case TokenType::OPERATOR:
-        std::cout << "OPERATOR\t" << operatorProperty(token._operator_type)._form << '\n';
-        break;
-      case TokenType::OPEN_PARENS:
-      case TokenType::CLOSE_PARENS:
-      case TokenType::FUNCTION:
-      case TokenType::VARIABLE:
-        std::cout << "      \t" << token._string << '\n';
-        break;
-      case TokenType::NUMBER:
-        std::cout << "      \t" << token._real << '\n';
-        break;
-      default:
-        std::cout << "???\n";
-    }
+std::string
+MathParseAST::formatToken(const Token & token)
+{
+  switch (token._type)
+  {
+    case TokenType::OPERATOR:
+      return "OPERATOR    \t" + operatorProperty(token._operator_type)._form;
+    case TokenType::OPEN_PARENS:
+      return "OPEN_PARENS \t" + token._string;
+    case TokenType::CLOSE_PARENS:
+      return "CLOSE_PARENS\t" + token._string;
+    case TokenType::FUNCTION:
+      return "FUNCTION    \t" + token._string;
+    case TokenType::VARIABLE:
+      return "VARIABLE    \t" + token._string;
+    case TokenType::NUMBER:
+      return "NUMBER      \t" + std::to_string(token._real);
+    case TokenType::COMMA:
+      return "COMMA       \t,";
+    default:
+      return "???";
   }
 }
 

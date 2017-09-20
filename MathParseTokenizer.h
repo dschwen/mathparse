@@ -19,6 +19,7 @@ public:
     CLOSE_PARENS,
     NUMBER,
     VARIABLE,
+    COMMA,
     INVALID,
     END
   };
@@ -34,10 +35,9 @@ public:
     TokenType _type;
     std::size_t _pos;
 
-    // should use C++17 variant
     std::string _string;
     OperatorType _operator_type;
-    // int _integer;
+    int _integer; // for OPEN_PARENS this holds the argument counter
     Real _real;
   };
 

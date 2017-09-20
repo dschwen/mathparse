@@ -19,7 +19,7 @@ MathParseTokenizer::isDigit()
 bool
 MathParseTokenizer::isOperator()
 {
-  const std::string operator_char("+-*/^!%<>=?:,");
+  const std::string operator_char("+-*/^!%<>=?:");
   return operator_char.find_first_of(*_c) != std::string::npos;
 }
 
@@ -77,6 +77,10 @@ MathParseTokenizer::getToken()
   // end of expression
   if (*_c == '\0')
     return makeToken(TokenType::END);
+
+  // comma
+  if (*_c == ',')
+    return makeToken(TokenType::COMMA);
 
   if (isOperator())
   {
@@ -187,7 +191,7 @@ MathParseTokenizer::makeToken(Real real)
  * Token constructors
  */
 MathParseTokenizer::Token::Token(TokenType type, const std::string & string, std::size_t pos)
-  : _type(type), _string(string), _pos(pos)
+  : _type(type), _string(string), _integer(0), _pos(pos)
 {
   // validate parameter for the given type
   switch (type)
@@ -196,6 +200,7 @@ MathParseTokenizer::Token::Token(TokenType type, const std::string & string, std
     case TokenType::VARIABLE:
     case TokenType::OPEN_PARENS:
     case TokenType::CLOSE_PARENS:
+    case TokenType::COMMA:
     case TokenType::INVALID:
     case TokenType::END:
       break;
@@ -205,14 +210,14 @@ MathParseTokenizer::Token::Token(TokenType type, const std::string & string, std
 }
 
 MathParseTokenizer::Token::Token(TokenType type, OperatorType operator_type, std::size_t pos)
-  : _type(type), _operator_type(operator_type), _pos(pos)
+  : _type(type), _operator_type(operator_type), _integer(0), _pos(pos)
 {
   if (type != TokenType::OPERATOR)
     throw std::invalid_argument("operator_type");
 }
 
 MathParseTokenizer::Token::Token(TokenType type, Real real, std::size_t pos)
-  : _type(type), _real(real), _pos(pos)
+  : _type(type), _integer(0), _real(real), _pos(pos)
 {
   if (type != TokenType::NUMBER)
     throw std::invalid_argument("operator_type");

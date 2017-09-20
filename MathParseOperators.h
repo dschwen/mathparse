@@ -35,8 +35,6 @@ protected:
     LOGICAL_AND,
     LOGICAL_OR,
 
-    COMMA,
-
     INVALID
   };
   using OperatorIterator = std::underlying_type<OperatorType>::type;
