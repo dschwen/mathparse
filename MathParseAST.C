@@ -18,6 +18,10 @@ MathParseAST::MathParseAST(const std::string expression)
   {
     token = getToken();
 
+    //
+    // Validation
+    //
+
     // check if token is invalid
     if (token._type == TokenType::INVALID)
     {
@@ -52,17 +56,38 @@ MathParseAST::MathParseAST(const std::string expression)
       }
     }
 
-    // shunting yard core
+    // disallow consecutive variables/numbers (we could insert a multiplication here...)
+    if ((token._type == TokenType::VARIABLE || token._type == TokenType::NUMBER ||
+         token._type == TokenType::FUNCTION) &&
+        (last_token._type == TokenType::VARIABLE || last_token._type == TokenType::NUMBER))
+    {
+      std::cerr << formatError(token._pos, "Operator expected here");
+      throw std::domain_error("operator");
+    }
+
+    // need to validate symbols
+
+    //
+    // Shunting yard core
+    //
+
     if (token._type == TokenType::NUMBER || token._type == TokenType::VARIABLE)
       output_stack.push(token);
     else if (token._type == TokenType::OPERATOR)
     {
-      // operator precedence
+      auto precedence = _operators[static_cast<int>(token._operator_type)]._precedence;
+      while (!operator_stack.empty() && operator_stack.top()._type == TokenType::OPERATOR &&
+             operatorProperty(operator_stack.top()._operator_type)._precedence <= precedence &&
+             operatorProperty(operator_stack.top()._operator_type)._left_associative)
+      {
+        output_stack.push(operator_stack.top());
+        operator_stack.pop();
+      }
       operator_stack.push(token);
     }
-    if (token._type == TokenType::OPEN_PARENS)
+    else if (token._type == TokenType::OPEN_PARENS)
       operator_stack.push(token);
-    if (token._type == TokenType::CLOSE_PARENS)
+    else if (token._type == TokenType::CLOSE_PARENS)
     {
       while (!operator_stack.empty() && operator_stack.top()._type != TokenType::OPEN_PARENS)
       {
@@ -81,10 +106,44 @@ MathParseAST::MathParseAST(const std::string expression)
     last_token = token;
   } while (token._type != TokenType::END);
 
-  // unwind stacks
-  // std::cout << type[token._type] << "\t'" << token._data << "'\n";
-  // if (token._data == "ERR")
-  //   std::cerr << formatError(token._pos, "Invalid token BLAH");
+  // unwind operator stack
+  while (!operator_stack.empty())
+  {
+    auto token = operator_stack.top();
+    if (token._type == TokenType::OPEN_PARENS)
+    {
+      std::cerr << formatError(token._pos, "Unmatched opening bracket");
+      throw std::domain_error("parenthesis");
+    }
+
+    output_stack.push(token);
+    operator_stack.pop();
+  }
+
+  // display output stack
+  while (!output_stack.empty())
+  {
+    auto token = output_stack.top();
+    output_stack.pop();
+
+    switch (token._type)
+    {
+      case TokenType::OPERATOR:
+        std::cout << "OPERATOR\t" << operatorProperty(token._operator_type)._form << '\n';
+        break;
+      case TokenType::OPEN_PARENS:
+      case TokenType::CLOSE_PARENS:
+      case TokenType::FUNCTION:
+      case TokenType::VARIABLE:
+        std::cout << "      \t" << token._string << '\n';
+        break;
+      case TokenType::NUMBER:
+        std::cout << "      \t" << token._real << '\n';
+        break;
+      default:
+        std::cout << "???\n";
+    }
+  }
 }
 
 std::string
