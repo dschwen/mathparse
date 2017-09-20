@@ -1,13 +1,12 @@
+#ifndef MATHPARSETOKENIZER_H
+#define MATHPARSETOKENIZER_H
+
 #include <string>
 
-class MathParse
+class MathParseTokenizer
 {
 public:
-  MathParse(const std::string expression);
-
-protected:
-  std::string _expression;
-  std::string::iterator _c;
+  MathParseTokenizer(const std::string expression);
 
   enum TokenType
   {
@@ -22,16 +21,6 @@ protected:
     END
   };
 
-  bool isDigit();
-  bool isOperator();
-  bool isOpenParenthesis();
-  bool isCloseParenthesis();
-  bool isAlphaFirst();
-  bool isAlphaCont();
-
-  int getInteger();
-  void skipWhite();
-
   struct Token
   {
     Token() : _type(INVALID), _data() {}
@@ -41,7 +30,22 @@ protected:
     std::string _data;
   };
 
+protected:
   Token getToken();
 
-  bool inSet(const std::string& set);
+private:
+  std::string _mpt_expression;
+  std::string::iterator _c;
+
+  bool isDigit();
+  bool isOperator();
+  bool isOpenParenthesis();
+  bool isCloseParenthesis();
+  bool isAlphaFirst();
+  bool isAlphaCont();
+
+  int getInteger();
+  void skipWhite();
 };
+
+#endif // MATHPARSETOKENIZER_H

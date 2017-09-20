@@ -1,14 +1,22 @@
-#include "mathparse.h"
+#include "MathParseTokenizer.h"
 #include <vector>
 #include <iostream>
 #include <cmath>
 
 typedef double Real;
 
-MathParse::MathParse(const std::string expression) : _expression(expression + '\0'), _c(_expression.begin())
+MathParseTokenizer::MathParseTokenizer(const std::string expression)
+  : _mpt_expression(expression + '\0'), _c(_mpt_expression.begin())
 {
-  const std::vector<std::string> type = {"OPERATOR", "FUNCTION", "COMMA   ", "OPEN_PARENS", "CLOSE_PARENS",
-                                         "NUMBER  ", "VARIABLE", "INVALID ", "END"};
+  const std::vector<std::string> type = {"OPERATOR",
+                                         "FUNCTION",
+                                         "COMMA   ",
+                                         "OPEN_PARENS",
+                                         "CLOSE_PARENS",
+                                         "NUMBER  ",
+                                         "VARIABLE",
+                                         "INVALID ",
+                                         "END"};
 
   Token token;
   do
@@ -18,41 +26,48 @@ MathParse::MathParse(const std::string expression) : _expression(expression + '\
   } while (token._type != END);
 }
 
-bool MathParse::isDigit()
+bool
+MathParseTokenizer::isDigit()
 {
   const std::string digit("0123456789");
   return digit.find_first_of(*_c) != std::string::npos;
 }
 
-bool MathParse::isOperator()
+bool
+MathParseTokenizer::isOperator()
 {
   const std::string operator_char("+-*/^!%<>=?:");
   return operator_char.find_first_of(*_c) != std::string::npos;
 }
 
-bool MathParse::isOpenParenthesis()
+bool
+MathParseTokenizer::isOpenParenthesis()
 {
   const std::string parenthesis("([{");
   return parenthesis.find_first_of(*_c) != std::string::npos;
 }
 
-bool MathParse::isCloseParenthesis()
+bool
+MathParseTokenizer::isCloseParenthesis()
 {
   const std::string parenthesis(")]}");
   return parenthesis.find_first_of(*_c) != std::string::npos;
 }
 
-bool MathParse::isAlphaFirst()
+bool
+MathParseTokenizer::isAlphaFirst()
 {
   return (*_c >= 'a' && *_c <= 'z') || (*_c >= 'A' && *_c <= 'Z');
 }
 
-bool MathParse::isAlphaCont()
+bool
+MathParseTokenizer::isAlphaCont()
 {
   return isAlphaFirst() || isDigit() || *_c == '_';
 }
 
-int MathParse::getInteger()
+int
+MathParseTokenizer::getInteger()
 {
   int integer = 0;
   while (isDigit())
@@ -60,14 +75,16 @@ int MathParse::getInteger()
   return integer;
 }
 
-void MathParse::skipWhite()
+void
+MathParseTokenizer::skipWhite()
 {
   // skip whitespace
   while (*_c == ' ')
     ++_c;
 }
 
-MathParse::Token MathParse::getToken()
+MathParseTokenizer::Token
+MathParseTokenizer::getToken()
 {
   skipWhite();
 
@@ -146,18 +163,10 @@ MathParse::Token MathParse::getToken()
     if (decimals == 0.0 && exponent == 0)
       return Token(TokenType::NUMBER, std::to_string(integer));
     else
-      return Token(TokenType::NUMBER, std::to_string((integer + decimals) * std::pow(10.0, exponent)));
+      return Token(TokenType::NUMBER,
+                   std::to_string((integer + decimals) * std::pow(10.0, exponent)));
   }
 
   // unable to parse
   return Token(TokenType::INVALID, *(_c++));
-}
-
-int main(int argc, char *argv[])
-{
-  if (argc != 2)
-    return 1;
-
-  MathParse parser(argv[1]);
-  return 0;
 }
