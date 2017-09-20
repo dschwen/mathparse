@@ -1,34 +1,57 @@
 # mathparse
 Mathematical expression parser that builds an AST.
 
-## Example
+It consists of
+
+- a tokenizer in `MathParseTokenize`
+- an infix to prefix converter in `MathParseAST`
+
+Work in progress
+
+- an prefix-tree generator
+
+## Features
+
+Detailed error messages:
 
 ```
-> ./mathparse '3.324 + 5e2*-3 - sin(3 + 3.44e-2) * {1,2+a,3} <= 7 '
-NUMBER  	3.324000
-OPERATOR	+
-NUMBER  	500.000000
-OPERATOR	*
-OPERATOR	-
-NUMBER  	3
-OPERATOR	-
-FUNCTION	sin
-OPEN_PARENS	(
-NUMBER  	3
-OPERATOR	+
-NUMBER  	0.034400
-CLOSE_PARENS	)
-OPERATOR	*
-OPEN_PARENS	{
-NUMBER  	1
-COMMA
-NUMBER  	2
-OPERATOR	+
-VARIABLE	a
-COMMA
-NUMBER  	3
-CLOSE_PARENS	}
-OPERATOR	<=
-NUMBER  	7
-END
+> ./mathparse 'a + b * (c - d'
+  a + b * (c - d
+        ~~^~~
+Unmatched opening bracket
+```
+
+```
+./mathparse 'a + b * c) - d'
+ a + b * c) - d
+        ~~^~~
+Unmatched closing bracket
+```
+
+```
+> ./mathparse 'a + b c - d'
+  a + b c - d
+      ~~^~~
+Operator expected here
+```
+
+```
+> ./mathparse 'a + b - * d'
+  a + b - * d
+        ~~^~~
+Did not expect operator here
+```
+
+```
+> ./mathparse 'a + b * c -= d'
+  a + b * c -= d
+          ~~^~~
+    Unknown operator
+```
+
+```
+> ./mathparse 'a + b * $ - d'
+  a + b * $ - d
+        ~~^~~
+     Parse error
 ```
