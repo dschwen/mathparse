@@ -24,10 +24,13 @@ public:
   struct Token
   {
     Token() : _type(INVALID), _data() {}
-    Token(TokenType type, const std::string& data) : _type(type), _data(data) {}
-    Token(TokenType type, char data) : _type(type), _data(1, data) {}
+    Token(TokenType type, const std::string & data, std::size_t pos)
+      : _type(type), _data(data), _pos(pos)
+    {
+    }
     TokenType _type;
     std::string _data;
+    std::size_t _pos;
   };
 
 protected:
@@ -46,6 +49,9 @@ private:
 
   int getInteger();
   void skipWhite();
+
+  Token makeToken(TokenType type);
+  Token makeToken(TokenType type, const std::string & data);
 };
 
 #endif // MATHPARSETOKENIZER_H

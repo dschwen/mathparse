@@ -8,22 +8,6 @@ typedef double Real;
 MathParseTokenizer::MathParseTokenizer(const std::string expression)
   : _mpt_expression(expression + '\0'), _c(_mpt_expression.begin())
 {
-  const std::vector<std::string> type = {"OPERATOR",
-                                         "FUNCTION",
-                                         "COMMA   ",
-                                         "OPEN_PARENS",
-                                         "CLOSE_PARENS",
-                                         "NUMBER  ",
-                                         "VARIABLE",
-                                         "INVALID ",
-                                         "END"};
-
-  Token token;
-  do
-  {
-    token = getToken();
-    std::cout << type[token._type] << '\t' << token._data << '\n';
-  } while (token._type != END);
 }
 
 bool
@@ -90,7 +74,7 @@ MathParseTokenizer::getToken()
 
   // end of expression
   if (*_c == '\0')
-    return Token(TokenType::END, "");
+    return makeToken(TokenType::END, "");
 
   if (isOperator())
   {
@@ -98,19 +82,16 @@ MathParseTokenizer::getToken()
     // parse >= <= == but NOT *-
     while (*_c == '=')
       op += *(_c++);
-    return Token(TokenType::OPERATOR, op);
+    return makeToken(TokenType::OPERATOR, op);
   }
 
   if (isOpenParenthesis())
-    return Token(TokenType::OPEN_PARENS, *(_c++));
+    return makeToken(TokenType::OPEN_PARENS);
   if (isCloseParenthesis())
-    return Token(TokenType::CLOSE_PARENS, *(_c++));
+    return makeToken(TokenType::CLOSE_PARENS);
 
   if (*_c == ',')
-  {
-    _c++;
-    return Token(TokenType::COMMA, "");
-  }
+    return makeToken(TokenType::COMMA);
 
   // consume symbol
   if (isAlphaFirst())
@@ -120,9 +101,9 @@ MathParseTokenizer::getToken()
       symbol += *(_c++);
 
     if (isOpenParenthesis())
-      return Token(TokenType::FUNCTION, symbol);
+      return makeToken(TokenType::FUNCTION, symbol);
     else
-      return Token(TokenType::VARIABLE, symbol);
+      return makeToken(TokenType::VARIABLE, symbol);
   }
 
   // consume number
@@ -161,12 +142,24 @@ MathParseTokenizer::getToken()
     }
 
     if (decimals == 0.0 && exponent == 0)
-      return Token(TokenType::NUMBER, std::to_string(integer));
+      return makeToken(TokenType::NUMBER, std::to_string(integer));
     else
-      return Token(TokenType::NUMBER,
-                   std::to_string((integer + decimals) * std::pow(10.0, exponent)));
+      return makeToken(TokenType::NUMBER,
+                       std::to_string((integer + decimals) * std::pow(10.0, exponent)));
   }
 
   // unable to parse
-  return Token(TokenType::INVALID, *(_c++));
+  return makeToken(TokenType::INVALID);
+}
+
+MathParseTokenizer::Token
+MathParseTokenizer::makeToken(TokenType type)
+{
+  return Token(type, std::string(1, *(_c++)), std::distance(_mpt_expression.begin(), _c) - 1);
+}
+
+MathParseTokenizer::Token
+MathParseTokenizer::makeToken(TokenType type, const std::string & data)
+{
+  return Token(type, data, std::distance(_mpt_expression.begin(), _c) - data.size());
 }
