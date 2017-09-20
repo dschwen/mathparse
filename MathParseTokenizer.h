@@ -1,18 +1,20 @@
 #ifndef MATHPARSETOKENIZER_H
 #define MATHPARSETOKENIZER_H
 
+#include "MathParseOperators.h"
 #include <string>
 
-class MathParseTokenizer
+typedef double Real;
+
+class MathParseTokenizer : public MathParseOperators
 {
 public:
   MathParseTokenizer(const std::string expression);
 
-  enum TokenType
+  enum class TokenType
   {
     OPERATOR,
     FUNCTION,
-    COMMA,
     OPEN_PARENS,
     CLOSE_PARENS,
     NUMBER,
@@ -23,14 +25,20 @@ public:
 
   struct Token
   {
-    Token() : _type(INVALID), _data() {}
-    Token(TokenType type, const std::string & data, std::size_t pos)
-      : _type(type), _data(data), _pos(pos)
-    {
-    }
+    Token() : _type(TokenType::INVALID), _pos(0) {}
+    Token(TokenType type, const std::string & string, std::size_t pos);
+    Token(TokenType type, OperatorType operator_type, std::size_t pos);
+    Token(TokenType type, Real real, std::size_t pos);
+    ~Token() {}
+
     TokenType _type;
-    std::string _data;
     std::size_t _pos;
+
+    // should use C++17 variant
+    std::string _string;
+    OperatorType _operator_type;
+    // int _integer;
+    Real _real;
   };
 
 protected:
@@ -40,6 +48,7 @@ protected:
 private:
   const std::string _mpt_expression;
   std::string::const_iterator _c;
+  std::size_t _token_start;
 
   ///@{ classification functions for the next expression character
   bool isDigit();
@@ -58,6 +67,9 @@ private:
 
   Token makeToken(TokenType type);
   Token makeToken(TokenType type, const std::string & data);
+  Token makeToken(OperatorType operator_type);
+  Token makeToken(int integer);
+  Token makeToken(Real real);
 };
 
 #endif // MATHPARSETOKENIZER_H

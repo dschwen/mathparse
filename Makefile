@@ -1,16 +1,14 @@
 CXX ?= clang++
-CXXFLAGS ?= -std=c++11
 
-OBJS := MathParse.o MathParseTokenizer.o MathParseAST.o
+OBJS := MathParse.o MathParseTokenizer.o MathParseAST.o MathParseOperators.o
 
 mathparse: main.C $(OBJS)
-	$(CXX) $(LDFLAGS) -o mathparse main.C $(OBJS)
+	$(CXX) -std=c++11 $(LDFLAGS) -o mathparse main.C $(OBJS)
 
 -include $(OBJS:.o=.d)
 
 %.o : %.C
-	echo $(CXX) -c $(CXXFLAGS) $(CPPFLAGS) $*.C -o $@
-	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) $*.C -o $@
+	$(CXX) -std=c++11 -c $(CXXFLAGS) $(CPPFLAGS) $*.C -o $@
 	$(CXX) -MM $(CXXFLAGS) $*.C > $*.d
 
 clean:
