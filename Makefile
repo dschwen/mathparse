@@ -1,7 +1,7 @@
 CXX ?= clang++
 CXXFLAGS ?= -std=c++11
 
-OBJS := MathParse.o MathParseTokenizer.o
+OBJS := MathParse.o MathParseTokenizer.o MathParseAST.o
 
 mathparse: main.C $(OBJS)
 	$(CXX) $(LDFLAGS) -o mathparse main.C $(OBJS)

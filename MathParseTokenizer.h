@@ -34,20 +34,26 @@ public:
   };
 
 protected:
+  /// gets the next complete token from the expression
   Token getToken();
 
 private:
-  std::string _mpt_expression;
-  std::string::iterator _c;
+  const std::string _mpt_expression;
+  std::string::const_iterator _c;
 
+  ///@{ classification functions for the next expression character
   bool isDigit();
   bool isOperator();
   bool isOpenParenthesis();
   bool isCloseParenthesis();
   bool isAlphaFirst();
   bool isAlphaCont();
+  ///@}
 
+  /// fetch and assemble a sequence of characters that constitute a valid integer number
   int getInteger();
+
+  /// skip the next whitespace characters
   void skipWhite();
 
   Token makeToken(TokenType type);
