@@ -1,6 +1,6 @@
 CXX ?= clang++
 
-OBJS := MathParse.o MathParseTokenizer.o MathParseAST.o MathParseOperators.o
+OBJS := MathParse.o MathParseTokenizer.o MathParseAST.o MathParseOperators.o MathParseFunctions.o
 
 mathparse: main.C $(OBJS)
 	$(CXX) -std=c++11 $(LDFLAGS) -o mathparse main.C $(OBJS)

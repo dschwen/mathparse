@@ -17,7 +17,7 @@ MathParseAST::MathParseAST(const std::string expression)
   do
   {
     token = getToken();
-    std::cout << "got token " << formatToken(token) << '\n';
+    // std::cout << "got token " << formatToken(token) << '\n';
 
     //
     // Validation
@@ -55,6 +55,13 @@ MathParseAST::MathParseAST(const std::string expression)
           throw std::domain_error("operator");
         }
       }
+    }
+
+    // function checking
+    if (token._type == TokenType::FUNCTION && token._function_type == FunctionType::INVALID)
+    {
+      std::cerr << formatError(token._pos, "Unknown function");
+      throw std::domain_error("operator");
     }
 
     // disallow consecutive variables/numbers (we could insert a multiplication here...)
@@ -119,7 +126,18 @@ MathParseAST::MathParseAST(const std::string expression)
         // check if this bracket pair was a function argument list
         if (!operator_stack.empty() && operator_stack.top()._type == TokenType::FUNCTION)
         {
-          std::cout << "POPPING FUNCTION WITH " << open_parens._integer + 1 << " ARGUMENTS\n";
+          auto function = operator_stack.top();
+          auto expected_argments = functionProperty(function._function_type)._arguments;
+          if (expected_argments != open_parens._integer + 1)
+          {
+            {
+              std::cerr << formatError(function._pos,
+                                       "Expected " + std::to_string(expected_argments) +
+                                           " argument(s) but found " +
+                                           std::to_string(open_parens._integer + 1));
+              throw std::domain_error("parenthesis");
+            }
+          }
           output_stack.push(operator_stack.top());
           operator_stack.pop();
         }
@@ -141,7 +159,16 @@ MathParseAST::MathParseAST(const std::string expression)
                                    "Empty bracket pairs are only allowed after functions");
           throw std::domain_error("parenthesis");
         }
-        std::cout << "POPPING FUNCTION WITHOUT ARGUMENTS\n";
+
+        auto function = operator_stack.top();
+        auto expected_argments = functionProperty(function._function_type)._arguments;
+        if (expected_argments != 0)
+        {
+          std::cerr << formatError(function._pos,
+                                   "Function takes " + std::to_string(expected_argments) +
+                                       " argument(s), but none were given");
+          throw std::domain_error("parenthesis");
+        }
         output_stack.push(operator_stack.top());
         operator_stack.pop();
       }
@@ -203,7 +230,7 @@ MathParseAST::formatToken(const Token & token)
     case TokenType::CLOSE_PARENS:
       return "CLOSE_PARENS\t" + token._string;
     case TokenType::FUNCTION:
-      return "FUNCTION    \t" + token._string;
+      return "FUNCTION    \t" + functionProperty(token._function_type)._form;
     case TokenType::VARIABLE:
       return "VARIABLE    \t" + token._string;
     case TokenType::NUMBER:

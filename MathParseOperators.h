@@ -3,7 +3,6 @@
 
 #include <string>
 #include <vector>
-#include <type_traits>
 
 class MathParseOperators
 {
@@ -37,7 +36,6 @@ protected:
 
     INVALID
   };
-  using OperatorIterator = std::underlying_type<OperatorType>::type;
 
   struct OperatorProperties
   {
@@ -49,7 +47,10 @@ protected:
   static const std::vector<OperatorProperties> _operators;
 
   OperatorType identifyOperator(const std::string & op);
-  OperatorProperties operatorProperty(OperatorType op) { return _operators[static_cast<int>(op)]; }
+  const OperatorProperties & operatorProperty(OperatorType op)
+  {
+    return _operators[static_cast<int>(op)];
+  }
 };
 
 #endif // MATHPARSEOPERATORS_H

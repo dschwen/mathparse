@@ -104,7 +104,7 @@ MathParseTokenizer::getToken()
       symbol += *(_c++);
 
     if (isOpenParenthesis())
-      return makeToken(TokenType::FUNCTION, symbol);
+      return makeToken(identifyFunction(symbol));
     else
       return makeToken(TokenType::VARIABLE, symbol);
   }
@@ -176,6 +176,12 @@ MathParseTokenizer::makeToken(OperatorType operator_type)
 }
 
 MathParseTokenizer::Token
+MathParseTokenizer::makeToken(FunctionType function_type)
+{
+  return Token(TokenType::FUNCTION, function_type, _token_start);
+}
+
+MathParseTokenizer::Token
 MathParseTokenizer::makeToken(int integer)
 {
   return Token(TokenType::NUMBER, Real(integer), _token_start);
@@ -196,7 +202,6 @@ MathParseTokenizer::Token::Token(TokenType type, const std::string & string, std
   // validate parameter for the given type
   switch (type)
   {
-    case TokenType::FUNCTION:
     case TokenType::VARIABLE:
     case TokenType::OPEN_PARENS:
     case TokenType::CLOSE_PARENS:
@@ -214,6 +219,13 @@ MathParseTokenizer::Token::Token(TokenType type, OperatorType operator_type, std
 {
   if (type != TokenType::OPERATOR)
     throw std::invalid_argument("operator_type");
+}
+
+MathParseTokenizer::Token::Token(TokenType type, FunctionType function_type, std::size_t pos)
+  : _type(type), _function_type(function_type), _integer(0), _pos(pos)
+{
+  if (type != TokenType::FUNCTION)
+    throw std::invalid_argument("function_type");
 }
 
 MathParseTokenizer::Token::Token(TokenType type, Real real, std::size_t pos)
