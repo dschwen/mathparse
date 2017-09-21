@@ -9,7 +9,7 @@ mathparse: main.C $(OBJS)
 
 %.o : %.C
 	$(CXX) -std=c++11 -c $(CXXFLAGS) $(CPPFLAGS) $*.C -o $@
-	$(CXX) -MM $(CXXFLAGS) $*.C > $*.d
+	$(CXX) -std=c++11 -MM $(CXXFLAGS) $*.C > $*.d
 
 clean:
 	rm -rf $(OBJS) *.o *.d

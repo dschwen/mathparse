@@ -224,7 +224,7 @@ MathParseAST::formatToken(const Token & token)
   switch (token._type)
   {
     case TokenType::OPERATOR:
-      return "OPERATOR    \t" + operatorProperty(token._operator_type)._form;
+      return "OPERATOR    \t" + operatorProperty(token._operator_type)._form + " (" + std::to_string(static_cast<int>(token._operator_type)) + ')';
     case TokenType::OPEN_PARENS:
       return "OPEN_PARENS \t" + token._string;
     case TokenType::CLOSE_PARENS:
