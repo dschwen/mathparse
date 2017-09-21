@@ -1,56 +1,77 @@
-#ifndef SYMBOLICMATHOPERATORS_H
-#define SYMBOLICMATHOPERATORS_H
+#ifndef SYMBOLICMATH_OPERATORS_H
+#define SYMBOLICMATH_OPERATORS_H
 
 #include <string>
 #include <vector>
 
-class SymbolicMathOperators
+namespace SymbolicMath
 {
-protected:
-  enum OperatorType
-  {
-    UNARY_PLUS,
-    UNARY_MINUS,
-    FACULTY,
-    LOGICAL_NOT,
 
-    POWER,
+enum class OperatorType
+{
+  UNARY_PLUS,
+  UNARY_MINUS,
+  FACULTY,
+  LOGICAL_NOT,
 
-    MULTIPLICATION,
-    DIVISION,
-    MODULO,
+  POWER,
 
-    ADDITION,
-    SUBTRACTION,
+  MULTIPLICATION,
+  DIVISION,
+  MODULO,
 
-    LESS_THAN,
-    GREATER_THAN,
-    LESS_EQUAL,
-    GREATER_EQUAL,
+  ADDITION,
+  SUBTRACTION,
 
-    EQUAL,
-    NOT_EQUAL,
+  LESS_THAN,
+  GREATER_THAN,
+  LESS_EQUAL,
+  GREATER_EQUAL,
 
-    LOGICAL_AND,
-    LOGICAL_OR,
+  EQUAL,
+  NOT_EQUAL,
 
-    INVALID
-  };
+  LOGICAL_AND,
+  LOGICAL_OR,
 
-  struct OperatorProperties
-  {
-    const unsigned short _precedence;
-    const bool _left_associative;
-    const std::string _form;
-  };
-
-  static const std::vector<OperatorProperties> _operators;
-
-  OperatorType identifyOperator(const std::string & op);
-  const OperatorProperties & operatorProperty(OperatorType op)
-  {
-    return _operators[static_cast<int>(op)];
-  }
+  INVALID
 };
 
-#endif // SYMBOLICMATHOPERATORS_H
+struct OperatorProperties
+{
+  const unsigned short _precedence;
+  const bool _left_associative;
+  const std::string _form;
+};
+
+const std::vector<OperatorProperties> _operators = {{3, true, "+"},
+                                                    {3, true, "-"},
+                                                    {3, true, "!"},
+                                                    {3, true, "~"},
+                                                    {4, true, "^"},
+                                                    {5, true, "*"},
+                                                    {5, true, "/"},
+                                                    {5, true, "%"},
+                                                    {6, true, "+"},
+                                                    {6, true, "-"},
+                                                    {8, true, "<"},
+                                                    {8, true, ">"},
+                                                    {8, true, "<="},
+                                                    {8, true, ">="},
+                                                    {9, true, "=="},
+                                                    {9, true, "!="},
+                                                    {13, true, "&"},
+                                                    {14, true, "|"}};
+
+OperatorType identifyOperator(const std::string & op);
+
+inline const OperatorProperties &
+operatorProperty(OperatorType op)
+{
+  return _operators[static_cast<int>(op)];
+}
+
+// end namespace SymbolicMath
+}
+
+#endif // SYMBOLICMATH_OPERATORS_H

@@ -1,27 +1,10 @@
 #include "SymbolicMathOperators.h"
 
-const std::vector<SymbolicMathOperators::OperatorProperties> SymbolicMathOperators::_operators = {
-    {3, true, "+"},
-    {3, true, "-"},
-    {3, true, "!"},
-    {3, true, "~"},
-    {4, true, "^"},
-    {5, true, "*"},
-    {5, true, "/"},
-    {5, true, "%"},
-    {6, true, "+"},
-    {6, true, "-"},
-    {8, true, "<"},
-    {8, true, ">"},
-    {8, true, "<="},
-    {8, true, ">="},
-    {9, true, "=="},
-    {9, true, "!="},
-    {13, true, "&"},
-    {14, true, "|"}};
+namespace SymbolicMath
+{
 
-SymbolicMathOperators::OperatorType
-SymbolicMathOperators::identifyOperator(const std::string & op)
+OperatorType
+identifyOperator(const std::string & op)
 {
   // we search from the back to avoid matching with the unary operators
   int i = static_cast<int>(OperatorType::INVALID) - 1;
@@ -30,4 +13,7 @@ SymbolicMathOperators::identifyOperator(const std::string & op)
       return static_cast<OperatorType>(i);
 
   return OperatorType::INVALID;
+}
+
+// end namespace SymbolicMath
 }

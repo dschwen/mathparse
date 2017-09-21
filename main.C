@@ -10,6 +10,6 @@ main(int argc, char * argv[])
     return 100;
   }
 
-  SymbolicMath parser(argv[1]);
+  SymbolicMath::Parser parser(argv[1]);
   return 0;
 }

@@ -1,56 +1,60 @@
 #include "SymbolicMathTokenizer.h"
+
 #include <vector>
 #include <iostream>
 #include <cmath>
 #include <exception>
 
-SymbolicMathTokenizer::SymbolicMathTokenizer(const std::string expression)
+namespace SymbolicMath
+{
+
+Tokenizer::Tokenizer(const std::string expression)
   : _mpt_expression(expression + '\0'), _c(_mpt_expression.begin())
 {
 }
 
 bool
-SymbolicMathTokenizer::isDigit()
+Tokenizer::isDigit()
 {
   const std::string digit("0123456789");
   return digit.find_first_of(*_c) != std::string::npos;
 }
 
 bool
-SymbolicMathTokenizer::isOperator()
+Tokenizer::isOperator()
 {
   const std::string operator_char("+-*/^!%<>=?:");
   return operator_char.find_first_of(*_c) != std::string::npos;
 }
 
 bool
-SymbolicMathTokenizer::isOpenParenthesis()
+Tokenizer::isOpenParenthesis()
 {
   const std::string parenthesis("([{");
   return parenthesis.find_first_of(*_c) != std::string::npos;
 }
 
 bool
-SymbolicMathTokenizer::isCloseParenthesis()
+Tokenizer::isCloseParenthesis()
 {
   const std::string parenthesis(")]}");
   return parenthesis.find_first_of(*_c) != std::string::npos;
 }
 
 bool
-SymbolicMathTokenizer::isAlphaFirst()
+Tokenizer::isAlphaFirst()
 {
   return (*_c >= 'a' && *_c <= 'z') || (*_c >= 'A' && *_c <= 'Z');
 }
 
 bool
-SymbolicMathTokenizer::isAlphaCont()
+Tokenizer::isAlphaCont()
 {
   return isAlphaFirst() || isDigit() || *_c == '_';
 }
 
 int
-SymbolicMathTokenizer::getInteger()
+Tokenizer::getInteger()
 {
   int integer = 0;
   while (isDigit())
@@ -59,15 +63,15 @@ SymbolicMathTokenizer::getInteger()
 }
 
 void
-SymbolicMathTokenizer::skipWhite()
+Tokenizer::skipWhite()
 {
   // skip whitespace
   while (*_c == ' ')
     ++_c;
 }
 
-SymbolicMathTokenizer::Token
-SymbolicMathTokenizer::getToken()
+Token
+Tokenizer::getToken()
 {
   skipWhite();
 
@@ -157,38 +161,38 @@ SymbolicMathTokenizer::getToken()
 /**
  * Token building helpers
  */
-SymbolicMathTokenizer::Token
-SymbolicMathTokenizer::makeToken(TokenType type)
+Token
+Tokenizer::makeToken(TokenType type)
 {
   return Token(type, std::string(1, *(_c++)), _token_start);
 }
 
-SymbolicMathTokenizer::Token
-SymbolicMathTokenizer::makeToken(TokenType type, const std::string & data)
+Token
+Tokenizer::makeToken(TokenType type, const std::string & data)
 {
   return Token(type, data, _token_start);
 }
 
-SymbolicMathTokenizer::Token
-SymbolicMathTokenizer::makeToken(OperatorType operator_type)
+Token
+Tokenizer::makeToken(OperatorType operator_type)
 {
   return Token(TokenType::OPERATOR, operator_type, _token_start);
 }
 
-SymbolicMathTokenizer::Token
-SymbolicMathTokenizer::makeToken(FunctionType function_type)
+Token
+Tokenizer::makeToken(FunctionType function_type)
 {
   return Token(TokenType::FUNCTION, function_type, _token_start);
 }
 
-SymbolicMathTokenizer::Token
-SymbolicMathTokenizer::makeToken(int integer)
+Token
+Tokenizer::makeToken(int integer)
 {
   return Token(TokenType::NUMBER, Real(integer), _token_start);
 }
 
-SymbolicMathTokenizer::Token
-SymbolicMathTokenizer::makeToken(Real real)
+Token
+Tokenizer::makeToken(Real real)
 {
   return Token(TokenType::NUMBER, real, _token_start);
 }
@@ -196,7 +200,7 @@ SymbolicMathTokenizer::makeToken(Real real)
 /**
  * Token constructors
  */
-SymbolicMathTokenizer::Token::Token(TokenType type, const std::string & string, std::size_t pos)
+Token::Token(TokenType type, const std::string & string, std::size_t pos)
   : _type(type), _string(string), _integer(0), _pos(pos)
 {
   // validate parameter for the given type
@@ -214,23 +218,26 @@ SymbolicMathTokenizer::Token::Token(TokenType type, const std::string & string, 
   }
 }
 
-SymbolicMathTokenizer::Token::Token(TokenType type, OperatorType operator_type, std::size_t pos)
+Token::Token(TokenType type, OperatorType operator_type, std::size_t pos)
   : _type(type), _operator_type(operator_type), _integer(0), _pos(pos)
 {
   if (type != TokenType::OPERATOR)
     throw std::invalid_argument("operator_type");
 }
 
-SymbolicMathTokenizer::Token::Token(TokenType type, FunctionType function_type, std::size_t pos)
+Token::Token(TokenType type, FunctionType function_type, std::size_t pos)
   : _type(type), _function_type(function_type), _integer(0), _pos(pos)
 {
   if (type != TokenType::FUNCTION)
     throw std::invalid_argument("function_type");
 }
 
-SymbolicMathTokenizer::Token::Token(TokenType type, Real real, std::size_t pos)
+Token::Token(TokenType type, Real real, std::size_t pos)
   : _type(type), _integer(0), _real(real), _pos(pos)
 {
   if (type != TokenType::NUMBER)
     throw std::invalid_argument("operator_type");
+}
+
+// end namespace SymbolicMath
 }

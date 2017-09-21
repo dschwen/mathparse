@@ -1,14 +1,10 @@
-# mathparse
-Mathematical expression parser that builds an AST.
+# SymbolicMath
+Abstract syntax tree (AST) based symbolic math system with an expression parser.
 
 It consists of
 
-- a tokenizer in `MathParseTokenize`
-- an infix to prefix converter in `MathParseAST`
-
-Work in progress
-
-- an prefix-tree generator
+- a tokenizer in `SymbolicMathTokenize`
+- an infix to prefix tree converter in `SymbolicMathParser`
 
 ## Features
 

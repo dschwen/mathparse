@@ -5,8 +5,10 @@
 #include <vector>
 #include <stack>
 
-SymbolicMathParser::SymbolicMathParser(const std::string expression)
-  : SymbolicMathTokenizer(expression), _mpa_expression(expression)
+namespace SymbolicMath
+{
+
+Parser::Parser(const std::string expression) : Tokenizer(expression), _mpa_expression(expression)
 {
   std::stack<Token> output_stack;
   std::stack<Token> operator_stack;
@@ -218,7 +220,7 @@ SymbolicMathParser::SymbolicMathParser(const std::string expression)
 }
 
 std::string
-SymbolicMathParser::formatToken(const Token & token)
+Parser::formatToken(const Token & token)
 {
   switch (token._type)
   {
@@ -243,7 +245,7 @@ SymbolicMathParser::formatToken(const Token & token)
 }
 
 std::string
-SymbolicMathParser::formatError(std::size_t pos, const std::string & message, std::size_t width)
+Parser::formatError(std::size_t pos, const std::string & message, std::size_t width)
 {
   // pad the expression to allow displaying pos 0 error markers
   const std::string padded = "  " + _mpa_expression;
@@ -264,4 +266,7 @@ SymbolicMathParser::formatError(std::size_t pos, const std::string & message, st
   error += std::string(indent, ' ') + message + '\n';
 
   return error;
+}
+
+// end namespace SymbolicMath
 }

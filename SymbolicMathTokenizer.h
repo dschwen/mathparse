@@ -6,50 +6,52 @@
 
 #include <string>
 
+namespace SymbolicMath
+{
 typedef double Real;
 
-class SymbolicMathTokenizer : public SymbolicMathOperators, public SymbolicMathFunctions
+enum class TokenType
+{
+  OPERATOR,
+  FUNCTION,
+  OPEN_PARENS,
+  CLOSE_PARENS,
+  NUMBER,
+  VARIABLE,
+  COMMA,
+  INVALID,
+  END
+};
+
+struct Token
+{
+  Token() : _type(TokenType::INVALID), _pos(0) {}
+  Token(TokenType type, const std::string & string, std::size_t pos);
+  Token(TokenType type, OperatorType operator_type, std::size_t pos);
+  Token(TokenType type, FunctionType operator_type, std::size_t pos);
+  Token(TokenType type, Real real, std::size_t pos);
+  ~Token() {}
+
+  TokenType _type;
+  std::size_t _pos;
+
+  // might drop this later and have the tokenizer look up variable IDs
+  std::string _string;
+
+  union {
+    OperatorType _operator_type;
+    FunctionType _function_type;
+  };
+
+  // for OPEN_PARENS this holds the argument counter
+  int _integer;
+  Real _real;
+};
+
+class Tokenizer
 {
 public:
-  SymbolicMathTokenizer(const std::string expression);
-
-  enum class TokenType
-  {
-    OPERATOR,
-    FUNCTION,
-    OPEN_PARENS,
-    CLOSE_PARENS,
-    NUMBER,
-    VARIABLE,
-    COMMA,
-    INVALID,
-    END
-  };
-
-  struct Token
-  {
-    Token() : _type(TokenType::INVALID), _pos(0) {}
-    Token(TokenType type, const std::string & string, std::size_t pos);
-    Token(TokenType type, OperatorType operator_type, std::size_t pos);
-    Token(TokenType type, FunctionType operator_type, std::size_t pos);
-    Token(TokenType type, Real real, std::size_t pos);
-    ~Token() {}
-
-    TokenType _type;
-    std::size_t _pos;
-
-    // might drop this later and have the tokenizer look up variable IDs
-    std::string _string;
-
-    union {
-      OperatorType _operator_type;
-      FunctionType _function_type;
-    };
-
-    // for OPEN_PARENS this holds the argument counter
-    int _integer;
-    Real _real;
-  };
+  Tokenizer(const std::string expression);
 
 protected:
   /// gets the next complete token from the expression
@@ -82,5 +84,8 @@ private:
   Token makeToken(int integer);
   Token makeToken(Real real);
 };
+
+// end namespace SymbolicMath
+}
 
 #endif // SYMBOLICMATHTOKENIZER_H
