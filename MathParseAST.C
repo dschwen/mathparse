@@ -17,7 +17,6 @@ MathParseAST::MathParseAST(const std::string expression)
   do
   {
     token = getToken();
-    // std::cout << "got token " << formatToken(token) << '\n';
 
     //
     // Validation
@@ -81,7 +80,7 @@ MathParseAST::MathParseAST(const std::string expression)
       throw std::domain_error("operator");
     }
 
-    // need to validate symbols
+    // std::cout << "got token " << formatToken(token) << '\n';
 
     //
     // Shunting yard core
@@ -224,7 +223,8 @@ MathParseAST::formatToken(const Token & token)
   switch (token._type)
   {
     case TokenType::OPERATOR:
-      return "OPERATOR    \t" + operatorProperty(token._operator_type)._form + " (" + std::to_string(static_cast<int>(token._operator_type)) + ')';
+      return "OPERATOR    \t" + operatorProperty(token._operator_type)._form + " (" +
+             std::to_string(operatorProperty(token._operator_type)._precedence) + ')';
     case TokenType::OPEN_PARENS:
       return "OPEN_PARENS \t" + token._string;
     case TokenType::CLOSE_PARENS:

@@ -1,10 +1,10 @@
 #include "MathParseOperators.h"
 
 const std::vector<MathParseOperators::OperatorProperties> MathParseOperators::_operators = {
-    {3, false, "+"},
-    {3, false, "-"},
-    {3, false, "!"},
-    {3, false, "~"},
+    {3, true, "+"},
+    {3, true, "-"},
+    {3, true, "!"},
+    {3, true, "~"},
     {4, true, "^"},
     {5, true, "*"},
     {5, true, "/"},
