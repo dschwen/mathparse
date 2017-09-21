@@ -1,8 +1,7 @@
 #ifndef SYMBOLICMATHTOKENIZER_H
 #define SYMBOLICMATHTOKENIZER_H
 
-#include "SymbolicMathOperators.h"
-#include "SymbolicMathFunctions.h"
+#include "SymbolicMathSymbols.h"
 
 #include <string>
 

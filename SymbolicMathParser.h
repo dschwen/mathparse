@@ -2,6 +2,7 @@
 #define SYMBOLICMATH_PARSER_H
 
 #include "SymbolicMathTokenizer.h"
+// #include "SymbolicMathTerm.h"
 
 #include <string>
 
@@ -16,6 +17,7 @@ class Parser
 public:
   Parser();
 
+  // Term
   void parse(const std::string expression);
 
 protected:
