@@ -8,6 +8,19 @@
 namespace SymbolicMath
 {
 
+enum class TokenType
+{
+  OPERATOR,
+  FUNCTION,
+  OPEN_PARENS,
+  CLOSE_PARENS,
+  NUMBER,
+  VARIABLE,
+  COMMA,
+  INVALID,
+  END
+};
+
 enum class FunctionType
 {
   ABS,

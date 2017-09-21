@@ -9,19 +9,6 @@ namespace SymbolicMath
 {
 typedef double Real;
 
-enum class TokenType
-{
-  OPERATOR,
-  FUNCTION,
-  OPEN_PARENS,
-  CLOSE_PARENS,
-  NUMBER,
-  VARIABLE,
-  COMMA,
-  INVALID,
-  END
-};
-
 struct Token
 {
   Token() : _type(TokenType::INVALID), _pos(0) {}

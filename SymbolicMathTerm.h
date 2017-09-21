@@ -1,6 +1,12 @@
 #ifndef SYMBOLICMATH_TERM_H
 #define SYMBOLICMATH_TERM_H
 
+#include <vector>
+#include <string>
+#include <cassert>
+
+typedef double Real;
+
 namespace SymbolicMath
 {
 
@@ -242,63 +248,6 @@ public:
 };
 
 /**
- * Substitution rule functor base class to perform flexible term substitutions
- */
-class SubstitutionRule
-{
-public:
-  virtual TermNode * apply(const TermNode *) const = 0;
-  virtual ~SubstitutionRule() {}
-};
-
-/**
- * Substitution rule base class that applies to nodes of type Node_T
- */
-template <class Node_T>
-class SubstitutionRuleTyped : public SubstitutionRule
-{
-public:
-  virtual TermNode * apply(const TermNode *) const;
-
-protected:
-  // on successful substitution this returns a new node to replace the old one, otherwise it
-  // returns NULL
-  virtual TermNode * substitute(const Node_T &) const = 0;
-};
-
-/**
- * Generic Substitution rule to replace all occurences of a given symbol node
- * term with a user defined term. This is used by Function.
- */
-class TermSubstitution : public SubstitutionRuleTyped<SymbolNode>
-{
-public:
-  TermSubstitution(const Term & find, const Term & replace);
-  virtual ~TermSubstitution() { delete _replace; }
-protected:
-  virtual TermNode * substitute(const SymbolNode &) const;
-  std::string _find;
-  TermNode * _replace;
-};
-
-/**
- * Substitution rule to replace all occurences of log(x) with plog(x, epsilon)
- * with a user defined term for epsilon.
- */
-class LogPlogSubstitution : public SubstitutionRuleTyped<UnaryFuncTermNode>
-{
-public:
-  LogPlogSubstitution(const Term & epsilon) : _epsilon(epsilon.cloneRoot())
-  {
-    mooseAssert(_epsilon != NULL, "Epsilon must not be an empty term in LogPlogSubstitution");
-  }
-  virtual ~LogPlogSubstitution() { delete _epsilon; }
-protected:
-  virtual TermNode * substitute(const UnaryFuncTermNode &) const;
-  TermNode * _epsilon;
-};
-
-/**
  * User facing host object for an expression tree. Each Term contains a _root
  * node pointer to an TermNode object. The _root pointer should never be NULL,
  * but it should be safe if it ever is. The default constructor assigns a
@@ -360,7 +309,8 @@ public:
 #define UNARY_OP_IMPLEMENT(op, OP)                                                                 \
   Term operator op() const                                                                         \
   {                                                                                                \
-    mooseAssert(_root != NULL, "Empty term provided for unary operator " #op);                     \
+    assert(_root != NULL);                                                                         \
+    /* mooseAssert(_root != NULL, "Empty term provided for unary operator " #op); */               \
     return Term(new UnaryOpTermNode(cloneRoot(), UnaryOpTermNode::OP));                            \
   }
   UNARY_OP_IMPLEMENT(-, NEG)
@@ -386,26 +336,26 @@ public:
 #define BINARY_OP_IMPLEMENT(op, OP)                                                                \
   Term operator op(const Term & term) const                                                        \
   {                                                                                                \
-    mooseAssert(_root != NULL, "Empty term provided on left side of operator " #op);               \
-    mooseAssert(term._root != NULL, "Empty term provided on right side of operator " #op);         \
+    /*mooseAssert(_root != NULL, "Empty term provided on left side of operator " #op); */          \
+    /*mooseAssert(term._root != NULL, "Empty term provided on right side of operator " #op); */    \
     return Term(new BinaryOpTermNode(cloneRoot(), term.cloneRoot(), BinaryOpTermNode::OP));        \
   }                                                                                                \
   friend Term operator op(int left, const Term & right)                                            \
   {                                                                                                \
-    mooseAssert(right._root != NULL, "Empty term provided on right side of operator " #op);        \
+    /*mooseAssert(right._root != NULL, "Empty term provided on right side of operator " #op); */   \
     return Term(                                                                                   \
         new BinaryOpTermNode(new NumberNode<int>(left), right.cloneRoot(), BinaryOpTermNode::OP)); \
   }                                                                                                \
   friend Term operator op(Real left, const Term & right)                                           \
   {                                                                                                \
-    mooseAssert(right._root != NULL, "Empty term provided on right side of operator " #op);        \
+    /*mooseAssert(right._root != NULL, "Empty term provided on right side of operator " #op); */   \
     return Term(new BinaryOpTermNode(                                                              \
         new NumberNode<Real>(left), right.cloneRoot(), BinaryOpTermNode::OP));                     \
   }                                                                                                \
   friend Term operator op(const Function & left, const Term & right)                               \
   {                                                                                                \
-    mooseAssert(Term(left)._root != NULL, "Empty term provided on left side of operator " #op);    \
-    mooseAssert(right._root != NULL, "Empty term provided on right side of operator " #op);        \
+    /*mooseAssert(Term(left)._root != NULL,"Empty term provided on left side of operator " #op);*/ \
+    /*mooseAssert(right._root != NULL, "Empty term provided on right side of operator " #op); */   \
     return Term(                                                                                   \
         new BinaryOpTermNode(Term(left).cloneRoot(), right.cloneRoot(), BinaryOpTermNode::OP));    \
   }                                                                                                \
@@ -430,8 +380,8 @@ public:
 #define BINARYCOMP_OP_IMPLEMENT(op, OP)                                                            \
   Term & operator op(const Term & term)                                                            \
   {                                                                                                \
-    mooseAssert(_root != NULL, "Empty term provided on left side of operator " #op);               \
-    mooseAssert(term._root != NULL, "Empty term provided on right side of operator " #op);         \
+    /*mooseAssert(_root != NULL, "Empty term provided on left side of operator " #op); */          \
+    /*mooseAssert(term._root != NULL, "Empty term provided on right side of operator " #op); */    \
     if (dynamic_cast<TempIDNode *>(_root))                                                         \
       mooseError("Using compound assignment operator on anonymous term. Set it to 0 first!");      \
     _root = new BinaryOpTermNode(_root, term.cloneRoot(), BinaryOpTermNode::OP);                   \
@@ -625,6 +575,63 @@ NumberNode<T>::stringify() const
   s << std::setprecision(12) << _value;
   return s.str();
 }
+
+/**
+ * Substitution rule functor base class to perform flexible term substitutions
+ */
+class SubstitutionRule
+{
+public:
+  virtual TermNode * apply(const TermNode *) const = 0;
+  virtual ~SubstitutionRule() {}
+};
+
+/**
+ * Substitution rule base class that applies to nodes of type Node_T
+ */
+template <class Node_T>
+class SubstitutionRuleTyped : public SubstitutionRule
+{
+public:
+  virtual TermNode * apply(const TermNode *) const;
+
+protected:
+  // on successful substitution this returns a new node to replace the old one, otherwise it
+  // returns NULL
+  virtual TermNode * substitute(const Node_T &) const = 0;
+};
+
+/**
+ * Generic Substitution rule to replace all occurences of a given symbol node
+ * term with a user defined term. This is used by Function.
+ */
+class TermSubstitution : public SubstitutionRuleTyped<SymbolNode>
+{
+public:
+  TermSubstitution(const Term & find, const Term & replace);
+  virtual ~TermSubstitution() { delete _replace; }
+protected:
+  virtual TermNode * substitute(const SymbolNode &) const;
+  std::string _find;
+  TermNode * _replace;
+};
+
+/**
+ * Substitution rule to replace all occurences of log(x) with plog(x, epsilon)
+ * with a user defined term for epsilon.
+ */
+class LogPlogSubstitution : public SubstitutionRuleTyped<UnaryFuncTermNode>
+{
+public:
+  LogPlogSubstitution(const Term & epsilon) : _epsilon(epsilon.cloneRoot())
+  {
+    mooseAssert(_epsilon != NULL, "Epsilon must not be an empty term in LogPlogSubstitution");
+  }
+  virtual ~LogPlogSubstitution() { delete _epsilon; }
+protected:
+  virtual TermNode * substitute(const UnaryFuncTermNode &) const;
+  TermNode * _epsilon;
+};
 
 template <class Node_T>
 TermNode *
