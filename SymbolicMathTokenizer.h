@@ -1,17 +1,17 @@
-#ifndef MATHPARSETOKENIZER_H
-#define MATHPARSETOKENIZER_H
+#ifndef SYMBOLICMATHTOKENIZER_H
+#define SYMBOLICMATHTOKENIZER_H
 
-#include "MathParseOperators.h"
-#include "MathParseFunctions.h"
+#include "SymbolicMathOperators.h"
+#include "SymbolicMathFunctions.h"
 
 #include <string>
 
 typedef double Real;
 
-class MathParseTokenizer : public MathParseOperators, public MathParseFunctions
+class SymbolicMathTokenizer : public SymbolicMathOperators, public SymbolicMathFunctions
 {
 public:
-  MathParseTokenizer(const std::string expression);
+  SymbolicMathTokenizer(const std::string expression);
 
   enum class TokenType
   {
@@ -83,4 +83,4 @@ private:
   Token makeToken(Real real);
 };
 
-#endif // MATHPARSETOKENIZER_H
+#endif // SYMBOLICMATHTOKENIZER_H

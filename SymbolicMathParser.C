@@ -1,12 +1,12 @@
-#include "MathParseAST.h"
+#include "SymbolicMathParser.h"
 
 #include <iostream>
 #include <string>
 #include <vector>
 #include <stack>
 
-MathParseAST::MathParseAST(const std::string expression)
-  : MathParseTokenizer(expression), _mpa_expression(expression)
+SymbolicMathParser::SymbolicMathParser(const std::string expression)
+  : SymbolicMathTokenizer(expression), _mpa_expression(expression)
 {
   std::stack<Token> output_stack;
   std::stack<Token> operator_stack;
@@ -218,7 +218,7 @@ MathParseAST::MathParseAST(const std::string expression)
 }
 
 std::string
-MathParseAST::formatToken(const Token & token)
+SymbolicMathParser::formatToken(const Token & token)
 {
   switch (token._type)
   {
@@ -243,7 +243,7 @@ MathParseAST::formatToken(const Token & token)
 }
 
 std::string
-MathParseAST::formatError(std::size_t pos, const std::string & message, std::size_t width)
+SymbolicMathParser::formatError(std::size_t pos, const std::string & message, std::size_t width)
 {
   // pad the expression to allow displaying pos 0 error markers
   const std::string padded = "  " + _mpa_expression;

@@ -1,11 +1,11 @@
-#ifndef MATHPARSEFUNCTIONS_H
-#define MATHPARSEFUNCTIONS_H
+#ifndef SYMBOLICMATHFUNCTIONS_H
+#define SYMBOLICMATHFUNCTIONS_H
 
 #include <string>
 #include <vector>
 #include <type_traits>
 
-class MathParseFunctions
+class SymbolicMathFunctions
 {
 protected:
   enum FunctionType
@@ -68,4 +68,4 @@ protected:
   }
 };
 
-#endif // MATHPARSEFUNCTIONS_H
+#endif // SYMBOLICMATHFUNCTIONS_H

@@ -1,10 +1,10 @@
-#ifndef MATHPARSEOPERATORS_H
-#define MATHPARSEOPERATORS_H
+#ifndef SYMBOLICMATHOPERATORS_H
+#define SYMBOLICMATHOPERATORS_H
 
 #include <string>
 #include <vector>
 
-class MathParseOperators
+class SymbolicMathOperators
 {
 protected:
   enum OperatorType
@@ -53,4 +53,4 @@ protected:
   }
 };
 
-#endif // MATHPARSEOPERATORS_H
+#endif // SYMBOLICMATHOPERATORS_H

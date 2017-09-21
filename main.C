@@ -1,4 +1,4 @@
-#include "MathParse.h"
+#include "SymbolicMath.h"
 #include <iostream>
 
 int
@@ -10,6 +10,6 @@ main(int argc, char * argv[])
     return 100;
   }
 
-  MathParse parser(argv[1]);
+  SymbolicMath parser(argv[1]);
   return 0;
 }

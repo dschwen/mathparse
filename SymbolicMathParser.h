@@ -1,15 +1,15 @@
-#ifndef MATHPARSEAST_H
-#define MATHPARSEAST_H
+#ifndef SYMBOLICMATHAST_H
+#define SYMBOLICMATHAST_H
 
-#include "MathParseTokenizer.h"
+#include "SymbolicMathTokenizer.h"
 
 /**
- * Builds the abstract syntax tree of an expression using the MathParseTokenizer
+ * Builds the abstract syntax tree of an expression using the SymbolicMathTokenizer
  */
-class MathParseAST : public MathParseTokenizer
+class SymbolicMathParser : public SymbolicMathTokenizer
 {
 public:
-  MathParseAST(const std::string expression);
+  SymbolicMathParser(const std::string expression);
 
 private:
   const std::string _mpa_expression;
@@ -21,4 +21,4 @@ private:
   std::string formatError(std::size_t pos, const std::string & message, std::size_t width = 80);
 };
 
-#endif // MATHPARSEAST_H
+#endif // SYMBOLICMATHAST_H

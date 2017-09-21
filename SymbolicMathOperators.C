@@ -1,6 +1,6 @@
-#include "MathParseOperators.h"
+#include "SymbolicMathOperators.h"
 
-const std::vector<MathParseOperators::OperatorProperties> MathParseOperators::_operators = {
+const std::vector<SymbolicMathOperators::OperatorProperties> SymbolicMathOperators::_operators = {
     {3, true, "+"},
     {3, true, "-"},
     {3, true, "!"},
@@ -20,8 +20,8 @@ const std::vector<MathParseOperators::OperatorProperties> MathParseOperators::_o
     {13, true, "&"},
     {14, true, "|"}};
 
-MathParseOperators::OperatorType
-MathParseOperators::identifyOperator(const std::string & op)
+SymbolicMathOperators::OperatorType
+SymbolicMathOperators::identifyOperator(const std::string & op)
 {
   // we search from the back to avoid matching with the unary operators
   int i = static_cast<int>(OperatorType::INVALID) - 1;

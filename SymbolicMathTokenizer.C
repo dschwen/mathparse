@@ -1,56 +1,56 @@
-#include "MathParseTokenizer.h"
+#include "SymbolicMathTokenizer.h"
 #include <vector>
 #include <iostream>
 #include <cmath>
 #include <exception>
 
-MathParseTokenizer::MathParseTokenizer(const std::string expression)
+SymbolicMathTokenizer::SymbolicMathTokenizer(const std::string expression)
   : _mpt_expression(expression + '\0'), _c(_mpt_expression.begin())
 {
 }
 
 bool
-MathParseTokenizer::isDigit()
+SymbolicMathTokenizer::isDigit()
 {
   const std::string digit("0123456789");
   return digit.find_first_of(*_c) != std::string::npos;
 }
 
 bool
-MathParseTokenizer::isOperator()
+SymbolicMathTokenizer::isOperator()
 {
   const std::string operator_char("+-*/^!%<>=?:");
   return operator_char.find_first_of(*_c) != std::string::npos;
 }
 
 bool
-MathParseTokenizer::isOpenParenthesis()
+SymbolicMathTokenizer::isOpenParenthesis()
 {
   const std::string parenthesis("([{");
   return parenthesis.find_first_of(*_c) != std::string::npos;
 }
 
 bool
-MathParseTokenizer::isCloseParenthesis()
+SymbolicMathTokenizer::isCloseParenthesis()
 {
   const std::string parenthesis(")]}");
   return parenthesis.find_first_of(*_c) != std::string::npos;
 }
 
 bool
-MathParseTokenizer::isAlphaFirst()
+SymbolicMathTokenizer::isAlphaFirst()
 {
   return (*_c >= 'a' && *_c <= 'z') || (*_c >= 'A' && *_c <= 'Z');
 }
 
 bool
-MathParseTokenizer::isAlphaCont()
+SymbolicMathTokenizer::isAlphaCont()
 {
   return isAlphaFirst() || isDigit() || *_c == '_';
 }
 
 int
-MathParseTokenizer::getInteger()
+SymbolicMathTokenizer::getInteger()
 {
   int integer = 0;
   while (isDigit())
@@ -59,15 +59,15 @@ MathParseTokenizer::getInteger()
 }
 
 void
-MathParseTokenizer::skipWhite()
+SymbolicMathTokenizer::skipWhite()
 {
   // skip whitespace
   while (*_c == ' ')
     ++_c;
 }
 
-MathParseTokenizer::Token
-MathParseTokenizer::getToken()
+SymbolicMathTokenizer::Token
+SymbolicMathTokenizer::getToken()
 {
   skipWhite();
 
@@ -157,38 +157,38 @@ MathParseTokenizer::getToken()
 /**
  * Token building helpers
  */
-MathParseTokenizer::Token
-MathParseTokenizer::makeToken(TokenType type)
+SymbolicMathTokenizer::Token
+SymbolicMathTokenizer::makeToken(TokenType type)
 {
   return Token(type, std::string(1, *(_c++)), _token_start);
 }
 
-MathParseTokenizer::Token
-MathParseTokenizer::makeToken(TokenType type, const std::string & data)
+SymbolicMathTokenizer::Token
+SymbolicMathTokenizer::makeToken(TokenType type, const std::string & data)
 {
   return Token(type, data, _token_start);
 }
 
-MathParseTokenizer::Token
-MathParseTokenizer::makeToken(OperatorType operator_type)
+SymbolicMathTokenizer::Token
+SymbolicMathTokenizer::makeToken(OperatorType operator_type)
 {
   return Token(TokenType::OPERATOR, operator_type, _token_start);
 }
 
-MathParseTokenizer::Token
-MathParseTokenizer::makeToken(FunctionType function_type)
+SymbolicMathTokenizer::Token
+SymbolicMathTokenizer::makeToken(FunctionType function_type)
 {
   return Token(TokenType::FUNCTION, function_type, _token_start);
 }
 
-MathParseTokenizer::Token
-MathParseTokenizer::makeToken(int integer)
+SymbolicMathTokenizer::Token
+SymbolicMathTokenizer::makeToken(int integer)
 {
   return Token(TokenType::NUMBER, Real(integer), _token_start);
 }
 
-MathParseTokenizer::Token
-MathParseTokenizer::makeToken(Real real)
+SymbolicMathTokenizer::Token
+SymbolicMathTokenizer::makeToken(Real real)
 {
   return Token(TokenType::NUMBER, real, _token_start);
 }
@@ -196,7 +196,7 @@ MathParseTokenizer::makeToken(Real real)
 /**
  * Token constructors
  */
-MathParseTokenizer::Token::Token(TokenType type, const std::string & string, std::size_t pos)
+SymbolicMathTokenizer::Token::Token(TokenType type, const std::string & string, std::size_t pos)
   : _type(type), _string(string), _integer(0), _pos(pos)
 {
   // validate parameter for the given type
@@ -214,21 +214,21 @@ MathParseTokenizer::Token::Token(TokenType type, const std::string & string, std
   }
 }
 
-MathParseTokenizer::Token::Token(TokenType type, OperatorType operator_type, std::size_t pos)
+SymbolicMathTokenizer::Token::Token(TokenType type, OperatorType operator_type, std::size_t pos)
   : _type(type), _operator_type(operator_type), _integer(0), _pos(pos)
 {
   if (type != TokenType::OPERATOR)
     throw std::invalid_argument("operator_type");
 }
 
-MathParseTokenizer::Token::Token(TokenType type, FunctionType function_type, std::size_t pos)
+SymbolicMathTokenizer::Token::Token(TokenType type, FunctionType function_type, std::size_t pos)
   : _type(type), _function_type(function_type), _integer(0), _pos(pos)
 {
   if (type != TokenType::FUNCTION)
     throw std::invalid_argument("function_type");
 }
 
-MathParseTokenizer::Token::Token(TokenType type, Real real, std::size_t pos)
+SymbolicMathTokenizer::Token::Token(TokenType type, Real real, std::size_t pos)
   : _type(type), _integer(0), _real(real), _pos(pos)
 {
   if (type != TokenType::NUMBER)
