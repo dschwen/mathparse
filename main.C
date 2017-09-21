@@ -10,6 +10,8 @@ main(int argc, char * argv[])
     return 100;
   }
 
-  SymbolicMath::Parser parser(argv[1]);
+  SymbolicMath::Parser parser;
+  parser.parse(argv[1]);
+
   return 0;
 }

@@ -8,79 +8,23 @@
 namespace SymbolicMath
 {
 
-Parser::Parser(const std::string expression) : Tokenizer(expression), _mpa_expression(expression)
+Parser::Parser() {}
+
+void
+Parser::parse(const std::string expression)
 {
+  Tokenizer tokenizer(expression);
+  _expression = expression;
+
   std::stack<Token> output_stack;
   std::stack<Token> operator_stack;
 
   // process tokens
-  Token token;
-  Token last_token;
   do
   {
-    token = getToken();
-
-    //
-    // Validation
-    //
-
-    // check if token is invalid
-    if (token._type == TokenType::INVALID)
-    {
-      std::cerr << formatError(token._pos, "Parse error");
-      throw std::domain_error("invalid");
-    }
-
-    // operator preprocessing
-    if (token._type == TokenType::OPERATOR)
-    {
-      // error on invalid operators
-      if (token._operator_type == OperatorType::INVALID)
-      {
-        std::cerr << formatError(token._pos, "Unknown operator");
-        throw std::domain_error("operator");
-      }
-
-      // preprocess operators to distinguish unary plus/minus from addition/subtraction
-      if (last_token._type != TokenType::NUMBER && last_token._type != TokenType::VARIABLE &&
-          last_token._type != TokenType::CLOSE_PARENS)
-      {
-        // turn addition into unary plus and subtraction into unary minus
-        if (token._operator_type == OperatorType::ADDITION)
-          token._operator_type = OperatorType::UNARY_PLUS;
-        else if (token._operator_type == OperatorType::SUBTRACTION)
-          token._operator_type = OperatorType::UNARY_MINUS;
-        else
-        {
-          std::cerr << formatError(token._pos, "Did not expect operator here");
-          throw std::domain_error("operator");
-        }
-      }
-    }
-
-    // function checking
-    if (token._type == TokenType::FUNCTION && token._function_type == FunctionType::INVALID)
-    {
-      std::cerr << formatError(token._pos, "Unknown function");
-      throw std::domain_error("operator");
-    }
-
-    // disallow consecutive variables/numbers (we could insert a multiplication here...)
-    if ((token._type == TokenType::VARIABLE || token._type == TokenType::NUMBER ||
-         token._type == TokenType::FUNCTION) &&
-        (last_token._type == TokenType::VARIABLE || last_token._type == TokenType::NUMBER))
-    {
-      std::cerr << formatError(token._pos, "Operator expected here");
-      throw std::domain_error("operator");
-    }
-
-    // check closing bracket state
-    if (token._type == TokenType::CLOSE_PARENS &&
-        (last_token._type == TokenType::OPERATOR || last_token._type == TokenType::COMMA))
-    {
-      std::cerr << formatError(token._pos, "Did not expect closing bracket here");
-      throw std::domain_error("operator");
-    }
+    _token = tokenizer.getToken();
+    preprocessToken();
+    validateToken();
 
     // std::cout << "got token " << formatToken(token) << '\n';
 
@@ -88,11 +32,11 @@ Parser::Parser(const std::string expression) : Tokenizer(expression), _mpa_expre
     // Shunting yard core
     //
 
-    if (token._type == TokenType::NUMBER || token._type == TokenType::VARIABLE)
-      output_stack.push(token);
-    else if (token._type == TokenType::OPERATOR)
+    if (_token._type == TokenType::NUMBER || _token._type == TokenType::VARIABLE)
+      output_stack.push(_token);
+    else if (_token._type == TokenType::OPERATOR)
     {
-      auto precedence = _operators[static_cast<int>(token._operator_type)]._precedence;
+      auto precedence = _operators[static_cast<int>(_token._operator_type)]._precedence;
       while (!operator_stack.empty() && operator_stack.top()._type == TokenType::OPERATOR &&
              operatorProperty(operator_stack.top()._operator_type)._precedence <= precedence &&
              operatorProperty(operator_stack.top()._operator_type)._left_associative)
@@ -100,15 +44,15 @@ Parser::Parser(const std::string expression) : Tokenizer(expression), _mpa_expre
         output_stack.push(operator_stack.top());
         operator_stack.pop();
       }
-      operator_stack.push(token);
+      operator_stack.push(_token);
     }
-    else if (token._type == TokenType::FUNCTION)
-      operator_stack.push(token);
-    else if (token._type == TokenType::OPEN_PARENS)
-      operator_stack.push(token);
-    else if (token._type == TokenType::CLOSE_PARENS)
+    else if (_token._type == TokenType::FUNCTION)
+      operator_stack.push(_token);
+    else if (_token._type == TokenType::OPEN_PARENS)
+      operator_stack.push(_token);
+    else if (_token._type == TokenType::CLOSE_PARENS)
     {
-      if (last_token._type != TokenType::OPEN_PARENS)
+      if (_last_token._type != TokenType::OPEN_PARENS)
       {
         // bracket pair containing an expression
         while (!operator_stack.empty() && operator_stack.top()._type != TokenType::OPEN_PARENS)
@@ -118,7 +62,7 @@ Parser::Parser(const std::string expression) : Tokenizer(expression), _mpa_expre
         }
         if (operator_stack.empty())
         {
-          std::cerr << formatError(token._pos, "Unmatched closing bracket");
+          std::cerr << formatError("Unmatched closing bracket");
           throw std::domain_error("parenthesis");
         }
         auto open_parens = operator_stack.top();
@@ -174,7 +118,7 @@ Parser::Parser(const std::string expression) : Tokenizer(expression), _mpa_expre
         operator_stack.pop();
       }
     }
-    else if (token._type == TokenType::COMMA)
+    else if (_token._type == TokenType::COMMA)
     {
       while (!operator_stack.empty() && operator_stack.top()._type != TokenType::OPEN_PARENS)
       {
@@ -183,7 +127,7 @@ Parser::Parser(const std::string expression) : Tokenizer(expression), _mpa_expre
       }
       if (operator_stack.empty())
       {
-        std::cerr << formatError(token._pos, "Comma outside of brackets");
+        std::cerr << formatError("Comma outside of brackets");
         throw std::domain_error("parenthesis");
       }
 
@@ -193,30 +137,36 @@ Parser::Parser(const std::string expression) : Tokenizer(expression), _mpa_expre
     }
 
     // needed to discriminate unary plus and minus
-    last_token = token;
-  } while (token._type != TokenType::END);
+    _last_token = _token;
+  } while (_token._type != TokenType::END);
 
   // unwind operator stack
   while (!operator_stack.empty())
   {
-    auto token = operator_stack.top();
-    if (token._type == TokenType::OPEN_PARENS)
+    auto _token = operator_stack.top();
+    if (_token._type == TokenType::OPEN_PARENS)
     {
-      std::cerr << formatError(token._pos, "Unmatched opening bracket");
+      std::cerr << formatError("Unmatched opening bracket");
       throw std::domain_error("parenthesis");
     }
 
-    output_stack.push(token);
+    output_stack.push(_token);
     operator_stack.pop();
   }
 
   // display output stack
   while (!output_stack.empty())
   {
-    auto token = output_stack.top();
+    _token = output_stack.top();
     output_stack.pop();
-    std::cout << formatToken(token) << '\n';
+    std::cout << formatToken() << '\n';
   }
+}
+
+std::string
+Parser::formatToken()
+{
+  return formatToken(_token);
 }
 
 std::string
@@ -244,11 +194,83 @@ Parser::formatToken(const Token & token)
   }
 }
 
+void
+Parser::preprocessToken()
+{
+  // operator preprocessing
+  if (_token._type == TokenType::OPERATOR)
+  {
+    // error on invalid operators
+    if (_token._operator_type == OperatorType::INVALID)
+    {
+      std::cerr << formatError("Unknown operator");
+      throw std::domain_error("operator");
+    }
+
+    // preprocess operators to distinguish unary plus/minus from addition/subtraction
+    if (_last_token._type != TokenType::NUMBER && _last_token._type != TokenType::VARIABLE &&
+        _last_token._type != TokenType::CLOSE_PARENS)
+    {
+      // turn addition into unary plus and subtraction into unary minus
+      if (_token._operator_type == OperatorType::ADDITION)
+        _token._operator_type = OperatorType::UNARY_PLUS;
+      else if (_token._operator_type == OperatorType::SUBTRACTION)
+        _token._operator_type = OperatorType::UNARY_MINUS;
+      else
+      {
+        std::cerr << formatError(_token._pos, "Did not expect operator here");
+        throw std::domain_error("operator");
+      }
+    }
+  }
+}
+
+void
+Parser::validateToken()
+{
+  // check if token is invalid
+  if (_token._type == TokenType::INVALID)
+  {
+    std::cerr << formatError("Parse error");
+    throw std::domain_error("invalid");
+  }
+
+  // function checking
+  if (_token._type == TokenType::FUNCTION && _token._function_type == FunctionType::INVALID)
+  {
+    std::cerr << formatError("Unknown function");
+    throw std::domain_error("operator");
+  }
+
+  // disallow consecutive variables/numbers (we could insert a multiplication here...)
+  if ((_token._type == TokenType::VARIABLE || _token._type == TokenType::NUMBER ||
+       _token._type == TokenType::FUNCTION) &&
+      (_last_token._type == TokenType::VARIABLE || _last_token._type == TokenType::NUMBER))
+  {
+    std::cerr << formatError("Operator expected here");
+    throw std::domain_error("operator");
+  }
+
+  // check closing bracket state
+  if (_token._type == TokenType::CLOSE_PARENS &&
+      (_last_token._type == TokenType::OPERATOR || _last_token._type == TokenType::COMMA))
+  {
+    std::cerr << formatError("Did not expect closing bracket here");
+    throw std::domain_error("operator");
+  }
+}
+
+std::string
+Parser::formatError(const std::string & message, std::size_t width)
+{
+  return formatError(_token._pos, message, width);
+}
+
 std::string
 Parser::formatError(std::size_t pos, const std::string & message, std::size_t width)
 {
   // pad the expression to allow displaying pos 0 error markers
-  const std::string padded = "  " + _mpa_expression;
+  const std::string padded = "  " + _expression;
   pos += 2;
 
   // half the width is where we center the error

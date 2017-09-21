@@ -53,7 +53,6 @@ class Tokenizer
 public:
   Tokenizer(const std::string expression);
 
-protected:
   /// gets the next complete token from the expression
   Token getToken();
 
