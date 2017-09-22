@@ -16,22 +16,22 @@ class Tree;
 class Tree
 {
 public:
-  Tree(OperatorType operator_type, std::vector<std::unique_ptr<Tree>> children);
-  Tree(FunctionType function_type, std::vector<std::unique_ptr<Tree>> children);
-  Tree(Real real, std::vector<std::unique_ptr<Tree>> children);
+  Tree(OperatorType operator_type, std::vector<Tree *> children);
+  Tree(FunctionType function_type, std::vector<Tree *> children);
+  Tree(Real real);
 
-  Real value();
-  unsigned short precedence();
-  std::string format();
+  virtual Real value();
+  virtual unsigned short precedence();
+  virtual std::string format();
 
 protected:
-  TokenType _type;
+  const TokenType _type;
 
   union {
-    OperatorType _operator_type;
-    FunctionType _function_type;
-    unsigned int _value_provider_id;
-    Real _real;
+    const OperatorType _operator_type;
+    const FunctionType _function_type;
+    const unsigned int _value_provider_id;
+    const Real _real;
   };
 
   std::vector<std::unique_ptr<Tree>> _children;

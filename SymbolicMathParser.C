@@ -3,15 +3,14 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include <stack>
 
 namespace SymbolicMath
 {
 
 Parser::Parser() {}
 
-void
-Parser::parse(const std::string expression)
+std::unique_ptr<Tree>
+Parser::parse(const std::string & expression)
 {
   Tokenizer tokenizer(expression);
   _expression = expression;
@@ -32,15 +31,16 @@ Parser::parse(const std::string expression)
     //
 
     if (_token._type == TokenType::NUMBER || _token._type == TokenType::VARIABLE)
-      output_stack.push(_token);
+      pushToOutput(_token);
     else if (_token._type == TokenType::OPERATOR)
     {
       auto precedence = _operators[static_cast<int>(_token._operator_type)]._precedence;
       while (!operator_stack.empty() && operator_stack.top()._type == TokenType::OPERATOR &&
              operatorProperty(operator_stack.top()._operator_type)._precedence <= precedence &&
-             operatorProperty(operator_stack.top()._operator_type)._left_associative)
+             (operatorProperty(operator_stack.top()._operator_type)._left_associative ||
+              operatorProperty(operator_stack.top()._operator_type)._unary))
       {
-        output_stack.push(operator_stack.top());
+        pushToOutput(operator_stack.top());
         operator_stack.pop();
       }
       operator_stack.push(_token);
@@ -56,7 +56,7 @@ Parser::parse(const std::string expression)
         // bracket pair containing an expression
         while (!operator_stack.empty() && operator_stack.top()._type != TokenType::OPEN_PARENS)
         {
-          output_stack.push(operator_stack.top());
+          pushToOutput(operator_stack.top());
           operator_stack.pop();
         }
         if (operator_stack.empty())
@@ -82,7 +82,7 @@ Parser::parse(const std::string expression)
               throw std::domain_error("parenthesis");
             }
           }
-          output_stack.push(operator_stack.top());
+          pushToOutput(operator_stack.top());
           operator_stack.pop();
         }
       }
@@ -113,7 +113,7 @@ Parser::parse(const std::string expression)
                                        " argument(s), but none were given");
           throw std::domain_error("parenthesis");
         }
-        output_stack.push(operator_stack.top());
+        pushToOutput(operator_stack.top());
         operator_stack.pop();
       }
     }
@@ -121,7 +121,7 @@ Parser::parse(const std::string expression)
     {
       while (!operator_stack.empty() && operator_stack.top()._type != TokenType::OPEN_PARENS)
       {
-        output_stack.push(operator_stack.top());
+        pushToOutput(operator_stack.top());
         operator_stack.pop();
       }
       if (operator_stack.empty())
@@ -149,47 +149,51 @@ Parser::parse(const std::string expression)
       throw std::domain_error("parenthesis");
     }
 
-    output_stack.push(_token);
+    pushToOutput(_token);
     operator_stack.pop();
   }
 
   // display output stack
-  while (!output_stack.empty())
-  {
-    _token = output_stack.top();
-    output_stack.pop();
-    std::cout << formatToken() << '\n';
-  }
+  // while (!output_stack.empty())
+  // {
+  //   _token = output_stack.top();
+  //   output_stack.pop();
+  //   std::cout << formatToken() << '\n';
+  // }
+  return std::move(_output_stack.top());
 }
 
-std::string
-Parser::formatToken()
-{
-  return formatToken(_token);
-}
-
-std::string
-Parser::formatToken(const Token & token)
+void
+Parser::pushToOutput(const Token & token)
 {
   switch (token._type)
   {
-    case TokenType::OPERATOR:
-      return "OPERATOR    \t" + operatorProperty(token._operator_type)._form + " (" +
-             std::to_string(operatorProperty(token._operator_type)._precedence) + ')';
-    case TokenType::OPEN_PARENS:
-      return "OPEN_PARENS \t" + token._string;
-    case TokenType::CLOSE_PARENS:
-      return "CLOSE_PARENS\t" + token._string;
-    case TokenType::FUNCTION:
-      return "FUNCTION    \t" + functionProperty(token._function_type)._form;
-    case TokenType::VARIABLE:
-      return "VARIABLE    \t" + token._string;
     case TokenType::NUMBER:
-      return "NUMBER      \t" + std::to_string(token._real);
-    case TokenType::COMMA:
-      return "COMMA       \t,";
+      _output_stack.push(std::move(std::unique_ptr<Tree>(new Tree(token._real))));
+      return;
+
+    case TokenType::OPERATOR:
+    {
+      auto right = std::move(_output_stack.top());
+      _output_stack.pop();
+
+      if (operatorProperty(token._operator_type)._unary)
+      {
+        _output_stack.push(
+            std::move(std::unique_ptr<Tree>(new Tree(token._operator_type, {right.release()}))));
+      }
+      else
+      {
+        auto left = std::move(_output_stack.top());
+        _output_stack.pop();
+        _output_stack.push(std::move(std::unique_ptr<Tree>(
+            new Tree(token._operator_type, {left.release(), right.release()}))));
+      }
+      return;
+    }
+
     default:
-      return "???";
+      throw std::domain_error("invalid_token");
   }
 }
 
@@ -256,6 +260,37 @@ Parser::validateToken()
   {
     std::cerr << formatError("Did not expect closing bracket here");
     throw std::domain_error("operator");
+  }
+}
+
+std::string
+Parser::formatToken()
+{
+  return formatToken(_token);
+}
+
+std::string
+Parser::formatToken(const Token & token)
+{
+  switch (token._type)
+  {
+    case TokenType::OPERATOR:
+      return "OPERATOR    \t" + operatorProperty(token._operator_type)._form + " (" +
+             std::to_string(operatorProperty(token._operator_type)._precedence) + ')';
+    case TokenType::OPEN_PARENS:
+      return "OPEN_PARENS \t" + token._string;
+    case TokenType::CLOSE_PARENS:
+      return "CLOSE_PARENS\t" + token._string;
+    case TokenType::FUNCTION:
+      return "FUNCTION    \t" + functionProperty(token._function_type)._form;
+    case TokenType::VARIABLE:
+      return "VARIABLE    \t" + token._string;
+    case TokenType::NUMBER:
+      return "NUMBER      \t" + std::to_string(token._real);
+    case TokenType::COMMA:
+      return "COMMA       \t,";
+    default:
+      return "???";
   }
 }
 

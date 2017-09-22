@@ -5,6 +5,7 @@
 #include "SymbolicMathTree.h"
 
 #include <string>
+#include <stack>
 
 namespace SymbolicMath
 {
@@ -17,10 +18,10 @@ class Parser
 public:
   Parser();
 
-  std::unique_ptr<Tree> parse(const std::string expression);
+  std::unique_ptr<Tree> parse(const std::string & expression);
 
 protected:
-  void pushToOutput(const & Token token);
+  void pushToOutput(const Token & token);
 
   void preprocessToken();
   void validateToken();

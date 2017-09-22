@@ -114,27 +114,28 @@ struct OperatorProperties
 {
   const unsigned short _precedence;
   const bool _left_associative;
+  const bool _unary;
   const std::string _form;
 };
 
-const std::vector<OperatorProperties> _operators = {{3, true, "+"},
-                                                    {3, true, "-"},
-                                                    {3, true, "!"},
-                                                    {3, true, "~"},
-                                                    {4, true, "^"},
-                                                    {5, true, "*"},
-                                                    {5, true, "/"},
-                                                    {5, true, "%"},
-                                                    {6, true, "+"},
-                                                    {6, true, "-"},
-                                                    {8, true, "<"},
-                                                    {8, true, ">"},
-                                                    {8, true, "<="},
-                                                    {8, true, ">="},
-                                                    {9, true, "=="},
-                                                    {9, true, "!="},
-                                                    {13, true, "&"},
-                                                    {14, true, "|"}};
+const std::vector<OperatorProperties> _operators = {{3, false, true, "+"},
+                                                    {3, false, true, "-"},
+                                                    {3, false, true, "!"},
+                                                    {3, false, true, "~"},
+                                                    {4, true, false, "^"},
+                                                    {5, true, false, "*"},
+                                                    {5, true, false, "/"},
+                                                    {5, true, false, "%"},
+                                                    {6, true, false, "+"},
+                                                    {6, true, false, "-"},
+                                                    {8, true, false, "<"},
+                                                    {8, true, false, ">"},
+                                                    {8, true, false, "<="},
+                                                    {8, true, false, ">="},
+                                                    {9, true, false, "=="},
+                                                    {9, true, false, "!="},
+                                                    {13, true, false, "&"},
+                                                    {14, true, false, "|"}};
 
 FunctionType identifyFunction(const std::string & op);
 

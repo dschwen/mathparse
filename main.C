@@ -11,7 +11,9 @@ main(int argc, char * argv[])
   }
 
   SymbolicMath::Parser parser;
-  parser.parse(argv[1]);
+  auto func = parser.parse(argv[1]);
+
+  std::cout << func->format() << '\n';
 
   return 0;
 }
