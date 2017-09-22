@@ -25,6 +25,8 @@ public:
   std::string format();
   bool constant();
 
+  bool foldConstants();
+
   std::unique_ptr<Tree> D(unsigned int _id);
 
 protected:

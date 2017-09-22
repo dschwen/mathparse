@@ -151,6 +151,27 @@ Tree::constant()
   }
 }
 
+bool
+Tree::foldConstants()
+{
+  if (_type == TokenType::NUMBER)
+    return true;
+
+  bool is_constant = true;
+  for (auto & child : _children)
+    is_constant = is_constant && child->foldConstants();
+
+  if (is_constant)
+  {
+    _real = value();
+    _type = TokenType::NUMBER;
+    _children.clear();
+    return true;
+  }
+
+  return false;
+}
+
 std::unique_ptr<Tree>
 D(unsigned int _id)
 {
