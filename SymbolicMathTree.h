@@ -22,6 +22,7 @@ public:
 
   Real value();
   std::string format();
+  std::string formatTree(std::string indent = "");
 
   bool isNumber(Real number);
   bool simplify();

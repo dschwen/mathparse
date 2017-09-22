@@ -151,6 +151,35 @@ Tree::format()
   }
 }
 
+std::string
+Tree::formatTree(std::string indent)
+{
+  std::string out;
+  switch (_type)
+  {
+    case TokenType::NUMBER:
+      out = indent + std::to_string(_real) + '\n';
+      break;
+
+    case TokenType::OPERATOR:
+      out = indent + '[' + operatorProperty(_operator_type)._form + "]\n";
+      for (auto & child : _children)
+        out += child->formatTree(indent + "  ");
+      break;
+
+    case TokenType::FUNCTION:
+      out = indent + functionProperty(_function_type)._form + '\n';
+      for (auto & child : _children)
+        out += child->formatTree(indent + "  ");
+      break;
+
+    default:
+      out = indent + "[???]\n";
+  }
+
+  return out;
+}
+
 void
 Tree::become(std::unique_ptr<Tree> tree)
 {
@@ -193,7 +222,10 @@ Tree::simplify()
   //
   bool all_constant = true;
   for (auto & child : _children)
-    all_constant = all_constant && child->simplify();
+  {
+    const bool child_constant = child->simplify();
+    all_constant = all_constant && child_constant;
+  }
   if (all_constant)
   {
     _real = value();
@@ -203,7 +235,7 @@ Tree::simplify()
   }
 
   //
-  // operator specific simplifications
+  // operator specific quick simplifications
   //
   if (_type == TokenType::OPERATOR)
     switch (_operator_type)
@@ -248,9 +280,18 @@ Tree::simplify()
         break;
 
       case OperatorType::DIVISION:
+        std::cout << "PING!\n";
         // a/1 = a
         if (_children[1]->isNumber(1.0))
           become(std::move(_children[0]));
+        // 0/b = 0
+        if (_children[0]->isNumber(0.0))
+        {
+          _real = 0.0;
+          _type = TokenType::NUMBER;
+          _children.clear();
+          return true;
+        }
         break;
 
       case OperatorType::POWER:

@@ -13,7 +13,7 @@ main(int argc, char * argv[])
   SymbolicMath::Parser parser;
   auto func = parser.parse(argv[1]);
 
-  std::cout << func->format() << '\n';
+  std::cout << func->format() << '\n' << func->formatTree("\t") << '\n';
 
   func->simplify();
 

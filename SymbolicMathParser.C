@@ -152,13 +152,6 @@ Parser::parse(const std::string & expression)
     operator_stack.pop();
   }
 
-  // display output stack
-  // while (!output_stack.empty())
-  // {
-  //   _token = output_stack.top();
-  //   output_stack.pop();
-  //   std::cout << formatToken() << '\n';
-  // }
   return std::move(_output_stack.top());
 }
 
