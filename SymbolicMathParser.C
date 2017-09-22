@@ -16,7 +16,6 @@ Parser::parse(const std::string expression)
   Tokenizer tokenizer(expression);
   _expression = expression;
 
-  std::stack<Token> output_stack;
   std::stack<Token> operator_stack;
 
   // process tokens

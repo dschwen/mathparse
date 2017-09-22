@@ -2,7 +2,7 @@
 #define SYMBOLICMATH_PARSER_H
 
 #include "SymbolicMathTokenizer.h"
-// #include "SymbolicMathTerm.h"
+#include "SymbolicMathTree.h"
 
 #include <string>
 
@@ -17,10 +17,11 @@ class Parser
 public:
   Parser();
 
-  // Term
-  void parse(const std::string expression);
+  std::unique_ptr<Tree> parse(const std::string expression);
 
 protected:
+  void pushToOutput(const & Token token);
+
   void preprocessToken();
   void validateToken();
 
@@ -30,6 +31,9 @@ private:
 
   /// previous token
   Token _last_token;
+
+  /// output stack where the Tree is formed
+  std::stack<std::unique_ptr<Tree>> _output_stack;
 
   /// currently parsed expression
   std::string _expression;
