@@ -266,16 +266,53 @@ Tree::simplify()
   //
   if (_type == TokenType::OPERATOR)
   {
-    // gather child summands and multiplicands
-    if (_operator_type == OperatorType::ADDITION || _operator_type == OperatorType::MULTIPLICATION)
+    // gather child summands
+    if (_operator_type == OperatorType::ADDITION)
     {
       std::vector<std::unique_ptr<Tree>> arguments;
       for (auto & child : _children)
         if (child->_type == TokenType::OPERATOR && child->_operator_type == _operator_type)
+        {
           for (auto & grandchild : child->_children)
-            arguments.push_back(std::move(grandchild));
-        else
+            if (!grandchild->isNumber(0.0))
+              arguments.push_back(std::move(grandchild));
+        }
+        else if (!child->isNumber(0.0))
           arguments.push_back(std::move(child));
+
+      _children = std::move(arguments);
+    }
+    else if (_operator_type == OperatorType::MULTIPLICATION)
+    {
+      std::vector<std::unique_ptr<Tree>> arguments;
+      for (auto & child : _children)
+        if (child->_type == TokenType::OPERATOR && child->_operator_type == _operator_type)
+        {
+          for (auto & grandchild : child->_children)
+          {
+            if (grandchild->isNumber(0.0))
+            {
+              _real = 0.0;
+              _type = TokenType::NUMBER;
+              _children.clear();
+              return true;
+            }
+            if (!grandchild->isNumber(1.0))
+              arguments.push_back(std::move(grandchild));
+          }
+        }
+        else
+        {
+          if (child->isNumber(0.0))
+          {
+            _real = 0.0;
+            _type = TokenType::NUMBER;
+            _children.clear();
+            return true;
+          }
+          if (!child->isNumber(1.0))
+            arguments.push_back(std::move(child));
+        }
 
       _children = std::move(arguments);
     }
@@ -284,13 +321,15 @@ Tree::simplify()
     switch (_operator_type)
     {
       case OperatorType::ADDITION:
-
-        // 0 + b = b
-        if (_children[0]->isNumber(0.0))
-          become(std::move(_children[1]));
-        // a + 0 = a
-        else if (_children[1]->isNumber(0.0))
+        if (_children.size() == 1)
           become(std::move(_children[0]));
+        else if (_children.size() == 0)
+        {
+          _real = 0.0;
+          _type = TokenType::NUMBER;
+          _children.clear();
+          return true;
+        }
         break;
 
       case OperatorType::SUBTRACTION:
@@ -307,20 +346,15 @@ Tree::simplify()
         break;
 
       case OperatorType::MULTIPLICATION:
-        // a * 0 = 0 * b = 0
-        if (_children[0]->isNumber(0.0) || _children[1]->isNumber(0.0))
+        if (_children.size() == 1)
+          become(std::move(_children[0]));
+        else if (_children.size() == 0)
         {
-          _real = 0.0;
+          _real = 1.0;
           _type = TokenType::NUMBER;
           _children.clear();
           return true;
         }
-        // 1 * b = b
-        if (_children[0]->isNumber(1.0))
-          become(std::move(_children[1]));
-        // a * 1 = a
-        else if (_children[1]->isNumber(1.0))
-          become(std::move(_children[0]));
         break;
 
       case OperatorType::DIVISION:
