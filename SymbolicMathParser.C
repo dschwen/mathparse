@@ -24,8 +24,6 @@ Parser::parse(const std::string & expression)
     preprocessToken();
     validateToken();
 
-    // std::cout << "got token " << formatToken(token) << '\n';
-
     //
     // Shunting yard core
     //
@@ -83,7 +81,7 @@ Parser::parse(const std::string & expression)
               throw std::domain_error("parenthesis");
             }
           }
-          pushToOutput(operator_stack.top());
+          pushFunctionToOutput(operator_stack.top(), expected_argments);
           operator_stack.pop();
         }
       }
@@ -114,7 +112,7 @@ Parser::parse(const std::string & expression)
                                        " argument(s), but none were given");
           throw std::domain_error("parenthesis");
         }
-        pushToOutput(operator_stack.top());
+        pushFunctionToOutput(operator_stack.top(), 0);
         operator_stack.pop();
       }
     }
@@ -187,6 +185,7 @@ Parser::pushToOutput(const Token & token)
       {
         auto left = std::move(_output_stack.top());
         _output_stack.pop();
+
         _output_stack.push(std::move(std::unique_ptr<Tree>(
             new Tree(token._operator_type, {left.release(), right.release()}))));
       }
@@ -196,6 +195,21 @@ Parser::pushToOutput(const Token & token)
     default:
       throw std::domain_error("invalid_token");
   }
+}
+
+void
+Parser::pushFunctionToOutput(const Token & token, unsigned int num_arguments)
+{
+  if (token._type != TokenType::FUNCTION)
+    throw std::domain_error("invalid_token");
+
+  std::vector<Tree *> arguments;
+  for (unsigned int i = 0; i < num_arguments; ++i)
+  {
+    arguments.push_back(_output_stack.top().release());
+    _output_stack.pop();
+  }
+  _output_stack.push(std::move(std::unique_ptr<Tree>(new Tree(token._function_type, arguments))));
 }
 
 void

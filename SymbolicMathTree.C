@@ -49,11 +49,35 @@ Tree::value()
           return NAN;
       }
 
+    //    {1, "acosh"}, {1, "arg"},   {1, "asinh"},
+    // {1, "atanh"}, {1, "cbrt"},  {1, "ceil"},  {1, "conj"},    {1, "cosh"},
+    // {1, "cot"},   {1, "csc"},   {1, "exp"},   {1, "exp2"},  {1, "floor"}, {2, "hypot"}, {3,
+    // "if"},
+    // {1, "imag"},  {1, "int"},   {1, "log"},   {1, "log10"}, {1, "log2"},
+    // {2, "plog"},  {2, "polar"}, {2, "pow"},   {1, "real"},  {1, "sec"},   {1, "sinh"},
+    // {1, "sqrt"},  {1, "tan"},   {1, "tanh"},  {1, "trunc"}};
+
     case TokenType::FUNCTION:
       switch (_function_type)
       {
         case FunctionType::ABS:
           return std::abs(_children[0]->value());
+        case FunctionType::ACOS:
+          return std::acos(_children[0]->value());
+        case FunctionType::ASIN:
+          return std::asin(_children[0]->value());
+        case FunctionType::ATAN:
+          return std::atan(_children[0]->value());
+        case FunctionType::ATAN2:
+          return std::atan2(_children[1]->value(), _children[0]->value());
+        case FunctionType::COS:
+          return std::cos(_children[0]->value());
+        case FunctionType::MIN:
+          return std::min(_children[1]->value(), _children[0]->value());
+        case FunctionType::MAX:
+          return std::max(_children[1]->value(), _children[0]->value());
+        case FunctionType::SIN:
+          return std::sin(_children[0]->value());
         default:
           return NAN;
       }
@@ -116,9 +140,9 @@ Tree::format()
     case TokenType::FUNCTION:
     {
       std::string out = functionProperty(_function_type)._form + '(';
-      unsigned int arguments = functionProperty(_function_type)._arguments;
+      const unsigned int arguments = functionProperty(_function_type)._arguments;
       for (unsigned i = 0; i < arguments; ++i)
-        out += (i ? ", " : "");
+        out += (i ? ", " : "") + _children[arguments - 1 - i]->format();
       return out + ')';
     }
 

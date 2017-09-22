@@ -22,6 +22,7 @@ public:
 
 protected:
   void pushToOutput(const Token & token);
+  void pushFunctionToOutput(const Token & token, unsigned int num_arguments);
 
   void preprocessToken();
   void validateToken();
