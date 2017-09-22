@@ -36,9 +36,10 @@ Parser::parse(const std::string & expression)
     {
       auto precedence = _operators[static_cast<int>(_token._operator_type)]._precedence;
       while (!operator_stack.empty() && operator_stack.top()._type == TokenType::OPERATOR &&
-             operatorProperty(operator_stack.top()._operator_type)._precedence <= precedence &&
-             (operatorProperty(operator_stack.top()._operator_type)._left_associative ||
-              operatorProperty(operator_stack.top()._operator_type)._unary))
+             ((operatorProperty(operator_stack.top()._operator_type)._precedence <= precedence &&
+               operatorProperty(operator_stack.top()._operator_type)._left_associative) ||
+              (operatorProperty(operator_stack.top()._operator_type)._precedence < precedence &&
+               operatorProperty(operator_stack.top()._operator_type)._unary)))
       {
         pushToOutput(operator_stack.top());
         operator_stack.pop();

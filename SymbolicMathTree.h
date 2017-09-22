@@ -21,11 +21,10 @@ public:
   Tree(Real real);
 
   Real value();
-  unsigned short precedence();
   std::string format();
-  bool constant();
 
-  bool foldConstants();
+  bool isNumber(Real number);
+  bool simplify();
 
   std::unique_ptr<Tree> D(unsigned int _id);
 
@@ -40,6 +39,9 @@ protected:
   };
 
   std::vector<std::unique_ptr<Tree>> _children;
+
+  unsigned short precedence();
+  void become(std::unique_ptr<Tree> tree);
 };
 
 // end namespace SymbolicMath

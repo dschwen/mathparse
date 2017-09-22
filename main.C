@@ -15,7 +15,7 @@ main(int argc, char * argv[])
 
   std::cout << func->format() << '\n';
 
-  func->foldConstants();
+  func->simplify();
 
   std::cout << " = " << func->format() << '\n';
 

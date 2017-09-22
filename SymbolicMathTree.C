@@ -1,6 +1,7 @@
 #include "SymbolicMathTree.h"
 
 #include <cmath>
+#include <iostream> // debug
 
 namespace SymbolicMath
 {
@@ -39,7 +40,7 @@ Tree::value()
         case OperatorType::ADDITION:
           return _children[0]->value() + _children[1]->value();
         case OperatorType::SUBTRACTION:
-          return _children[0]->value() + _children[1]->value();
+          return _children[0]->value() - _children[1]->value();
         case OperatorType::MULTIPLICATION:
           return _children[0]->value() * _children[1]->value();
         case OperatorType::DIVISION:
@@ -126,48 +127,125 @@ Tree::format()
   }
 }
 
-bool
-Tree::constant()
+void
+Tree::become(std::unique_ptr<Tree> tree)
 {
+  _type = tree->_type;
   switch (_type)
   {
     case TokenType::NUMBER:
-      return true;
+      _real = tree->_real;
+      break;
 
     case TokenType::OPERATOR:
-      if (operatorProperty(_operator_type)._unary)
-        return _children[0]->constant();
-      else
-        return _children[0]->constant() && _children[1]->constant();
+      _operator_type = tree->_operator_type;
+      break;
 
     case TokenType::FUNCTION:
-      for (auto & child : _children)
-        if (!child->constant())
-          return false;
-      return true;
+      _function_type = tree->_function_type;
+      break;
 
     default:
-      return false;
+      _value_provider_id = tree->_value_provider_id;
   }
+
+  _children = std::move(tree->_children);
 }
 
 bool
-Tree::foldConstants()
+Tree::isNumber(Real number)
+{
+  return _type == TokenType::NUMBER && _real == number;
+}
+
+bool
+Tree::simplify()
 {
   if (_type == TokenType::NUMBER)
     return true;
 
-  bool is_constant = true;
+  //
+  // constant folding
+  //
+  bool all_constant = true;
   for (auto & child : _children)
-    is_constant = is_constant && child->foldConstants();
-
-  if (is_constant)
+    all_constant = all_constant && child->simplify();
+  if (all_constant)
   {
     _real = value();
     _type = TokenType::NUMBER;
     _children.clear();
     return true;
   }
+
+  //
+  // operator specific simplifications
+  //
+  if (_type == TokenType::OPERATOR)
+    switch (_operator_type)
+    {
+      case OperatorType::ADDITION:
+        // 0 + b = b
+        if (_children[0]->isNumber(0.0))
+          become(std::move(_children[1]));
+        // a + 0 = a
+        else if (_children[1]->isNumber(0.0))
+          become(std::move(_children[0]));
+        break;
+
+      case OperatorType::SUBTRACTION:
+        // 0 - b = -b
+        if (_children[0]->isNumber(0.0))
+        {
+          _operator_type = OperatorType::UNARY_MINUS;
+          _children[0] = std::move(_children[1]);
+          _children.resize(1);
+        }
+        // a - 0 = a
+        else if (_children[1]->isNumber(0.0))
+          become(std::move(_children[0]));
+        break;
+
+      case OperatorType::MULTIPLICATION:
+        // a * 0 = 0 * b = 0
+        if (_children[0]->isNumber(0.0) || _children[1]->isNumber(0.0))
+        {
+          _real = 0.0;
+          _type = TokenType::NUMBER;
+          _children.clear();
+          return true;
+        }
+        // 1 * b = b
+        if (_children[0]->isNumber(1.0))
+          become(std::move(_children[1]));
+        // a * 1 = a
+        else if (_children[1]->isNumber(1.0))
+          become(std::move(_children[0]));
+        break;
+
+      case OperatorType::DIVISION:
+        // a/1 = a
+        if (_children[1]->isNumber(1.0))
+          become(std::move(_children[0]));
+        break;
+
+      case OperatorType::POWER:
+        // a^0 = 1
+        if (_children[1]->isNumber(0.0))
+        {
+          _real = 1.0;
+          _type = TokenType::NUMBER;
+          _children.clear();
+          return true;
+        }
+        // a^1 = a
+        else if (_children[1]->isNumber(1.0))
+          become(std::move(_children[0]));
+        break;
+
+      default:
+        return false;
+    }
 
   return false;
 }
