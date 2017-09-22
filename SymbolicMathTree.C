@@ -36,6 +36,14 @@ Tree::value()
           return _children[0]->value();
         case OperatorType::UNARY_MINUS:
           return -_children[0]->value();
+        case OperatorType::ADDITION:
+          return _children[0]->value() + _children[1]->value();
+        case OperatorType::SUBTRACTION:
+          return _children[0]->value() + _children[1]->value();
+        case OperatorType::MULTIPLICATION:
+          return _children[0]->value() * _children[1]->value();
+        case OperatorType::DIVISION:
+          return _children[0]->value() / _children[1]->value();
         default:
           return NAN;
       }
@@ -116,6 +124,36 @@ Tree::format()
     default:
       return "[???]";
   }
+}
+
+bool
+Tree::constant()
+{
+  switch (_type)
+  {
+    case TokenType::NUMBER:
+      return true;
+
+    case TokenType::OPERATOR:
+      if (operatorProperty(_operator_type)._unary)
+        return _children[0]->constant();
+      else
+        return _children[0]->constant() && _children[1]->constant();
+
+    case TokenType::FUNCTION:
+      for (auto & child : _children)
+        if (!child->constant())
+          return false;
+      return true;
+
+    default:
+      return false;
+  }
+}
+
+std::unique_ptr<Tree>
+D(unsigned int _id)
+{
 }
 
 // end namespace SymbolicMath

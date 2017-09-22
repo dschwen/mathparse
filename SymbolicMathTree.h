@@ -20,18 +20,21 @@ public:
   Tree(FunctionType function_type, std::vector<Tree *> children);
   Tree(Real real);
 
-  virtual Real value();
-  virtual unsigned short precedence();
-  virtual std::string format();
+  Real value();
+  unsigned short precedence();
+  std::string format();
+  bool constant();
+
+  std::unique_ptr<Tree> D(unsigned int _id);
 
 protected:
-  const TokenType _type;
+  TokenType _type;
 
   union {
-    const OperatorType _operator_type;
-    const FunctionType _function_type;
-    const unsigned int _value_provider_id;
-    const Real _real;
+    OperatorType _operator_type;
+    FunctionType _function_type;
+    unsigned int _value_provider_id;
+    Real _real;
   };
 
   std::vector<std::unique_ptr<Tree>> _children;
