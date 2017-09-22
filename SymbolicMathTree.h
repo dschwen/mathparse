@@ -2,7 +2,9 @@
 #define SYMBOLICMATH_TREE_H
 
 #include "SymbolicMathSymbols.h"
+
 #include <vector>
+#include <memory>
 
 typedef double Real;
 
@@ -19,6 +21,7 @@ public:
   Tree(Real real, std::vector<std::unique_ptr<Tree>> children);
 
   Real value();
+  unsigned short precedence();
   std::string format();
 
 protected:
@@ -31,7 +34,7 @@ protected:
     Real _real;
   };
 
-  std::vector<std::unique_ptr<Tree>> _child;
+  std::vector<std::unique_ptr<Tree>> _children;
 };
 
 // end namespace SymbolicMath
