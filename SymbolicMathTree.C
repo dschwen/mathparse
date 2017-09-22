@@ -38,11 +38,21 @@ Tree::value()
         case OperatorType::UNARY_MINUS:
           return -_children[0]->value();
         case OperatorType::ADDITION:
-          return _children[0]->value() + _children[1]->value();
+        {
+          Real sum = 0.0;
+          for (auto & child : _children)
+            sum += child->value();
+          return sum;
+        }
         case OperatorType::SUBTRACTION:
           return _children[0]->value() - _children[1]->value();
         case OperatorType::MULTIPLICATION:
-          return _children[0]->value() * _children[1]->value();
+        {
+          Real product = 1.0;
+          for (auto & child : _children)
+            product *= child->value();
+          return product;
+        }
         case OperatorType::DIVISION:
           return _children[0]->value() / _children[1]->value();
         default:
@@ -116,24 +126,41 @@ Tree::format()
       }
       else
       {
-        // binary operators
         std::string out;
-        if (_children[0]->precedence() > precedence())
-          out = '(' + _children[0]->format() + ')';
+        // multinary operators
+        if (_operator_type == OperatorType::ADDITION ||
+            _operator_type == OperatorType::MULTIPLICATION)
+        {
+          for (auto & child : _children)
+          {
+            if (!out.empty())
+              out += ' ' + operatorProperty(_operator_type)._form + ' ';
+
+            if (child->precedence() > precedence())
+              out += '(' + child->format() + ')';
+            else
+              out += child->format();
+          }
+        }
         else
-          out = _children[0]->format();
+        {
+          // binary operators
+          if (_children[0]->precedence() > precedence())
+            out = '(' + _children[0]->format() + ')';
+          else
+            out = _children[0]->format();
 
-        out += ' ' + operatorProperty(_operator_type)._form + ' ';
+          out += ' ' + operatorProperty(_operator_type)._form + ' ';
 
-        if (_children[1]->precedence() > precedence() ||
-            (_children[1]->precedence() == precedence() &&
-             (_operator_type == OperatorType::SUBTRACTION ||
-              _operator_type == OperatorType::DIVISION || _operator_type == OperatorType::MODULO ||
-              _operator_type == OperatorType::POWER)))
-          out += '(' + _children[1]->format() + ')';
-        else
-          out += _children[1]->format();
-
+          if (_children[1]->precedence() > precedence() ||
+              (_children[1]->precedence() == precedence() &&
+               (_operator_type == OperatorType::SUBTRACTION ||
+                _operator_type == OperatorType::DIVISION ||
+                _operator_type == OperatorType::MODULO || _operator_type == OperatorType::POWER)))
+            out += '(' + _children[1]->format() + ')';
+          else
+            out += _children[1]->format();
+        }
         return out;
       }
 
@@ -226,7 +253,7 @@ Tree::simplify()
     const bool child_constant = child->simplify();
     all_constant = all_constant && child_constant;
   }
-  if (all_constant)
+  if (false && all_constant)
   {
     _real = value();
     _type = TokenType::NUMBER;
@@ -238,9 +265,26 @@ Tree::simplify()
   // operator specific quick simplifications
   //
   if (_type == TokenType::OPERATOR)
+  {
+    // gather child summands and multiplicands
+    if (_operator_type == OperatorType::ADDITION || _operator_type == OperatorType::MULTIPLICATION)
+    {
+      std::vector<std::unique_ptr<Tree>> arguments;
+      for (auto & child : _children)
+        if (child->_type == TokenType::OPERATOR && child->_operator_type == _operator_type)
+          for (auto & grandchild : child->_children)
+            arguments.push_back(std::move(grandchild));
+        else
+          arguments.push_back(std::move(child));
+
+      _children = std::move(arguments);
+    }
+
+    // simplify
     switch (_operator_type)
     {
       case OperatorType::ADDITION:
+
         // 0 + b = b
         if (_children[0]->isNumber(0.0))
           become(std::move(_children[1]));
@@ -280,7 +324,6 @@ Tree::simplify()
         break;
 
       case OperatorType::DIVISION:
-        std::cout << "PING!\n";
         // a/1 = a
         if (_children[1]->isNumber(1.0))
           become(std::move(_children[0]));
@@ -311,6 +354,7 @@ Tree::simplify()
       default:
         return false;
     }
+  }
 
   return false;
 }

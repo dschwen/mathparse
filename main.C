@@ -17,7 +17,7 @@ main(int argc, char * argv[])
 
   func->simplify();
 
-  std::cout << " = " << func->format() << '\n';
+  std::cout << " = " << func->format() << '\n' << func->formatTree("\t") << '\n';
 
   return 0;
 }
