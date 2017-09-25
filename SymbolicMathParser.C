@@ -46,14 +46,14 @@ Parser::parse(const std::string & expression)
     }
     else if (_token._type == TokenType::FUNCTION)
       operator_stack.push(_token);
-    else if (_token._type == TokenType::OPEN_PARENS)
+    else if (_token._type == TokenType::OPENING_BRACKET)
       operator_stack.push(_token);
-    else if (_token._type == TokenType::CLOSE_PARENS)
+    else if (_token._type == TokenType::CLOSING_BRACKET)
     {
-      if (_last_token._type != TokenType::OPEN_PARENS)
+      if (_last_token._type != TokenType::OPENING_BRACKET)
       {
         // bracket pair containing an expression
-        while (!operator_stack.empty() && operator_stack.top()._type != TokenType::OPEN_PARENS)
+        while (!operator_stack.empty() && operator_stack.top()._type != TokenType::OPENING_BRACKET)
         {
           pushToOutput(operator_stack.top());
           operator_stack.pop();
@@ -89,7 +89,7 @@ Parser::parse(const std::string & expression)
       {
         // empty bracket pair
         auto open_parens = operator_stack.top();
-        if (open_parens._type != TokenType::OPEN_PARENS)
+        if (open_parens._type != TokenType::OPENING_BRACKET)
         {
           std::cerr << "Internal error\n";
           throw std::domain_error("parenthesis");
@@ -118,7 +118,7 @@ Parser::parse(const std::string & expression)
     }
     else if (_token._type == TokenType::COMMA)
     {
-      while (!operator_stack.empty() && operator_stack.top()._type != TokenType::OPEN_PARENS)
+      while (!operator_stack.empty() && operator_stack.top()._type != TokenType::OPENING_BRACKET)
       {
         pushToOutput(operator_stack.top());
         operator_stack.pop();
@@ -130,7 +130,7 @@ Parser::parse(const std::string & expression)
       }
 
       // count the function arguments encountered for validation purposes
-      // assert(operator_stack.top()._type != TokenType::OPEN_PARENS)
+      // assert(operator_stack.top()._type != TokenType::OPENING_BRACKET)
       operator_stack.top()._integer++;
     }
 
@@ -142,7 +142,7 @@ Parser::parse(const std::string & expression)
   while (!operator_stack.empty())
   {
     auto _token = operator_stack.top();
-    if (_token._type == TokenType::OPEN_PARENS)
+    if (_token._type == TokenType::OPENING_BRACKET)
     {
       std::cerr << formatError("Unmatched opening bracket");
       throw std::domain_error("parenthesis");
@@ -220,7 +220,7 @@ Parser::preprocessToken()
 
     // preprocess operators to distinguish unary plus/minus from addition/subtraction
     if (_last_token._type != TokenType::NUMBER && _last_token._type != TokenType::VARIABLE &&
-        _last_token._type != TokenType::CLOSE_PARENS)
+        _last_token._type != TokenType::CLOSING_BRACKET)
     {
       // turn addition into unary plus and subtraction into unary minus
       if (_token._operator_type == OperatorType::ADDITION)
@@ -263,7 +263,7 @@ Parser::validateToken()
   }
 
   // check closing bracket state
-  if (_token._type == TokenType::CLOSE_PARENS &&
+  if (_token._type == TokenType::CLOSING_BRACKET &&
       (_last_token._type == TokenType::OPERATOR || _last_token._type == TokenType::COMMA))
   {
     std::cerr << formatError("Did not expect closing bracket here");
@@ -285,10 +285,10 @@ Parser::formatToken(const Token & token)
     case TokenType::OPERATOR:
       return "OPERATOR    \t" + operatorProperty(token._operator_type)._form + " (" +
              std::to_string(operatorProperty(token._operator_type)._precedence) + ')';
-    case TokenType::OPEN_PARENS:
-      return "OPEN_PARENS \t" + token._string;
-    case TokenType::CLOSE_PARENS:
-      return "CLOSE_PARENS\t" + token._string;
+    case TokenType::OPENING_BRACKET:
+      return "OPENING_BRACKET \t" + token._string;
+    case TokenType::CLOSING_BRACKET:
+      return "CLOSING_BRACKET\t" + token._string;
     case TokenType::FUNCTION:
       return "FUNCTION    \t" + functionProperty(token._function_type)._form;
     case TokenType::VARIABLE:

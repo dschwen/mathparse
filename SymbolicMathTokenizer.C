@@ -28,14 +28,14 @@ Tokenizer::isOperator()
 }
 
 bool
-Tokenizer::isOpenParenthesis()
+Tokenizer::isOpeningBracket()
 {
   const std::string parenthesis("([{");
   return parenthesis.find_first_of(*_c) != std::string::npos;
 }
 
 bool
-Tokenizer::isCloseParenthesis()
+Tokenizer::isClosingBracket()
 {
   const std::string parenthesis(")]}");
   return parenthesis.find_first_of(*_c) != std::string::npos;
@@ -95,10 +95,27 @@ Tokenizer::getToken()
     return makeToken(identifyOperator(op));
   }
 
-  if (isOpenParenthesis())
-    return makeToken(TokenType::OPEN_PARENS);
-  if (isCloseParenthesis())
-    return makeToken(TokenType::CLOSE_PARENS);
+  if (isOpeningBracket())
+    switch (*(_c++))
+    {
+      case '(':
+        return makeToken(TokenType::OPENING_BRACKET, BracketType::ROUND);
+      case '[':
+        return makeToken(TokenType::OPENING_BRACKET, BracketType::SQUARE);
+      case '{':
+        return makeToken(TokenType::OPENING_BRACKET, BracketType::CURLY);
+    }
+
+  if (isClosingBracket())
+    switch (*(_c++))
+    {
+      case ')':
+        return makeToken(TokenType::CLOSING_BRACKET, BracketType::ROUND);
+      case ']':
+        return makeToken(TokenType::CLOSING_BRACKET, BracketType::SQUARE);
+      case '}':
+        return makeToken(TokenType::CLOSING_BRACKET, BracketType::CURLY);
+    }
 
   // consume symbol
   if (isAlphaFirst())
@@ -107,7 +124,7 @@ Tokenizer::getToken()
     while (isAlphaCont())
       symbol += *(_c++);
 
-    if (isOpenParenthesis())
+    if (*_c == '(')
       return makeToken(identifyFunction(symbol));
     else
       return makeToken(TokenType::VARIABLE, symbol);
@@ -174,6 +191,12 @@ Tokenizer::makeToken(TokenType type, const std::string & data)
 }
 
 Token
+Tokenizer::makeToken(TokenType type, BracketType bracket_type)
+{
+  return Token(type, bracket_type, _token_start);
+}
+
+Token
 Tokenizer::makeToken(OperatorType operator_type)
 {
   return Token(TokenType::OPERATOR, operator_type, _token_start);
@@ -207,8 +230,8 @@ Token::Token(TokenType type, const std::string & string, std::size_t pos)
   switch (type)
   {
     case TokenType::VARIABLE:
-    case TokenType::OPEN_PARENS:
-    case TokenType::CLOSE_PARENS:
+    case TokenType::OPENING_BRACKET:
+    case TokenType::CLOSING_BRACKET:
     case TokenType::COMMA:
     case TokenType::INVALID:
     case TokenType::END:
@@ -230,6 +253,13 @@ Token::Token(TokenType type, FunctionType function_type, std::size_t pos)
 {
   if (type != TokenType::FUNCTION)
     throw std::invalid_argument("function_type");
+}
+
+Token::Token(TokenType type, BracketType bracket_type, std::size_t pos)
+  : _type(type), _bracket_type(bracket_type), _integer(0), _pos(pos)
+{
+  if (type != TokenType::OPENING_BRACKET && type != TokenType::CLOSING_BRACKET)
+    throw std::invalid_argument("bracket_type");
 }
 
 Token::Token(TokenType type, Real real, std::size_t pos)

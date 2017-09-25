@@ -15,6 +15,7 @@ struct Token
   Token(TokenType type, const std::string & string, std::size_t pos);
   Token(TokenType type, OperatorType operator_type, std::size_t pos);
   Token(TokenType type, FunctionType operator_type, std::size_t pos);
+  Token(TokenType type, BracketType operator_type, std::size_t pos);
   Token(TokenType type, Real real, std::size_t pos);
   ~Token() {}
 
@@ -27,9 +28,10 @@ struct Token
   union {
     OperatorType _operator_type;
     FunctionType _function_type;
+    BracketType _bracket_type;
   };
 
-  // for OPEN_PARENS this holds the argument counter
+  // for OPENING_BRACKET this holds the argument counter
   int _integer;
   Real _real;
 };
@@ -50,8 +52,8 @@ private:
   ///@{ classification functions for the next expression character
   bool isDigit();
   bool isOperator();
-  bool isOpenParenthesis();
-  bool isCloseParenthesis();
+  bool isOpeningBracket();
+  bool isClosingBracket();
   bool isAlphaFirst();
   bool isAlphaCont();
   ///@}
@@ -64,6 +66,7 @@ private:
 
   Token makeToken(TokenType type);
   Token makeToken(TokenType type, const std::string & data);
+  Token makeToken(TokenType type, BracketType function_type);
   Token makeToken(OperatorType operator_type);
   Token makeToken(FunctionType function_type);
   Token makeToken(int integer);

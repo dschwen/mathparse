@@ -12,13 +12,21 @@ enum class TokenType
 {
   OPERATOR,
   FUNCTION,
-  OPEN_PARENS,
-  CLOSE_PARENS,
+  OPENING_BRACKET,
+  CLOSING_BRACKET,
   NUMBER,
   VARIABLE,
   COMMA,
+  COMPONENT,
   INVALID,
   END
+};
+
+enum class BracketType
+{
+  ROUND,
+  SQUARE,
+  CURLY
 };
 
 enum class FunctionType
@@ -59,6 +67,7 @@ enum class FunctionType
   SIN,
   SINH,
   SQRT,
+  T,
   TAN,
   TANH,
   TRUNC,
@@ -78,7 +87,7 @@ static const std::vector<FunctionProperties> _functions = {
     {1, "cot"},   {1, "csc"},   {1, "exp"},   {1, "exp2"},  {1, "floor"}, {2, "hypot"}, {3, "if"},
     {1, "imag"},  {1, "int"},   {1, "log"},   {1, "log10"}, {1, "log2"},  {2, "max"},   {2, "min"},
     {2, "plog"},  {2, "polar"}, {2, "pow"},   {1, "real"},  {1, "sec"},   {1, "sin"},   {1, "sinh"},
-    {1, "sqrt"},  {1, "tan"},   {1, "tanh"},  {1, "trunc"}};
+    {1, "sqrt"},  {1, "T"},     {1, "tan"},   {1, "tanh"},  {1, "trunc"}};
 
 enum class OperatorType
 {
