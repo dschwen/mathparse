@@ -6,6 +6,7 @@
 
 #include <string>
 #include <stack>
+#include <map>
 
 namespace SymbolicMath
 {
@@ -24,6 +25,25 @@ protected:
   void pushToOutput(const Token & token);
   void pushFunctionToOutput(const Token & token, unsigned int num_arguments);
 
+  int registerValueProvider(std::string name);
+
+  void registerQPIndex(const unsigned int & qp) { _qp_ptr = &qp; }
+
+  /*
+  int registerValueProvider(std::string name, const VariableValue & var);
+  int registerValueProvider(std::string name, const VariableGradient & grad);
+  int registerValueProvider(std::string name, const MaterialProperty<Real> & real_prop);
+  int registerValueProvider(std::string name, const MaterialProperty<RankTwoTensor> & r2t_prop);
+  int registerValueProvider(std::string name, const MaterialProperty<RankThreeTensor> & r3t_prop);
+  int registerValueProvider(std::string name, const MaterialProperty<RankFourTensor> & r4t_prop);
+
+  or
+
+  int registerValueProvider(std::string name, const ValueProvider & vp);
+  (where ValueProvider is a base class that provides a virtual clone() method to build the tree
+  nodes)
+  */
+
   void preprocessToken();
   void validateToken();
 
@@ -36,6 +56,12 @@ private:
 
   /// output stack where the Tree is formed
   std::stack<std::unique_ptr<Tree>> _output_stack;
+
+  /// value provider ID map
+  std::map<std::string, int> _value_providers;
+
+  /// pointer to the quadrature point index (_qp)
+  const unsigned int * _qp_ptr;
 
   /// currently parsed expression
   std::string _expression;

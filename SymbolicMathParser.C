@@ -7,7 +7,7 @@
 namespace SymbolicMath
 {
 
-Parser::Parser() {}
+Parser::Parser() : _qp_ptr(nullptr) {}
 
 std::unique_ptr<Tree>
 Parser::parse(const std::string & expression)
@@ -53,7 +53,9 @@ Parser::parse(const std::string & expression)
       if (_last_token._type != TokenType::OPENING_BRACKET)
       {
         // bracket pair containing an expression
-        while (!operator_stack.empty() && operator_stack.top()._type != TokenType::OPENING_BRACKET)
+        while (!operator_stack.empty() &&
+               (operator_stack.top()._type != TokenType::OPENING_BRACKET ||
+                operator_stack.top()._bracket_type != _token._bracket_type))
         {
           pushToOutput(operator_stack.top());
           operator_stack.pop();
@@ -67,22 +69,30 @@ Parser::parse(const std::string & expression)
         operator_stack.pop();
 
         // check if this bracket pair was a function argument list
-        if (!operator_stack.empty() && operator_stack.top()._type == TokenType::FUNCTION)
+        if (!operator_stack.empty())
         {
-          auto function = operator_stack.top();
-          auto expected_argments = functionProperty(function._function_type)._arguments;
-          if (expected_argments != open_parens._integer + 1)
+          if (operator_stack.top()._type == TokenType::FUNCTION)
           {
+            auto function = operator_stack.top();
+            auto expected_argments = functionProperty(function._function_type)._arguments;
+            if (expected_argments != open_parens._integer + 1)
             {
-              std::cerr << formatError(function._pos,
-                                       "Expected " + std::to_string(expected_argments) +
-                                           " argument(s) but found " +
-                                           std::to_string(open_parens._integer + 1));
-              throw std::domain_error("parenthesis");
+              {
+                std::cerr << formatError(function._pos,
+                                         "Expected " + std::to_string(expected_argments) +
+                                             " argument(s) but found " +
+                                             std::to_string(open_parens._integer + 1));
+                throw std::domain_error("parenthesis");
+              }
             }
+            pushFunctionToOutput(operator_stack.top(), expected_argments);
+            operator_stack.pop();
           }
-          pushFunctionToOutput(operator_stack.top(), expected_argments);
-          operator_stack.pop();
+          else if (operator_stack.top()._type == TokenType::VARIABLE)
+          {
+            // build a component operator node (e.g. M[1,3])
+            std::cerr << "Component operator not implemented yet\n";
+          }
         }
       }
       else
@@ -94,12 +104,23 @@ Parser::parse(const std::string & expression)
           std::cerr << "Internal error\n";
           throw std::domain_error("parenthesis");
         }
+        if (open_parens._bracket_type != _token._bracket_type)
+        {
+          std::cerr << formatError(open_parens._pos, "Mismatching empty bracket pair");
+          throw std::domain_error("parenthesis");
+        }
+        if (_token._bracket_type != BracketType::ROUND)
+        {
+          std::cerr << formatError(open_parens._pos, "Invalid empty bracket pair");
+          throw std::domain_error("parenthesis");
+        }
+
         operator_stack.pop();
 
         if (operator_stack.empty() || operator_stack.top()._type != TokenType::FUNCTION)
         {
           std::cerr << formatError(open_parens._pos,
-                                   "Empty bracket pairs are only allowed after functions");
+                                   "Empty round bracket pairs are only allowed after functions");
           throw std::domain_error("parenthesis");
         }
 
@@ -185,6 +206,10 @@ Parser::pushToOutput(const Token & token)
       return;
     }
 
+    case TokenType::VARIABLE:
+    {
+    }
+
     default:
       throw std::domain_error("invalid_token");
   }
@@ -203,6 +228,24 @@ Parser::pushFunctionToOutput(const Token & token, unsigned int num_arguments)
     _output_stack.pop();
   }
   _output_stack.push(std::move(std::unique_ptr<Tree>(new Tree(token._function_type, arguments))));
+}
+
+int
+Parser::registerValueProvider(std::string name)
+{
+  if (_value_providers.empty())
+    _value_providers.insert(std::make_pair(name, 0));
+  else
+  {
+    auto it = std::max_element(
+        _value_providers.begin(),
+        _value_providers.end(),
+        [](const std::pair<std::string, int> & p1, const std::pair<std::string, int> & p2) {
+          return p1.second < p2.second;
+        });
+
+    _value_providers.insert(std::make_pair(name, it->second + 1));
+  }
 }
 
 void

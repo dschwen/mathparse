@@ -253,7 +253,7 @@ Tree::simplify()
     const bool child_constant = child->simplify();
     all_constant = all_constant && child_constant;
   }
-  if (false && all_constant)
+  if (all_constant)
   {
     _real = value();
     _type = TokenType::NUMBER;

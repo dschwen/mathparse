@@ -230,8 +230,6 @@ Token::Token(TokenType type, const std::string & string, std::size_t pos)
   switch (type)
   {
     case TokenType::VARIABLE:
-    case TokenType::OPENING_BRACKET:
-    case TokenType::CLOSING_BRACKET:
     case TokenType::COMMA:
     case TokenType::INVALID:
     case TokenType::END:
