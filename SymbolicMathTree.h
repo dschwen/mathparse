@@ -19,6 +19,7 @@ public:
   Tree(OperatorType operator_type, std::vector<Tree *> children);
   Tree(FunctionType function_type, std::vector<Tree *> children);
   Tree(Real real);
+  Tree(unsigned int real);
 
   Real value();
   std::string format();

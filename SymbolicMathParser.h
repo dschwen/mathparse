@@ -21,11 +21,7 @@ public:
 
   std::unique_ptr<Tree> parse(const std::string & expression);
 
-protected:
-  void pushToOutput(const Token & token);
-  void pushFunctionToOutput(const Token & token, unsigned int num_arguments);
-
-  int registerValueProvider(std::string name);
+  unsigned int registerValueProvider(std::string name);
 
   void registerQPIndex(const unsigned int & qp) { _qp_ptr = &qp; }
 
@@ -44,6 +40,10 @@ protected:
   nodes)
   */
 
+protected:
+  void pushToOutput(const Token & token);
+  void pushFunctionToOutput(const Token & token, unsigned int num_arguments);
+
   void preprocessToken();
   void validateToken();
 
@@ -58,7 +58,7 @@ private:
   std::stack<std::unique_ptr<Tree>> _output_stack;
 
   /// value provider ID map
-  std::map<std::string, int> _value_providers;
+  std::map<std::string, unsigned int> _value_providers;
 
   /// pointer to the quadrature point index (_qp)
   const unsigned int * _qp_ptr;

@@ -182,7 +182,7 @@ Parser::pushToOutput(const Token & token)
   switch (token._type)
   {
     case TokenType::NUMBER:
-      _output_stack.push(std::move(std::unique_ptr<Tree>(new Tree(token._real))));
+      _output_stack.push(std::unique_ptr<Tree>(new Tree(token._real)));
       return;
 
     case TokenType::OPERATOR:
@@ -193,21 +193,30 @@ Parser::pushToOutput(const Token & token)
       if (operatorProperty(token._operator_type)._unary)
       {
         _output_stack.push(
-            std::move(std::unique_ptr<Tree>(new Tree(token._operator_type, {right.release()}))));
+            std::unique_ptr<Tree>(new Tree(token._operator_type, {right.release()})));
       }
       else
       {
         auto left = std::move(_output_stack.top());
         _output_stack.pop();
 
-        _output_stack.push(std::move(std::unique_ptr<Tree>(
-            new Tree(token._operator_type, {left.release(), right.release()}))));
+        _output_stack.push(std::unique_ptr<Tree>(
+            new Tree(token._operator_type, {left.release(), right.release()})));
       }
       return;
     }
 
     case TokenType::VARIABLE:
     {
+      auto it = _value_providers.find(token._string);
+      if (it == _value_providers.end())
+      {
+        std::cerr << formatError(token._pos, "Unknown value provider name");
+        throw std::domain_error("value_provider");
+      }
+
+      _output_stack.push(std::unique_ptr<Tree>(new Tree(it->second)));
+      return;
     }
 
     default:
@@ -227,24 +236,28 @@ Parser::pushFunctionToOutput(const Token & token, unsigned int num_arguments)
     arguments.push_back(_output_stack.top().release());
     _output_stack.pop();
   }
-  _output_stack.push(std::move(std::unique_ptr<Tree>(new Tree(token._function_type, arguments))));
+  _output_stack.push(std::unique_ptr<Tree>(new Tree(token._function_type, arguments)));
 }
 
-int
+unsigned int
 Parser::registerValueProvider(std::string name)
 {
   if (_value_providers.empty())
+  {
     _value_providers.insert(std::make_pair(name, 0));
+    return 0;
+  }
   else
   {
     auto it = std::max_element(
         _value_providers.begin(),
         _value_providers.end(),
-        [](const std::pair<std::string, int> & p1, const std::pair<std::string, int> & p2) {
-          return p1.second < p2.second;
-        });
+        [](const std::pair<std::string, unsigned int> & p1,
+           const std::pair<std::string, unsigned int> & p2) { return p1.second < p2.second; });
 
-    _value_providers.insert(std::make_pair(name, it->second + 1));
+    auto id = it->second + 1;
+    _value_providers.insert(std::make_pair(name, id));
+    return id;
   }
 }
 
@@ -272,7 +285,7 @@ Parser::preprocessToken()
         _token._operator_type = OperatorType::UNARY_MINUS;
       else
       {
-        std::cerr << formatError(_token._pos, "Did not expect operator here");
+        std::cerr << formatError("Did not expect operator here");
         throw std::domain_error("operator");
       }
     }

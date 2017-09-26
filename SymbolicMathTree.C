@@ -22,6 +22,8 @@ Tree::Tree(FunctionType function_type, std::vector<Tree *> children)
 
 Tree::Tree(Real real) : _type(TokenType::NUMBER), _real(real), _children() {}
 
+Tree::Tree(unsigned int id) : _type(TokenType::VARIABLE), _value_provider_id(id), _children() {}
+
 Real
 Tree::value()
 {
@@ -114,6 +116,9 @@ Tree::format()
     case TokenType::NUMBER:
       return std::to_string(_real);
 
+    case TokenType::VARIABLE:
+      return "val" + std::to_string(_value_provider_id);
+
     case TokenType::OPERATOR:
       if (operatorProperty(_operator_type)._unary)
       {
@@ -188,8 +193,18 @@ Tree::formatTree(std::string indent)
       out = indent + std::to_string(_real) + '\n';
       break;
 
+    case TokenType::VARIABLE:
+      out = indent + "val" + std::to_string(_value_provider_id) + '\n';
+      break;
+
     case TokenType::OPERATOR:
-      out = indent + '[' + operatorProperty(_operator_type)._form + "]\n";
+      out = indent + '{' + operatorProperty(_operator_type)._form + "}\n";
+      for (auto & child : _children)
+        out += child->formatTree(indent + "  ");
+      break;
+
+    case TokenType::COMPONENT:
+      out = indent + "[]\n";
       for (auto & child : _children)
         out += child->formatTree(indent + "  ");
       break;
@@ -243,6 +258,9 @@ Tree::simplify()
 {
   if (_type == TokenType::NUMBER)
     return true;
+
+  if (_type == TokenType::VARIABLE)
+    return false;
 
   //
   // constant folding
