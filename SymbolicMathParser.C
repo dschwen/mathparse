@@ -236,7 +236,11 @@ Parser::pushFunctionToOutput(const Token & token, unsigned int num_arguments)
     arguments.push_back(_output_stack.top().release());
     _output_stack.pop();
   }
-  _output_stack.push(std::unique_ptr<Tree>(new Tree(token._function_type, arguments)));
+
+  if (token._function_type == FunctionType::POW)
+    _output_stack.push(std::unique_ptr<Tree>(new Tree(OperatorType::POWER, arguments)));
+  else
+    _output_stack.push(std::unique_ptr<Tree>(new Tree(token._function_type, arguments)));
 }
 
 unsigned int

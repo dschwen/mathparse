@@ -258,7 +258,6 @@ Tree::simplify()
 {
   if (_type == TokenType::NUMBER)
     return true;
-
   if (_type == TokenType::VARIABLE)
     return false;
 
@@ -390,6 +389,17 @@ Tree::simplify()
         break;
 
       case OperatorType::POWER:
+        //(a^b)^c = a^(b*c) (c00^c01) ^ c1 = c00 ^ (c01*c1)
+        if (_children[0]->_type == TokenType::OPERATOR &&
+            _children[0]->_operator_type == OperatorType::POWER)
+        {
+          auto c0 = std::move(_children[0]);
+          _children[0] = std::move(c0->_children[0]);
+          _children[1] = std::unique_ptr<Tree>(new Tree(
+              OperatorType::MULTIPLICATION, {c0->_children[1].release(), _children[1].release()}));
+          _children[1]->simplify();
+        }
+
         // a^0 = 1
         if (_children[1]->isNumber(0.0))
         {
