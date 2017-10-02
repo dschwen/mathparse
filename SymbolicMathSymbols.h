@@ -8,6 +8,106 @@
 namespace SymbolicMath
 {
 
+//// New symbols
+
+enum class NumberNodeType
+{
+  REAL,
+  INTEGER,
+  RATIONAL,
+  _ANY
+};
+
+enum class UnaryOperatorNodeType
+{
+  PLUS,
+  MINUS,
+  FACULTY,
+  NOT,
+  _ANY
+};
+
+enum class BinaryOperatorNodeType
+{
+  ADDITION,
+  SUBTRACTION,
+  MULTIPLICATION,
+  DIVISION,
+  LOGICAL_OR,
+  LOGICAL_AND,
+  _ANY
+};
+
+enum class MultinaryOperatorNodeType
+{
+  ADDITION,
+  MULTIPLICATION,
+  _ANY
+};
+
+enum class UnaryFunctionNodeType
+{
+  ABS,
+  ACOS,
+  ACOSH,
+  ARG,
+  ASIN,
+  ASINH,
+  ATAN,
+  ATANH,
+  CBRT,
+  CEIL,
+  CONJ,
+  COS,
+  COSH,
+  COT,
+  CSC,
+  EXP,
+  EXP2,
+  FLOOR,
+  IMAG,
+  INT,
+  LOG,
+  LOG10,
+  LOG2,
+  REAL,
+  SEC,
+  SIN,
+  SINH,
+  SQRT,
+  T,
+  TAN,
+  TANH,
+  TRUNC,
+  _ANY
+};
+
+enum class BinaryFunctionNodeType
+{
+  ATAN2,
+  HYPOT,
+  MAX,
+  MIN,
+  PLOG,
+  POLAR,
+  POW,
+  _ANY
+};
+
+enum class ConditionalNodeType
+{
+  IF,
+  _ANY
+};
+
+enum class MultinaryNodeType
+{
+  COMPONENT,
+  _ANY
+};
+
+//// Old symbols
+
 enum class TokenType
 {
   OPERATOR,
