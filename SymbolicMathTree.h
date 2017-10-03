@@ -71,6 +71,14 @@ public:
     for (std::size_t i = 0; i < sizeof...(args); ++i)
       _args[i].reset(argArray[i]);
   }
+  FixedArgumentNode(Enum type, std::stack<Node *> & stack) : _type(type)
+  {
+    for (std::size_t i = 0; i < N; ++i)
+    {
+      _args[N - 1 - i].reset(stack.top());
+      stack.pop();
+    }
+  }
 
   bool is(Enum type) override { return _type == type || type == Enum::_ANY; }
 

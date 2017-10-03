@@ -2,6 +2,7 @@
 #define SYMBOLICMATHTOKENIZER_H
 
 #include "SymbolicMathSymbols.h"
+#include "SymbolicMathTree.h"
 
 #include <string>
 
@@ -9,6 +10,7 @@ namespace SymbolicMath
 {
 typedef double Real;
 
+template <class TNode, typename TEnum>
 struct Token
 {
   Token() : _type(TokenType::INVALID), _pos(0) {}
@@ -34,6 +36,8 @@ struct Token
   // for OPENING_BRACKET this holds the argument counter
   int _integer;
   Real _real;
+
+  Node * buildNode(std::stack<Node *> & stack) { return new TNode(type, stack); }
 };
 
 class Tokenizer

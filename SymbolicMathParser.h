@@ -55,7 +55,7 @@ private:
   Token _last_token;
 
   /// output stack where the Tree is formed
-  std::stack<std::unique_ptr<Tree>> _output_stack;
+  std::stack<Node *> _output_stack;
 
   /// value provider ID map
   std::map<std::string, unsigned int> _value_providers;
