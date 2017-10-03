@@ -27,7 +27,6 @@ std::string stringify(MultinaryOperatorNodeType type);
 std::string stringify(UnaryFunctionNodeType type);
 std::string stringify(BinaryFunctionNodeType type);
 std::string stringify(ConditionalNodeType type);
-std::string stringify(MultinaryNodeType type);
 
 template <typename T>
 std::string

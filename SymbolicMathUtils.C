@@ -18,13 +18,13 @@ stringify(UnaryOperatorNodeType type)
 std::string
 stringify(BinaryOperatorNodeType type)
 {
-  return stringifyHelper(type, {"+", "-", "*", "/", "|", "&"});
+  return stringifyHelper(type, {"+", "-", "*", "/", "%", "^", "|", "&"});
 }
 
 std::string
 stringify(MultinaryOperatorNodeType type)
 {
-  return stringifyHelper(type, {"+", "*"});
+  return stringifyHelper(type, {"+", "*", "[]"});
 }
 
 std::string
@@ -47,12 +47,6 @@ std::string
 stringify(ConditionalNodeType type)
 {
   return stringifyHelper(type, {"if"});
-}
-
-std::string
-stringify(MultinaryNodeType type)
-{
-  return stringifyHelper(type, {"[]"});
 }
 
 // end namespace SymbolicMath

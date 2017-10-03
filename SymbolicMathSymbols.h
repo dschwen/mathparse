@@ -33,6 +33,8 @@ enum class BinaryOperatorNodeType
   SUBTRACTION,
   MULTIPLICATION,
   DIVISION,
+  MODULO,
+  POWER,
   LOGICAL_OR,
   LOGICAL_AND,
   _ANY
@@ -42,6 +44,7 @@ enum class MultinaryOperatorNodeType
 {
   ADDITION,
   MULTIPLICATION,
+  COMPONENT,
   _ANY
 };
 
@@ -97,12 +100,6 @@ enum class BinaryFunctionNodeType
 enum class ConditionalNodeType
 {
   IF,
-  _ANY
-};
-
-enum class MultinaryNodeType
-{
-  COMPONENT,
   _ANY
 };
 

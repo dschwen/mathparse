@@ -5,6 +5,8 @@
 
 #include <vector>
 #include <memory>
+#include <array>
+#include <type_traits>
 
 typedef double Real;
 
@@ -14,6 +16,9 @@ namespace SymbolicMath
 class Node;
 class NodePtr : public std::unique_ptr<Node>
 {
+  using std::unique_ptr<Node>::unique_ptr;
+
+public:
   // ignore self-resets
   void reset(Node * ptr)
   {
@@ -28,7 +33,8 @@ class Node
 {
 public:
   virtual Real value() = 0;
-  virtual Real value(const std::vector<unsigned int> & index) { checkIndex(index); };
+  // virtual Real value(const std::vector<unsigned int> & index) = 0;
+
   virtual std::string format() = 0;
   virtual std::string formatTree(std::string indent = "") = 0;
 
@@ -43,13 +49,51 @@ public:
   virtual bool is(BinaryFunctionNodeType) { return false; };
   virtual bool is(ConditionalNodeType) { return false; };
 
-  virtual Shape shape() = 0;
+  // virtual Shape shape() = 0;
+  virtual Shape shape() { return {1}; };
+
   virtual void checkIndex(const std::vector<unsigned int> & index);
 
   virtual Node * simplify() { return this; };
-  virtual Node * D(unsigned int _id) = 0;
+  virtual Node * D(unsigned int id) = 0;
 
   virtual unsigned short precedence() { return 0; }
+};
+
+template <typename Enum, std::size_t N>
+class FixedArgumentNode : public Node
+{
+public:
+  template <typename... Args, typename = typename std::enable_if<N == sizeof...(Args), void>::type>
+  FixedArgumentNode(Enum type, Args &&... args) : _type(type)
+  {
+    Node * argArray[] = {args...};
+    for (std::size_t i = 0; i < sizeof...(args); ++i)
+      _args[i].reset(argArray[i]);
+  }
+
+  bool is(Enum type) override { return _type == type || type == Enum::_ANY; }
+
+protected:
+  std::array<NodePtr, N> _args;
+  Enum _type;
+};
+
+template <typename Enum>
+class MultinaryNode : public Node
+{
+public:
+  MultinaryNode(Enum type, std::initializer_list<Node *> args) : _type(type)
+  {
+    for (auto arg : args)
+      _args.emplace_back(arg);
+  }
+
+  bool is(Enum type) override { return _type == type || type == Enum::_ANY; }
+
+protected:
+  std::vector<NodePtr> _args;
+  Enum _type;
 };
 
 class ValueProviderNode : public Node
@@ -59,9 +103,9 @@ class ValueProviderNode : public Node
 class NumberNode : public Node
 {
 public:
-  virtual Shape shape() { return {1}; }
+  Shape shape() override { return {1}; }
 
-  virtual Node * D(unsigned int /*_id*/);
+  Node * D(unsigned int /*_id*/) override;
 
 protected:
   NumberNodeType _type;
@@ -71,15 +115,14 @@ class RealNumberNode : public NumberNode
 {
 public:
   RealNumberNode(Real value) : NumberNode(), _value(value) {}
-  virtual Real value() { return _value; };
-  virtual std::string format() { return std::to_string(_value); };
-  virtual std::string formatTree(std::string indent = "");
+  Real value() override { return _value; };
+  std::string format() override { return std::to_string(_value); };
+  std::string formatTree(std::string indent = "") override;
 
-  virtual bool is(NumberNodeType type)
-  {
-    return _type == NumberNodeType::REAL || _type == NumberNodeType::_ANY;
-  };
-  virtual bool is(Real value) { return value == _value; };
+  Node * clone() override { return new RealNumberNode(_value); };
+
+  bool is(NumberNodeType type) override;
+  bool is(Real value) override { return value == _value; };
 
 protected:
   Real _value;
@@ -88,69 +131,114 @@ protected:
 /**
  * Operators o of the form 'oA'
  */
-class UnaryOperatorNode : public Node
+class UnaryOperatorNode : public FixedArgumentNode<UnaryOperatorNodeType, 1>
 {
-  UnaryOperatorNode(UnaryOperatorNodeType type, Node * argument)
-    : Node(), _type(type), _argument(argument)
-  {
-  }
-  virtual Real value();
-  virtual std::string format();
-  virtual std::string formatTree(std::string indent = "");
+  using FixedArgumentNode<UnaryOperatorNodeType, 1>::FixedArgumentNode;
 
-  virtual unsigned short precedence() { return 3; }
+public:
+  Real value() override;
+  std::string format() override;
+  std::string formatTree(std::string indent = "") override;
 
-  virtual Node * simplify();
-  virtual Node * D(unsigned int _id);
+  Node * clone() override { return new UnaryOperatorNode(_type, _args[0]->clone()); };
 
-protected:
-  UnaryOperatorNodeType _type;
-  NodePtr _argument;
+  Node * simplify() override;
+  Node * D(unsigned int _id) override;
+
+  unsigned short precedence() override { return 3; }
 };
 
 /**
  * Operators o of the form 'A o B'
  */
-class BinaryOperatorNode : public Node
+class BinaryOperatorNode : public FixedArgumentNode<BinaryOperatorNodeType, 2>
 {
-  BinaryOperatorNode(BinaryOperatorNodeType type, Node * left, Node * right)
-    : Node(), _type(type), _left(left), _right(right)
+  using FixedArgumentNode<BinaryOperatorNodeType, 2>::FixedArgumentNode;
+
+public:
+  Real value() override;
+  std::string format() override;
+  std::string formatTree(std::string indent = "") override;
+
+  Node * clone() override
   {
-  }
-  virtual Real value();
-  virtual std::string format();
-  virtual std::string formatTree(std::string indent = "");
+    return new BinaryOperatorNode(_type, _args[0]->clone(), _args[1]->clone());
+  };
 
-  virtual unsigned short precedence();
+  Node * simplify() override;
+  Node * D(unsigned int _id) override;
 
-protected:
-  BinaryOperatorNodeType _type;
-  NodePtr _left;
-  NodePtr _right;
+  unsigned short precedence() override;
 };
 
-class MultinaryOperatorNode : public Node
+class MultinaryOperatorNode : public MultinaryNode<MultinaryOperatorNodeType>
 {
-  MultinaryOperatorNode(std::initializer_list<Node *> arguments);
-  virtual Real value();
-  virtual std::string format();
-  virtual std::string formatTree(std::string indent = "");
+  using MultinaryNode<MultinaryOperatorNodeType>::MultinaryNode;
 
-  virtual unsigned short precedence();
+public:
+  Real value() override;
+  std::string format() override;
+  std::string formatTree(std::string indent = "") override;
 
-protected:
-  MultinaryOperatorNodeType _type;
-  std::vector<NodePtr> _arguments;
+  Node * clone() override;
+
+  Node * simplify() override;
+  Node * D(unsigned int id) override;
+
+  unsigned short precedence() override;
 };
 
-class MultinaryNode : public Node
+/**
+ * Functions o of the form 'F(A)'
+ */
+class UnaryFunctionNode : public FixedArgumentNode<UnaryFunctionNodeType, 1>
 {
-  MultinaryNode(std::initializer_list<Node *> arguments);
-  virtual Real value();
+  using FixedArgumentNode<UnaryFunctionNodeType, 1>::FixedArgumentNode;
 
-protected:
-  MultinaryNodeType _type;
-  std::vector<NodePtr> _arguments;
+public:
+  Real value() override;
+  std::string format() override;
+  std::string formatTree(std::string indent = "") override;
+
+  Node * clone() override { return new UnaryFunctionNode(_type, _args[0]->clone()); }
+
+  Node * simplify() override;
+  Node * D(unsigned int _id) override;
+
+  unsigned short precedence() override { return 3; }
+};
+
+/**
+ * Functions o of the form 'F(A,B)'
+ */
+class BinaryFunctionNode : public FixedArgumentNode<BinaryFunctionNodeType, 2>
+{
+  using FixedArgumentNode<BinaryFunctionNodeType, 2>::FixedArgumentNode;
+
+public:
+  Real value() override;
+  std::string format() override;
+  std::string formatTree(std::string indent = "") override;
+
+  Node * clone() override;
+
+  Node * simplify() override;
+  Node * D(unsigned int _id) override;
+
+  unsigned short precedence() override;
+};
+
+class ConditionalNode : public FixedArgumentNode<ConditionalNodeType, 3>
+{
+public:
+  Real value() override;
+  std::string format() override;
+  std::string formatTree(std::string indent = "") override;
+
+  Node * clone() override;
+
+  Node * simplify() override;
+  Node * D(unsigned int _id) override;
 };
 
 // end namespace SymbolicMath
