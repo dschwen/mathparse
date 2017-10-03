@@ -224,12 +224,12 @@ public:
 
   Node * simplify() override;
   Node * D(unsigned int _id) override;
-
-  unsigned short precedence() override;
 };
 
 class ConditionalNode : public FixedArgumentNode<ConditionalNodeType, 3>
 {
+  using FixedArgumentNode<ConditionalNodeType, 3>::FixedArgumentNode;
+
 public:
   Real value() override;
   std::string format() override;

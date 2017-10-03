@@ -221,11 +221,12 @@ BinaryOperatorNode::simplify()
       if (_args[0]->is(BinaryOperatorNodeType::POWER))
       {
         auto arg0 = static_cast<BinaryOperatorNode *>(_args[0].get());
-        return (new BinaryOperatorNode(BinaryOperatorNodeType::POWER,
-                                       arg0->_args[0].release(),
-                                       BinaryOperatorNode(BinaryOperatorNodeType::MULTIPLICATION,
-                                                          arg0->_args[1].release(),
-                                                          _args[1].release())))
+        return (new BinaryOperatorNode(
+                    BinaryOperatorNodeType::POWER,
+                    arg0->_args[0].release(),
+                    new BinaryOperatorNode(BinaryOperatorNodeType::MULTIPLICATION,
+                                           arg0->_args[1].release(),
+                                           _args[1].release())))
             ->simplify();
       }
 
@@ -242,6 +243,19 @@ BinaryOperatorNode::simplify()
     default:
       return this;
   }
+}
+
+unsigned short
+BinaryOperatorNode::precedence()
+{
+  const auto index = static_cast<int>(_type);
+  //                                        +  -  *  /  %  ^  |   &
+  const std::vector<unsigned short> list = {6, 6, 5, 5, 5, 4, 14, 13};
+
+  if (index >= list.size())
+    fatalError("Unknown operator");
+
+  return list[index];
 }
 
 /********************************************************
@@ -313,6 +327,22 @@ Node *
 MultinaryOperatorNode::D(unsigned int id)
 {
   fatalError("Derivative not implemented");
+}
+
+unsigned short
+MultinaryOperatorNode::precedence()
+{
+  switch (_type)
+  {
+    case MultinaryOperatorNodeType::ADDITION:
+      return 6;
+
+    case MultinaryOperatorNodeType::MULTIPLICATION:
+      return 5;
+
+    default:
+      fatalError("Unknown operator");
+  }
 }
 
 /********************************************************
@@ -578,6 +608,8 @@ ConditionalNode::simplify()
     else
       return _args[2].release();
   }
+
+  return this;
 }
 
 Node *
@@ -594,14 +626,7 @@ ConditionalNode::D(unsigned int id)
  *
  ********************************************************/
 
-unsigned short
-Tree::precedence()
-{
-  if (_type == TokenType::OPERATOR)
-    return operatorProperty(_operator_type)._precedence;
-
-  return 0;
-}
+#if 0
 
 std::string
 Tree::format()
@@ -743,11 +768,7 @@ Tree::simplify()
 
   return false;
 }
-
-std::unique_ptr<Tree>
-D(unsigned int _id)
-{
-}
+#endif
 
 // end namespace SymbolicMath
 }
