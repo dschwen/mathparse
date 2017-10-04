@@ -29,9 +29,7 @@ enum class UnaryOperatorNodeType
 
 enum class BinaryOperatorNodeType
 {
-  ADDITION,
   SUBTRACTION,
-  MULTIPLICATION,
   DIVISION,
   MODULO,
   POWER,

@@ -120,14 +120,8 @@ BinaryOperatorNode::value()
 
   switch (_type)
   {
-    case BinaryOperatorNodeType::ADDITION:
-      return A + B;
-
     case BinaryOperatorNodeType::SUBTRACTION:
       return A - B;
-
-    case BinaryOperatorNodeType::MULTIPLICATION:
-      return A * B;
 
     case BinaryOperatorNodeType::DIVISION:
       return A / B;
@@ -184,11 +178,6 @@ BinaryOperatorNode::simplify()
 
   switch (_type)
   {
-    case BinaryOperatorNodeType::ADDITION:
-      return (new MultinaryOperatorNode(MultinaryOperatorNodeType::ADDITION,
-                                        {_args[0].release(), _args[1].release()}))
-          ->simplify();
-
     case BinaryOperatorNodeType::SUBTRACTION:
       // 0 - b = -b
       if (_args[0]->is(0.0))
@@ -199,11 +188,6 @@ BinaryOperatorNode::simplify()
         return _args[0].release();
 
       return this;
-
-    case BinaryOperatorNodeType::MULTIPLICATION:
-      return (new MultinaryOperatorNode(MultinaryOperatorNodeType::MULTIPLICATION,
-                                        {_args[0].release(), _args[1].release()}))
-          ->simplify();
 
     case BinaryOperatorNodeType::DIVISION:
       // a/1 = a
@@ -224,9 +208,8 @@ BinaryOperatorNode::simplify()
         return (new BinaryOperatorNode(
                     BinaryOperatorNodeType::POWER,
                     arg0->_args[0].release(),
-                    new BinaryOperatorNode(BinaryOperatorNodeType::MULTIPLICATION,
-                                           arg0->_args[1].release(),
-                                           _args[1].release())))
+                    new MultinaryOperatorNode(MultinaryOperatorNodeType::MULTIPLICATION,
+                                              {arg0->_args[1].release(), _args[1].release()})))
             ->simplify();
       }
 
@@ -249,8 +232,8 @@ unsigned short
 BinaryOperatorNode::precedence()
 {
   const auto index = static_cast<int>(_type);
-  //                                        +  -  *  /  %  ^  |   &
-  const std::vector<unsigned short> list = {6, 6, 5, 5, 5, 4, 14, 13};
+  //                                        -  /  %  ^  |   &
+  const std::vector<unsigned short> list = {6, 5, 5, 4, 14, 13};
 
   if (index >= list.size())
     fatalError("Unknown operator");
@@ -320,7 +303,69 @@ MultinaryOperatorNode::formatTree(std::string indent)
 Node *
 MultinaryOperatorNode::simplify()
 {
-  fatalError("Operator not implemented");
+  for (auto & arg : _args)
+    arg.reset(arg->simplify());
+
+  std::vector<Node *> new_args;
+  RealNumberNode * constant = nullptr;
+
+  switch (_type)
+  {
+    case MultinaryOperatorNodeType::ADDITION:
+      for (auto & arg : _args)
+      {
+        if (arg->is(NumberNodeType::_ANY))
+        {
+          if (!constant)
+            constant = new RealNumberNode(arg->value());
+          else
+            constant->setValue(constant->value() + arg->value());
+        }
+        else if (arg->is(MultinaryOperatorNodeType::ADDITION))
+        {
+          auto multi_arg = static_cast<MultinaryOperatorNode *>(arg.get());
+          for (auto & child_arg : multi_arg->_args)
+            new_args.push_back(child_arg.release());
+        }
+        else
+          new_args.push_back(arg.release());
+      }
+
+      if (constant && constant->value() != 0.0)
+        new_args.push_back(constant);
+
+      return new MultinaryOperatorNode(MultinaryOperatorNodeType::ADDITION, new_args);
+
+    case MultinaryOperatorNodeType::MULTIPLICATION:
+      for (auto & arg : _args)
+      {
+        if (arg->is(NumberNodeType::_ANY))
+        {
+          if (!constant)
+            constant = new RealNumberNode(arg->value());
+          else
+            constant->setValue(constant->value() * arg->value());
+        }
+        else if (arg->is(MultinaryOperatorNodeType::MULTIPLICATION))
+        {
+          auto multi_arg = static_cast<MultinaryOperatorNode *>(arg.get());
+          for (auto & child_arg : multi_arg->_args)
+            new_args.push_back(child_arg.release());
+        }
+        else
+          new_args.push_back(arg.release());
+      }
+
+      if (constant && constant->value() != 1.0)
+        new_args.push_back(constant);
+
+      return new MultinaryOperatorNode(MultinaryOperatorNodeType::MULTIPLICATION, new_args);
+
+    default:
+      fatalError("Operator not implemented");
+  }
+
+  return this;
 }
 
 Node *
@@ -658,116 +703,6 @@ Tree::formatTree(std::string indent)
   return out;
 }
 
-bool
-Tree::simplify()
-{
-  //
-  // constant folding
-  //
-  bool all_constant = true;
-  for (auto & child : _children)
-  {
-    const bool child_constant = child->simplify();
-    all_constant = all_constant && child_constant;
-  }
-  if (all_constant)
-  {
-    _real = value();
-    _type = TokenType::NUMBER;
-    _children.clear();
-    return true;
-  }
-
-  //
-  // operator specific quick simplifications
-  //
-  if (_type == TokenType::OPERATOR)
-  {
-    // gather child summands
-    if (_operator_type == OperatorType::ADDITION)
-    {
-      std::vector<std::unique_ptr<Tree>> arguments;
-      for (auto & child : _children)
-        if (child->_type == TokenType::OPERATOR && child->_operator_type == _operator_type)
-        {
-          for (auto & grandchild : child->_children)
-            if (!grandchild->isNumber(0.0))
-              arguments.push_back(std::move(grandchild));
-        }
-        else if (!child->isNumber(0.0))
-          arguments.push_back(std::move(child));
-
-      _children = std::move(arguments);
-    }
-    else if (_operator_type == OperatorType::MULTIPLICATION)
-    {
-      std::vector<std::unique_ptr<Tree>> arguments;
-      for (auto & child : _children)
-        if (child->_type == TokenType::OPERATOR && child->_operator_type == _operator_type)
-        {
-          for (auto & grandchild : child->_children)
-          {
-            if (grandchild->isNumber(0.0))
-            {
-              _real = 0.0;
-              _type = TokenType::NUMBER;
-              _children.clear();
-              return true;
-            }
-            if (!grandchild->isNumber(1.0))
-              arguments.push_back(std::move(grandchild));
-          }
-        }
-        else
-        {
-          if (child->isNumber(0.0))
-          {
-            _real = 0.0;
-            _type = TokenType::NUMBER;
-            _children.clear();
-            return true;
-          }
-          if (!child->isNumber(1.0))
-            arguments.push_back(std::move(child));
-        }
-
-      _children = std::move(arguments);
-    }
-
-    // simplify
-    switch (_operator_type)
-    {
-      case OperatorType::ADDITION:
-        if (_children.size() == 1)
-          become(std::move(_children[0]));
-        else if (_children.size() == 0)
-        {
-          _real = 0.0;
-          _type = TokenType::NUMBER;
-          _children.clear();
-          return true;
-        }
-        break;
-
-      case OperatorType::MULTIPLICATION:
-        if (_children.size() == 1)
-          become(std::move(_children[0]));
-        else if (_children.size() == 0)
-        {
-          _real = 1.0;
-          _type = TokenType::NUMBER;
-          _children.clear();
-          return true;
-        }
-        break;
-
-      default:
-        return false;
-    }
-  }
-
-  return false;
-}
 #endif
 
 // end namespace SymbolicMath

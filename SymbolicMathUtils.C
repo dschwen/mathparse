@@ -18,7 +18,7 @@ stringify(UnaryOperatorNodeType type)
 std::string
 stringify(BinaryOperatorNodeType type)
 {
-  return stringifyHelper(type, {"+", "-", "*", "/", "%", "^", "|", "&"});
+  return stringifyHelper(type, {"-", "/", "%", "^", "|", "&"});
 }
 
 std::string

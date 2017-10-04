@@ -6,6 +6,7 @@
 #include <vector>
 #include <memory>
 #include <array>
+#include <stack>
 #include <type_traits>
 
 typedef double Real;
@@ -91,7 +92,7 @@ template <typename Enum>
 class MultinaryNode : public Node
 {
 public:
-  MultinaryNode(Enum type, std::initializer_list<Node *> args) : _type(type)
+  MultinaryNode(Enum type, std::vector<Node *> args) : _type(type)
   {
     for (auto arg : args)
       _args.emplace_back(arg);
@@ -131,6 +132,8 @@ public:
 
   bool is(NumberNodeType type) override;
   bool is(Real value) override { return value == _value; };
+
+  void setValue(Real value) { _value = value; }
 
 protected:
   Real _value;

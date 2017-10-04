@@ -10,7 +10,10 @@ namespace SymbolicMath
 {
 typedef double Real;
 
-template <class TNode, typename TEnum>
+/***************************************************
+ * Token classes emmitted by the Tokenizer
+ ***************************************************/
+
 struct Token
 {
   Token() : _type(TokenType::INVALID), _pos(0) {}
@@ -36,9 +39,17 @@ struct Token
   // for OPENING_BRACKET this holds the argument counter
   int _integer;
   Real _real;
+};
 
+template <class TNode, typename TEnum>
+struct TreeToken : public Token
+{
   Node * buildNode(std::stack<Node *> & stack) { return new TNode(type, stack); }
 };
+
+/***************************************************
+ * Tokenizer that parses an expression string
+ ***************************************************/
 
 class Tokenizer
 {
