@@ -173,7 +173,8 @@ enum class BracketType
 {
   ROUND,
   SQUARE,
-  CURLY
+  CURLY,
+  _INVALID
 };
 
 FunctionType identifyFunction(const std::string & op);

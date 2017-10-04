@@ -33,21 +33,21 @@ class Token
 public:
   Token(std::size_t pos) : _pos(pos) {}
 
-  bool isInvalid() { return false; }
-  bool isOperator() { return false; }
-  bool isOpeningBracket() { return false; }
-  bool isClosingBracket() { return false; }
-  bool isNumber() { return false; }
-  bool isFunction() { return false; }
-  bool isSymbol() { return false; }
-  bool isComma() { return false; }
-  bool isEnd() { return false; }
+  virtual bool isInvalid() { return false; }
+  virtual bool isOperator() { return false; }
+  virtual bool isOpeningBracket() { return false; }
+  virtual bool isClosingBracket() { return false; }
+  virtual bool isNumber() { return false; }
+  virtual bool isFunction() { return false; }
+  virtual bool isSymbol() { return false; }
+  virtual bool isComma() { return false; }
+  virtual bool isEnd() { return false; }
 
-  Real asNumber() { return NAN; };
-  std::string asString() { return ""; };
+  virtual Real asNumber() { return NAN; };
+  virtual std::string asString() { return ""; };
 
-  unsigned short arguments() { return 0; }
-  Node * node(std::stack<Node *> & stack) { return nullptr; }
+  virtual unsigned short arguments() { return 0; }
+  virtual Node * node(std::stack<Node *> & stack) { return nullptr; }
 
 protected:
   std::size_t _pos;
@@ -57,22 +57,22 @@ class EndToken : public Token
 {
 public:
   EndToken(std::size_t pos) : Token(pos) {}
-  bool isEnd() { return true; }
+  bool isEnd() override { return true; }
 };
 
 class InvalidToken : public Token
 {
 public:
   InvalidToken(std::size_t pos) : Token(pos) {}
-  bool isInvalid() { return true; }
+  bool isInvalid() override { return true; }
 };
 
 class SymbolToken : public Token
 {
 public:
   SymbolToken(const std::string & string, std::size_t pos) : Token(pos), _string(string) {}
-  bool isSymbol() { return true; }
-  std::string asString() { return _string; };
+  bool isSymbol() override { return true; }
+  std::string asString() override { return _string; };
 
 protected:
   std::string _string;
@@ -81,8 +81,8 @@ protected:
 class NumberToken : public Token
 {
   StringToken(Real number, std::size_t pos) : Token(pos), _number(number) {}
-  bool isNumber() { return true; }
-  Real asNumber() { return _number; };
+  bool isNumber() override { return true; }
+  Real asNumber() override { return _number; };
 
 protected:
   Real _number;
@@ -90,9 +90,12 @@ protected:
 
 class BracketToken : public Token
 {
-  StringToken(char bracket, std::size_t pos);
-  bool isOpeningBracket() { return _opening; }
-  bool isClosingBracket() { return !_opening; }
+  BracketToken(char bracket, std::size_t pos);
+  bool isOpeningBracket() override { return _opening; }
+  bool isClosingBracket() override { return !_opening; }
+
+  static BracketType opening(char c);
+  static BracketType closing(char c);
 
 protected:
   bool _opening;
@@ -104,8 +107,9 @@ class OperatorToken : public Token
   using Token::Token;
 
 public:
-  bool isOperator() { return true; }
-  static build(const std::string & string, std::size_t pos);
+  bool isOperator() override { return true; }
+  virtual bool isInvalid() { return true; }
+  static OperatorToken * build(const std::string & string, std::size_t pos);
 };
 
 class UnaryOperatorToken : public OperatorToken
@@ -114,9 +118,9 @@ public:
   UnaryOperatorToken(UnaryOperatorNodeType type, std::size_t pos) : OperatorToken(pos), _type(type)
   {
   }
-  bool isInvalid() { return _type == UnaryOperatorNodeType::_INVALID; }
-  unsigned short arguments() { return 1; }
-  Node * node(std::stack<Node *> & stack) { return new UnaryOperatorNode(_type, stack); }
+  bool isInvalid() override { return _type == UnaryOperatorNodeType::_INVALID; }
+  unsigned short arguments() override { return 1; }
+  Node * node(std::stack<Node *> & stack) override { return new UnaryOperatorNode(_type, stack); }
 
 protected:
   UnaryOperatorNodeType _type;
@@ -129,9 +133,9 @@ public:
     : OperatorToken(pos), _type(type)
   {
   }
-  bool isInvalid() { return _type == BinaryOperatorNodeType::_INVALID; }
-  unsigned short arguments() { return 2; }
-  Node * node(std::stack<Node *> & stack) { return new BinaryOperatorNode(_type, stack); }
+  bool isInvalid() override { return _type == BinaryOperatorNodeType::_INVALID; }
+  unsigned short arguments() override { return 2; }
+  Node * node(std::stack<Node *> & stack) override { return new BinaryOperatorNode(_type, stack); }
 
 protected:
   BinaryOperatorNodeType _type;
@@ -144,9 +148,12 @@ public:
     : OperatorToken(pos), _type(type)
   {
   }
-  bool isInvalid() { return _type == MultinaryOperatorNodeType::_INVALID; }
-  unsigned short arguments() { return 2; }
-  Node * node(std::stack<Node *> & stack) { return new MultinaryOperatorNode(_type, stack); }
+  bool isInvalid() override { return _type == MultinaryOperatorNodeType::_INVALID; }
+  unsigned short arguments() override { return 2; }
+  Node * node(std::stack<Node *> & stack) override
+  {
+    return new MultinaryOperatorNode(_type, stack);
+  }
 
 protected:
   MultinaryOperatorNodeType _type;
@@ -157,8 +164,9 @@ class FunctionToken : public Token
   using Token::Token;
 
 public:
-  static build(const std::string & string, std::size_t pos);
-  bool isFunction() { return true; }
+  static FunctionToken * build(const std::string & string, std::size_t pos);
+  bool isFunction() override { return true; }
+  virtual bool isInvalid() { return true; }
 };
 
 class UnaryFunctionToken : public FunctionToken
@@ -167,9 +175,9 @@ public:
   UnaryFunctionToken(UnaryFunctionNodeType type, std::size_t pos) : FunctionToken(pos), _type(type)
   {
   }
-  bool isInvalid() { return _type == UnaryFunctionNodeType::_INVALID; }
-  unsigned short arguments() { return 1; }
-  Node * node(std::stack<Node *> & stack) { return new UnaryFunctionNode(_type, stack); }
+  bool isInvalid() override { return _type == UnaryFunctionNodeType::_INVALID; }
+  unsigned short arguments() override { return 1; }
+  Node * node(std::stack<Node *> & stack) override { return new UnaryFunctionNode(_type, stack); }
 
 protected:
   UnaryFunctionNodeType _type;
@@ -182,9 +190,9 @@ public:
     : FunctionToken(pos), _type(type)
   {
   }
-  bool isInvalid() { return _type == BinaryFunctionNodeType::_INVALID; }
-  unsigned short arguments() { return 2; }
-  Node * node(std::stack<Node *> & stack) { return new BinaryFunctionNode(_type, stack); }
+  bool isInvalid() override { return _type == BinaryFunctionNodeType::_INVALID; }
+  unsigned short arguments() override { return 2; }
+  Node * node(std::stack<Node *> & stack) override { return new BinaryFunctionNode(_type, stack); }
 
 protected:
   BinaryFunctionNodeType _type;
@@ -194,9 +202,9 @@ class ConditionalToken : public FunctionToken
 {
 public:
   ConditionalToken(ConditionalNodeType type, std::size_t pos) : FunctionToken(pos), _type(type) {}
-  bool isInvalid() { return _type == ConditionalNodeType::_INVALID; }
-  unsigned short arguments() { return 3; }
-  Node * node(std::stack<Node *> & stack) { return new ConditionalNode(_type, stack); }
+  bool isInvalid() override { return _type == ConditionalNodeType::_INVALID; }
+  unsigned short arguments() override { return 3; }
+  Node * node(std::stack<Node *> & stack) override { return new ConditionalNode(_type, stack); }
 
 protected:
   ConditionalNodeType _type;
@@ -222,8 +230,7 @@ private:
   ///@{ classification functions for the next expression character
   bool isDigit();
   bool isOperator();
-  bool isOpeningBracket();
-  bool isClosingBracket();
+  bool isBracket();
   bool isAlphaFirst();
   bool isAlphaCont();
   ///@}
@@ -234,13 +241,8 @@ private:
   /// skip the next whitespace characters
   void skipWhite();
 
-  Token makeToken(TokenType type);
-  Token makeToken(TokenType type, const std::string & data);
-  Token makeToken(TokenType type, BracketType function_type);
-  Token makeToken(OperatorType operator_type);
-  Token makeToken(FunctionType function_type);
-  Token makeToken(int integer);
-  Token makeToken(Real real);
+  /// curent tokenizer position
+  std::size_t pos() { return std::distance(_mpt_expression.begin(), _c); }
 };
 
 // end namespace SymbolicMath

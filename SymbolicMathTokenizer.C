@@ -8,6 +8,71 @@
 namespace SymbolicMath
 {
 
+BracketToken::BracketToken(char bracket, std::size_t pos) : Token(pos), _opening(false)
+{
+  if ((_type = opening(c)) != BracketType::_INVALID)
+    _opening = true;
+  else
+    _type = closing(c);
+}
+
+BracketType
+BracketToken::opening(char c)
+{
+  const std::string parenthesis("([{");
+  return parenthesis.find_first_of(c) != std::string::npos;
+}
+
+BracketType
+BracketToken::closing(char c)
+{
+  const std::string parenthesis(")]}");
+  return parenthesis.find_first_of(c) != std::string::npos;
+}
+
+OperatorToken *
+OperatorToken::build(const std::string & string, std::size_t pos)
+{
+  // search multinary and binary operators first
+  for (auto & pair : _multinary_operators)
+    if (pair.second._form == string)
+      return new MultinaryOperatorToken(pair, pos);
+
+  for (auto & pair : _binary_operators)
+    if (pair.second._form == string)
+      return new BinaryOperatorToken(pair, pos);
+
+  // unary operators + and - are discriminated in the parser
+  for (auto & pair : _unary_operators)
+    if (pair.second._form == string)
+      return new UnaryOperatorToken(pair, pos);
+
+  // return an invalid operator token
+  return new OperatorToken(pos);
+}
+
+FunctionToken *
+FunctionToken::build(const std::string & string, std::size_t pos)
+{
+  if (string == "if")
+    return new ConditionalToken(ConditionalNodeType::IF, pos);
+
+  for (auto & pair : _unary_functions)
+    if (pair.second == string)
+      return new UnaryFunctionToken(pair.first, pos);
+
+  for (auto & pair : _binary_functions)
+    if (pair.second == string)
+      return new BinaryFunctionToken(pair.first, pos);
+
+  // return an invalid function token
+  return new FunctionToken(pos);
+}
+
+/***************************************************
+ * Tokenizer that parses an expression string
+ ***************************************************/
+
 Tokenizer::Tokenizer(const std::string expression)
   : _mpt_expression(expression + '\0'), _c(_mpt_expression.begin())
 {
@@ -28,17 +93,10 @@ Tokenizer::isOperator()
 }
 
 bool
-Tokenizer::isOpeningBracket()
+Tokenizer::isBracket()
 {
-  const std::string parenthesis("([{");
-  return parenthesis.find_first_of(*_c) != std::string::npos;
-}
-
-bool
-Tokenizer::isClosingBracket()
-{
-  const std::string parenthesis(")]}");
-  return parenthesis.find_first_of(*_c) != std::string::npos;
+  return BracketToken::opening(*_c) != BracketType::_INVALID ||
+         BracketToken::closing(*_c) != BracketType::_INVALID;
 }
 
 bool
