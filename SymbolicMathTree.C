@@ -20,6 +20,21 @@ Node::checkIndex(const std::vector<unsigned int> & index)
       fatalError("Index out of range");
 }
 
+std::string
+ValueProviderNode::formatTree(std::string indent)
+{
+  return indent + "_val" + std::to_string(_id) + '\n';
+}
+
+Node *
+ValueProviderNode::D(unsigned int /*_id*/)
+{
+  if (id == _id)
+    return new RealNumberNode(1.0);
+  else
+    return new RealNumberNode(0.0);
+}
+
 Node *
 NumberNode::D(unsigned int /*_id*/)
 {

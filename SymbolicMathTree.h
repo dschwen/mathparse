@@ -107,6 +107,14 @@ protected:
 
 class ValueProviderNode : public Node
 {
+public:
+  std::string format() override { return "_val" + std::to_string(_id); }
+  std::string formatTree(std::string indent = "") override;
+
+  Node * D(unsigned int _id) override;
+
+protected:
+  unsigned int _id;
 };
 
 class NumberNode : public Node

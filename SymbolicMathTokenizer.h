@@ -14,37 +14,192 @@ typedef double Real;
  * Token classes emmitted by the Tokenizer
  ***************************************************/
 
-struct Token
+// enum class TokenType
+// {
+//   OPERATOR,
+//   FUNCTION,
+//   OPENING_BRACKET,
+//   CLOSING_BRACKET,
+//   NUMBER,
+//   VARIABLE,
+//   COMMA,
+//   COMPONENT,
+//   INVALID,
+//   END
+// };
+
+class Token
 {
-  Token() : _type(TokenType::INVALID), _pos(0) {}
-  Token(TokenType type, const std::string & string, std::size_t pos);
-  Token(TokenType type, OperatorType operator_type, std::size_t pos);
-  Token(TokenType type, FunctionType operator_type, std::size_t pos);
-  Token(TokenType type, BracketType operator_type, std::size_t pos);
-  Token(TokenType type, Real real, std::size_t pos);
-  ~Token() {}
+public:
+  Token(std::size_t pos) : _pos(pos) {}
 
-  TokenType _type;
+  bool isInvalid() { return false; }
+  bool isOperator() { return false; }
+  bool isOpeningBracket() { return false; }
+  bool isClosingBracket() { return false; }
+  bool isNumber() { return false; }
+  bool isFunction() { return false; }
+  bool isSymbol() { return false; }
+  bool isComma() { return false; }
+  bool isEnd() { return false; }
+
+  Real asNumber() { return NAN; };
+  std::string asString() { return ""; };
+
+  unsigned short arguments() { return 0; }
+  Node * node(std::stack<Node *> & stack) { return nullptr; }
+
+protected:
   std::size_t _pos;
-
-  // might drop this later and have the tokenizer look up variable IDs
-  std::string _string;
-
-  union {
-    OperatorType _operator_type;
-    FunctionType _function_type;
-    BracketType _bracket_type;
-  };
-
-  // for OPENING_BRACKET this holds the argument counter
-  int _integer;
-  Real _real;
 };
 
-template <class TNode, typename TEnum>
-struct TreeToken : public Token
+class EndToken : public Token
 {
-  Node * buildNode(std::stack<Node *> & stack) { return new TNode(type, stack); }
+public:
+  EndToken(std::size_t pos) : Token(pos) {}
+  bool isEnd() { return true; }
+};
+
+class InvalidToken : public Token
+{
+public:
+  InvalidToken(std::size_t pos) : Token(pos) {}
+  bool isInvalid() { return true; }
+};
+
+class SymbolToken : public Token
+{
+public:
+  SymbolToken(const std::string & string, std::size_t pos) : Token(pos), _string(string) {}
+  bool isSymbol() { return true; }
+  std::string asString() { return _string; };
+
+protected:
+  std::string _string;
+};
+
+class NumberToken : public Token
+{
+  StringToken(Real number, std::size_t pos) : Token(pos), _number(number) {}
+  bool isNumber() { return true; }
+  Real asNumber() { return _number; };
+
+protected:
+  Real _number;
+};
+
+class BracketToken : public Token
+{
+  StringToken(char bracket, std::size_t pos);
+  bool isOpeningBracket() { return _opening; }
+  bool isClosingBracket() { return !_opening; }
+
+protected:
+  bool _opening;
+  BracketType _type;
+};
+
+class OperatorToken : public Token
+{
+  using Token::Token;
+
+public:
+  bool isOperator() { return true; }
+  static build(const std::string & string, std::size_t pos);
+};
+
+class UnaryOperatorToken : public OperatorToken
+{
+public:
+  UnaryOperatorToken(UnaryOperatorNodeType type, std::size_t pos) : OperatorToken(pos), _type(type)
+  {
+  }
+  bool isInvalid() { return _type == UnaryOperatorNodeType::_INVALID; }
+  unsigned short arguments() { return 1; }
+  Node * node(std::stack<Node *> & stack) { return new UnaryOperatorNode(_type, stack); }
+
+protected:
+  UnaryOperatorNodeType _type;
+};
+
+class BinaryOperatorToken : public OperatorToken
+{
+public:
+  BinaryOperatorToken(BinaryOperatorNodeType type, std::size_t pos)
+    : OperatorToken(pos), _type(type)
+  {
+  }
+  bool isInvalid() { return _type == BinaryOperatorNodeType::_INVALID; }
+  unsigned short arguments() { return 2; }
+  Node * node(std::stack<Node *> & stack) { return new BinaryOperatorNode(_type, stack); }
+
+protected:
+  BinaryOperatorNodeType _type;
+};
+
+class MultinaryOperatorToken : public OperatorToken
+{
+public:
+  MultinaryOperatorToken(MultinaryOperatorNodeType type, std::size_t pos)
+    : OperatorToken(pos), _type(type)
+  {
+  }
+  bool isInvalid() { return _type == MultinaryOperatorNodeType::_INVALID; }
+  unsigned short arguments() { return 2; }
+  Node * node(std::stack<Node *> & stack) { return new MultinaryOperatorNode(_type, stack); }
+
+protected:
+  MultinaryOperatorNodeType _type;
+};
+
+class FunctionToken : public Token
+{
+  using Token::Token;
+
+public:
+  static build(const std::string & string, std::size_t pos);
+  bool isFunction() { return true; }
+};
+
+class UnaryFunctionToken : public FunctionToken
+{
+public:
+  UnaryFunctionToken(UnaryFunctionNodeType type, std::size_t pos) : FunctionToken(pos), _type(type)
+  {
+  }
+  bool isInvalid() { return _type == UnaryFunctionNodeType::_INVALID; }
+  unsigned short arguments() { return 1; }
+  Node * node(std::stack<Node *> & stack) { return new UnaryFunctionNode(_type, stack); }
+
+protected:
+  UnaryFunctionNodeType _type;
+};
+
+class BinaryFunctionToken : public FunctionToken
+{
+public:
+  BinaryFunctionToken(BinaryFunctionNodeType type, std::size_t pos)
+    : FunctionToken(pos), _type(type)
+  {
+  }
+  bool isInvalid() { return _type == BinaryFunctionNodeType::_INVALID; }
+  unsigned short arguments() { return 2; }
+  Node * node(std::stack<Node *> & stack) { return new BinaryFunctionNode(_type, stack); }
+
+protected:
+  BinaryFunctionNodeType _type;
+};
+
+class ConditionalToken : public FunctionToken
+{
+public:
+  ConditionalToken(ConditionalNodeType type, std::size_t pos) : FunctionToken(pos), _type(type) {}
+  bool isInvalid() { return _type == ConditionalNodeType::_INVALID; }
+  unsigned short arguments() { return 3; }
+  Node * node(std::stack<Node *> & stack) { return new ConditionalNode(_type, stack); }
+
+protected:
+  ConditionalNodeType _type;
 };
 
 /***************************************************

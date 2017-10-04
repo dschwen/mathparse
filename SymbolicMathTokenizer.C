@@ -70,7 +70,7 @@ Tokenizer::skipWhite()
     ++_c;
 }
 
-Token
+Token *
 Tokenizer::getToken()
 {
   skipWhite();

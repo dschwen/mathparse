@@ -8,14 +8,20 @@
 namespace SymbolicMath
 {
 
-//// New symbols
+struct OperatorProperties
+{
+  const unsigned short _precedence;
+  const bool _left_associative;
+  const std::string _form;
+};
 
 enum class NumberNodeType
 {
   REAL,
   INTEGER,
   RATIONAL,
-  _ANY
+  _ANY,
+  _INVALID
 };
 
 enum class UnaryOperatorNodeType
@@ -24,8 +30,15 @@ enum class UnaryOperatorNodeType
   MINUS,
   FACULTY,
   NOT,
-  _ANY
+  _ANY,
+  _INVALID
 };
+
+const std::map<UnaryOperatorNodeType, OperatorProperties> _unary_operators = {
+    {UnaryOperatorNodeType::PLUS, {3, false, "+"}},
+    {UnaryOperatorNodeType::MINUS, {3, false, "-"}},
+    {UnaryOperatorNodeType::FACULTY, {3, false, "!"}},
+    {UnaryOperatorNodeType::NOT, {3, false, "~"}}};
 
 enum class BinaryOperatorNodeType
 {
@@ -35,16 +48,41 @@ enum class BinaryOperatorNodeType
   POWER,
   LOGICAL_OR,
   LOGICAL_AND,
-  _ANY
+  LESS_THAN,
+  GREATER_THAN,
+  LESS_EQUAL,
+  GREATER_EQUAL,
+  EQUAL,
+  NOT_EQUAL,
+  _ANY,
+  _INVALID
 };
+
+const std::map<UnaryOperatorNodeType, OperatorProperties> _binary_operators = {
+    {BinaryOperatorNodeType::SUBTRACTION, {6, true, "-"}},
+    {BinaryOperatorNodeType::DIVISION, {5, true, "/"}},
+    {BinaryOperatorNodeType::POWER, {4, true, "^"}},
+    {BinaryOperatorNodeType::LOGICAL_OR, {14, true, "|"}},
+    {BinaryOperatorNodeType::LOGICAL_AND, {13, true, "&"}},
+    {BinaryOperatorNodeType::LESS_THAN, {8, true, "<"}},
+    {BinaryOperatorNodeType::GREATER_THAN, {8, true, ">"}},
+    {BinaryOperatorNodeType::LESS_EQUAL, {8, true, "<="}},
+    {BinaryOperatorNodeType::GREATER_EQUAL, {8, true, ">="}},
+    {BinaryOperatorNodeType::EQUAL, {9, true, "=="}},
+    {BinaryOperatorNodeType::NOT_EQUAL, {9, true, "!="}}};
 
 enum class MultinaryOperatorNodeType
 {
   ADDITION,
   MULTIPLICATION,
   COMPONENT,
-  _ANY
+  _ANY,
+  _INVALID
 };
+
+const std::map<MultinaryOperatorNodeType, OperatorProperties> _multinary_operators = {
+    {MultinaryOperatorNodeType::ADDITION, {6, true, "+"}},
+    {MultinaryOperatorNodeType::MULTIPLICATION, {5, true, "*"}}};
 
 enum class UnaryFunctionNodeType
 {
@@ -80,8 +118,27 @@ enum class UnaryFunctionNodeType
   TAN,
   TANH,
   TRUNC,
-  _ANY
+  _ANY,
+  _INVALID
 };
+
+const std::map<UnaryFunctionNodeType, std::string> _unary_functions = {
+    {UnaryFunctionNodeType::ABS, "abs"},     {UnaryFunctionNodeType::ACOS, "acos"},
+    {UnaryFunctionNodeType::ACOSH, "acosh"}, {UnaryFunctionNodeType::ARG, "arg"},
+    {UnaryFunctionNodeType::ASIN, "asin"},   {UnaryFunctionNodeType::ASINH, "asinh"},
+    {UnaryFunctionNodeType::ATAN, "atan"},   {UnaryFunctionNodeType::ATANH, "atanh"},
+    {UnaryFunctionNodeType::CBRT, "cbrt"},   {UnaryFunctionNodeType::CEIL, "ceil"},
+    {UnaryFunctionNodeType::CONJ, "conj"},   {UnaryFunctionNodeType::COS, "cos"},
+    {UnaryFunctionNodeType::COSH, "cosh"},   {UnaryFunctionNodeType::COT, "cot"},
+    {UnaryFunctionNodeType::CSC, "csc"},     {UnaryFunctionNodeType::EXP, "exp"},
+    {UnaryFunctionNodeType::EXP2, "exp2"},   {UnaryFunctionNodeType::FLOOR, "floor"},
+    {UnaryFunctionNodeType::IMAG, "imag"},   {UnaryFunctionNodeType::INT, "int"},
+    {UnaryFunctionNodeType::LOG, "log"},     {UnaryFunctionNodeType::LOG10, "log10"},
+    {UnaryFunctionNodeType::LOG2, "log2"},   {UnaryFunctionNodeType::REAL, "real"},
+    {UnaryFunctionNodeType::SEC, "sec"},     {UnaryFunctionNodeType::SIN, "sin"},
+    {UnaryFunctionNodeType::SINH, "sinh"},   {UnaryFunctionNodeType::SQRT, "sqrt"},
+    {UnaryFunctionNodeType::T, "T"},         {UnaryFunctionNodeType::TAN, "tan"},
+    {UnaryFunctionNodeType::TANH, "tanh"},   {UnaryFunctionNodeType::TRUNC, "trunc"}};
 
 enum class BinaryFunctionNodeType
 {
@@ -92,29 +149,24 @@ enum class BinaryFunctionNodeType
   PLOG,
   POLAR,
   POW,
-  _ANY
+  _ANY,
+  _INVALID
 };
+
+const std::map<BinaryFunctionNodeType, std::string> _binary_functions = {
+    {BinaryFunctionNodeType::ATAN2, "atan2"},
+    {BinaryFunctionNodeType::HYPOT, "hypot"},
+    {BinaryFunctionNodeType::MAX, "max"},
+    {BinaryFunctionNodeType::MIN, "min"},
+    {BinaryFunctionNodeType::PLOG, "plog"},
+    {BinaryFunctionNodeType::POLAR, "polar"},
+    {BinaryFunctionNodeType::POW, "pow"}};
 
 enum class ConditionalNodeType
 {
   IF,
-  _ANY
-};
-
-//// Old symbols
-
-enum class TokenType
-{
-  OPERATOR,
-  FUNCTION,
-  OPENING_BRACKET,
-  CLOSING_BRACKET,
-  NUMBER,
-  VARIABLE,
-  COMMA,
-  COMPONENT,
-  INVALID,
-  END
+  _ANY,
+  _INVALID
 };
 
 enum class BracketType
@@ -124,137 +176,24 @@ enum class BracketType
   CURLY
 };
 
-enum class FunctionType
-{
-  ABS,
-  ACOS,
-  ACOSH,
-  ARG,
-  ASIN,
-  ASINH,
-  ATAN,
-  ATAN2,
-  ATANH,
-  CBRT,
-  CEIL,
-  CONJ,
-  COS,
-  COSH,
-  COT,
-  CSC,
-  EXP,
-  EXP2,
-  FLOOR,
-  HYPOT,
-  IF,
-  IMAG,
-  INT,
-  LOG,
-  LOG10,
-  LOG2,
-  MAX,
-  MIN,
-  PLOG,
-  POLAR,
-  POW,
-  REAL,
-  SEC,
-  SIN,
-  SINH,
-  SQRT,
-  T,
-  TAN,
-  TANH,
-  TRUNC,
-
-  INVALID
-};
-
-struct FunctionProperties
-{
-  const unsigned short _arguments;
-  const std::string _form;
-};
-
-static const std::vector<FunctionProperties> _functions = {
-    {1, "abs"},   {1, "acos"},  {1, "acosh"}, {1, "arg"},   {1, "asin"},  {1, "asinh"}, {1, "atan"},
-    {2, "atan2"}, {1, "atanh"}, {1, "cbrt"},  {1, "ceil"},  {1, "conj"},  {1, "cos"},   {1, "cosh"},
-    {1, "cot"},   {1, "csc"},   {1, "exp"},   {1, "exp2"},  {1, "floor"}, {2, "hypot"}, {3, "if"},
-    {1, "imag"},  {1, "int"},   {1, "log"},   {1, "log10"}, {1, "log2"},  {2, "max"},   {2, "min"},
-    {2, "plog"},  {2, "polar"}, {2, "pow"},   {1, "real"},  {1, "sec"},   {1, "sin"},   {1, "sinh"},
-    {1, "sqrt"},  {1, "T"},     {1, "tan"},   {1, "tanh"},  {1, "trunc"}};
-
-enum class OperatorType
-{
-  UNARY_PLUS,
-  UNARY_MINUS,
-  FACULTY,
-  LOGICAL_NOT,
-
-  POWER,
-
-  MULTIPLICATION,
-  DIVISION,
-  MODULO,
-
-  ADDITION,
-  SUBTRACTION,
-
-  LESS_THAN,
-  GREATER_THAN,
-  LESS_EQUAL,
-  GREATER_EQUAL,
-
-  EQUAL,
-  NOT_EQUAL,
-
-  LOGICAL_AND,
-  LOGICAL_OR,
-
-  INVALID
-};
-
-struct OperatorProperties
-{
-  const unsigned short _precedence;
-  const bool _left_associative;
-  const bool _unary;
-  const std::string _form;
-};
-
-const std::vector<OperatorProperties> _operators = {{3, false, true, "+"},
-                                                    {3, false, true, "-"},
-                                                    {3, false, true, "!"},
-                                                    {3, false, true, "~"},
-                                                    {4, true, false, "^"},
-                                                    {5, true, false, "*"},
-                                                    {5, true, false, "/"},
-                                                    {5, true, false, "%"},
-                                                    {6, true, false, "+"},
-                                                    {6, true, false, "-"},
-                                                    {8, true, false, "<"},
-                                                    {8, true, false, ">"},
-                                                    {8, true, false, "<="},
-                                                    {8, true, false, ">="},
-                                                    {9, true, false, "=="},
-                                                    {9, true, false, "!="},
-                                                    {13, true, false, "&"},
-                                                    {14, true, false, "|"}};
-
 FunctionType identifyFunction(const std::string & op);
 
-inline const FunctionProperties &
-functionProperty(FunctionType op)
+inline const OperatorProperties &
+operatorProperty(UnaryOperatorNodeType op)
 {
-  return _functions[static_cast<int>(op)];
+  auto it = _unary_operators.find(op);
+  if (it == _unary_operators.end())
+    fatalError("Unknown operator");
+  return it->second;
 }
 
-OperatorType identifyOperator(const std::string & op);
-
 inline const OperatorProperties &
-operatorProperty(OperatorType op)
+operatorProperty(BinaryOperatorNodeType op)
 {
-  return _operators[static_cast<int>(op)];
+  auto it = _binary_operators.find(op);
+  if (it == _binary_operators.end())
+    fatalError("Unknown operator");
+  return it->second;
 }
 
 // end namespace SymbolicMath
