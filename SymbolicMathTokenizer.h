@@ -43,8 +43,8 @@ public:
   virtual bool isComma() { return false; }
   virtual bool isEnd() { return false; }
 
-  virtual bool is(BinaryOperatorNodeType) { return false; }
-  virtual bool is(MultinaryOperatorNodeType) { return false; }
+  virtual bool is(BinaryOperatorType) { return false; }
+  virtual bool is(MultinaryOperatorType) { return false; }
 
   virtual Real asNumber() { return 0.0; };
   virtual std::string asString() { return ""; };
@@ -159,55 +159,55 @@ protected:
 class UnaryOperatorToken : public OperatorTokenBase
 {
 public:
-  UnaryOperatorToken(std::pair<UnaryOperatorNodeType, OperatorProperties> type_prop,
+  UnaryOperatorToken(std::pair<UnaryOperatorType, OperatorProperties> type_prop,
                      std::size_t pos)
     : OperatorTokenBase(type_prop.second, pos), _type(type_prop.first)
   {
   }
-  bool isInvalid() override { return _type == UnaryOperatorNodeType::_INVALID; }
+  bool isInvalid() override { return _type == UnaryOperatorType::_INVALID; }
   bool isUnary() override { return true; }
   unsigned short arguments() override { return 1; }
   Node * node(std::stack<Node *> & stack) override { return new UnaryOperatorNode(_type, stack); }
 
 protected:
-  UnaryOperatorNodeType _type;
+  UnaryOperatorType _type;
 };
 
 class BinaryOperatorToken : public OperatorTokenBase
 {
 public:
-  BinaryOperatorToken(std::pair<BinaryOperatorNodeType, OperatorProperties> type_prop,
+  BinaryOperatorToken(std::pair<BinaryOperatorType, OperatorProperties> type_prop,
                       std::size_t pos)
     : OperatorTokenBase(type_prop.second, pos), _type(type_prop.first)
   {
   }
-  bool isInvalid() override { return _type == BinaryOperatorNodeType::_INVALID; }
+  bool isInvalid() override { return _type == BinaryOperatorType::_INVALID; }
   unsigned short arguments() override { return 2; }
   Node * node(std::stack<Node *> & stack) override { return new BinaryOperatorNode(_type, stack); }
-  bool is(BinaryOperatorNodeType type) override { return type == _type; }
+  bool is(BinaryOperatorType type) override { return type == _type; }
 
 protected:
-  BinaryOperatorNodeType _type;
+  BinaryOperatorType _type;
 };
 
 class MultinaryOperatorToken : public OperatorTokenBase
 {
 public:
-  MultinaryOperatorToken(std::pair<MultinaryOperatorNodeType, OperatorProperties> type_prop,
+  MultinaryOperatorToken(std::pair<MultinaryOperatorType, OperatorProperties> type_prop,
                          std::size_t pos)
     : OperatorTokenBase(type_prop.second, pos), _type(type_prop.first)
   {
   }
-  bool isInvalid() override { return _type == MultinaryOperatorNodeType::_INVALID; }
+  bool isInvalid() override { return _type == MultinaryOperatorType::_INVALID; }
   unsigned short arguments() override { return 2; }
   Node * node(std::stack<Node *> & stack) override
   {
     return new MultinaryOperatorNode(_type, stack, 2);
   }
-  bool is(MultinaryOperatorNodeType type) override { return type == _type; }
+  bool is(MultinaryOperatorType type) override { return type == _type; }
 
 protected:
-  MultinaryOperatorNodeType _type;
+  MultinaryOperatorType _type;
 };
 
 class FunctionToken : public Token
@@ -223,42 +223,42 @@ public:
 class UnaryFunctionToken : public FunctionToken
 {
 public:
-  UnaryFunctionToken(UnaryFunctionNodeType type, std::size_t pos) : FunctionToken(pos), _type(type)
+  UnaryFunctionToken(UnaryFunctionType type, std::size_t pos) : FunctionToken(pos), _type(type)
   {
   }
-  bool isInvalid() override { return _type == UnaryFunctionNodeType::_INVALID; }
+  bool isInvalid() override { return _type == UnaryFunctionType::_INVALID; }
   unsigned short arguments() override { return 1; }
   Node * node(std::stack<Node *> & stack) override { return new UnaryFunctionNode(_type, stack); }
 
 protected:
-  UnaryFunctionNodeType _type;
+  UnaryFunctionType _type;
 };
 
 class BinaryFunctionToken : public FunctionToken
 {
 public:
-  BinaryFunctionToken(BinaryFunctionNodeType type, std::size_t pos)
+  BinaryFunctionToken(BinaryFunctionType type, std::size_t pos)
     : FunctionToken(pos), _type(type)
   {
   }
-  bool isInvalid() override { return _type == BinaryFunctionNodeType::_INVALID; }
+  bool isInvalid() override { return _type == BinaryFunctionType::_INVALID; }
   unsigned short arguments() override { return 2; }
   Node * node(std::stack<Node *> & stack) override { return new BinaryFunctionNode(_type, stack); }
 
 protected:
-  BinaryFunctionNodeType _type;
+  BinaryFunctionType _type;
 };
 
 class ConditionalToken : public FunctionToken
 {
 public:
-  ConditionalToken(ConditionalNodeType type, std::size_t pos) : FunctionToken(pos), _type(type) {}
-  bool isInvalid() override { return _type == ConditionalNodeType::_INVALID; }
+  ConditionalToken(ConditionalType type, std::size_t pos) : FunctionToken(pos), _type(type) {}
+  bool isInvalid() override { return _type == ConditionalType::_INVALID; }
   unsigned short arguments() override { return 3; }
   Node * node(std::stack<Node *> & stack) override { return new ConditionalNode(_type, stack); }
 
 protected:
-  ConditionalNodeType _type;
+  ConditionalType _type;
 };
 
 /***************************************************

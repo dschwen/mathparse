@@ -73,7 +73,7 @@ FunctionToken *
 FunctionToken::build(const std::string & string, std::size_t pos)
 {
   if (string == "if")
-    return new ConditionalToken(ConditionalNodeType::IF, pos);
+    return new ConditionalToken(ConditionalType::IF, pos);
 
   for (auto & pair : _unary_functions)
     if (pair.second == string)

@@ -4,31 +4,31 @@ namespace SymbolicMath
 {
 
 std::string
-stringify(NumberNodeType type)
+stringify(NumberType type)
 {
   return stringifyHelper(type, {"real", "integer", "rational"});
 }
 
 std::string
-stringify(UnaryOperatorNodeType type)
+stringify(UnaryOperatorType type)
 {
   return stringifyHelper(type, {"+", "-", "!", "^"});
 }
 
 std::string
-stringify(BinaryOperatorNodeType type)
+stringify(BinaryOperatorType type)
 {
   return stringifyHelper(type, {"-", "/", "%", "^", "|", "&"});
 }
 
 std::string
-stringify(MultinaryOperatorNodeType type)
+stringify(MultinaryOperatorType type)
 {
   return stringifyHelper(type, {"+", "*", "[]"});
 }
 
 std::string
-stringify(UnaryFunctionNodeType type)
+stringify(UnaryFunctionType type)
 {
   return stringifyHelper(type,
                          {"abs",  "acos",  "acosh", "arg",  "asin", "asinh", "atan", "atanh",
@@ -38,13 +38,13 @@ stringify(UnaryFunctionNodeType type)
 }
 
 std::string
-stringify(BinaryFunctionNodeType type)
+stringify(BinaryFunctionType type)
 {
   return stringifyHelper(type, {"atan2", "hypot", "max", "min", "plog", "polar", "pow"});
 }
 
 std::string
-stringify(ConditionalNodeType type)
+stringify(ConditionalType type)
 {
   return stringifyHelper(type, {"if"});
 }

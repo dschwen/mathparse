@@ -52,9 +52,9 @@ RealNumberNode::formatTree(std::string indent)
 }
 
 bool
-RealNumberNode::is(NumberNodeType type)
+RealNumberNode::is(NumberType type)
 {
-  return _type == NumberNodeType::REAL || _type == NumberNodeType::_ANY;
+  return _type == NumberType::REAL || _type == NumberType::_ANY;
 }
 
 /********************************************************
@@ -66,10 +66,10 @@ UnaryOperatorNode::value()
 {
   switch (_type)
   {
-    case UnaryOperatorNodeType::PLUS:
+    case UnaryOperatorType::PLUS:
       return _args[0]->value();
 
-    case UnaryOperatorNodeType::MINUS:
+    case UnaryOperatorType::MINUS:
       return -_args[0]->value();
 
     default:
@@ -82,7 +82,7 @@ UnaryOperatorNode::simplify()
 {
   switch (_type)
   {
-    case UnaryOperatorNodeType::PLUS:
+    case UnaryOperatorType::PLUS:
       return _args[0]->simplify();
 
     default:
@@ -95,11 +95,11 @@ UnaryOperatorNode::D(unsigned int id)
 {
   switch (_type)
   {
-    case UnaryOperatorNodeType::PLUS:
+    case UnaryOperatorType::PLUS:
       return _args[0]->D(id);
 
-    case UnaryOperatorNodeType::MINUS:
-      return new UnaryOperatorNode(UnaryOperatorNodeType::MINUS, _args[0]->D(id));
+    case UnaryOperatorType::MINUS:
+      return new UnaryOperatorNode(UnaryOperatorType::MINUS, _args[0]->D(id));
 
     default:
       fatalError("Unknown operator");
@@ -135,16 +135,16 @@ BinaryOperatorNode::value()
 
   switch (_type)
   {
-    case BinaryOperatorNodeType::SUBTRACTION:
+    case BinaryOperatorType::SUBTRACTION:
       return A - B;
 
-    case BinaryOperatorNodeType::DIVISION:
+    case BinaryOperatorType::DIVISION:
       return A / B;
 
-    case BinaryOperatorNodeType::LOGICAL_OR:
+    case BinaryOperatorType::LOGICAL_OR:
       return (A != 0.0 || B != 0.0) ? 1.0 : 0.0;
 
-    case BinaryOperatorNodeType::LOGICAL_AND:
+    case BinaryOperatorType::LOGICAL_AND:
       return (A != 0.0 && B != 0.0) ? 1.0 : 0.0;
 
     default:
@@ -166,8 +166,8 @@ BinaryOperatorNode::format()
 
   if (_args[1]->precedence() > precedence() ||
       (_args[1]->precedence() == precedence() &&
-       (is(BinaryOperatorNodeType::SUBTRACTION) || is(BinaryOperatorNodeType::DIVISION) ||
-        is(BinaryOperatorNodeType::MODULO) || is(BinaryOperatorNodeType::POWER))))
+       (is(BinaryOperatorType::SUBTRACTION) || is(BinaryOperatorType::DIVISION) ||
+        is(BinaryOperatorType::MODULO) || is(BinaryOperatorType::POWER))))
     out += '(' + _args[1]->format() + ')';
   else
     out += _args[1]->format();
@@ -188,15 +188,15 @@ BinaryOperatorNode::simplify()
   // constant folding
   _args[0].reset(_args[0]->simplify());
   _args[1].reset(_args[1]->simplify());
-  if (_args[0]->is(NumberNodeType::_ANY) && _args[1]->is(NumberNodeType::_ANY))
+  if (_args[0]->is(NumberType::_ANY) && _args[1]->is(NumberType::_ANY))
     return new RealNumberNode(value());
 
   switch (_type)
   {
-    case BinaryOperatorNodeType::SUBTRACTION:
+    case BinaryOperatorType::SUBTRACTION:
       // 0 - b = -b
       if (_args[0]->is(0.0))
-        return new UnaryOperatorNode(UnaryOperatorNodeType::MINUS, _args[1].release());
+        return new UnaryOperatorNode(UnaryOperatorType::MINUS, _args[1].release());
 
       // a - 0 = a
       else if (_args[1]->is(0.0))
@@ -204,7 +204,7 @@ BinaryOperatorNode::simplify()
 
       return this;
 
-    case BinaryOperatorNodeType::DIVISION:
+    case BinaryOperatorType::DIVISION:
       // a/1 = a
       if (_args[1]->is(1.0))
         return _args[0].release();
@@ -215,15 +215,15 @@ BinaryOperatorNode::simplify()
 
       return this;
 
-    case BinaryOperatorNodeType::POWER:
+    case BinaryOperatorType::POWER:
       //(a^b)^c = a^(b*c) (c00^c01) ^ c1 = c00 ^ (c01*c1)
-      if (_args[0]->is(BinaryOperatorNodeType::POWER))
+      if (_args[0]->is(BinaryOperatorType::POWER))
       {
         auto arg0 = static_cast<BinaryOperatorNode *>(_args[0].get());
         return (new BinaryOperatorNode(
-                    BinaryOperatorNodeType::POWER,
+                    BinaryOperatorType::POWER,
                     arg0->_args[0].release(),
-                    new MultinaryOperatorNode(MultinaryOperatorNodeType::MULTIPLICATION,
+                    new MultinaryOperatorNode(MultinaryOperatorType::MULTIPLICATION,
                                               {arg0->_args[1].release(), _args[1].release()})))
             ->simplify();
       }
@@ -265,7 +265,7 @@ MultinaryOperatorNode::value()
 {
   switch (_type)
   {
-    case MultinaryOperatorNodeType::ADDITION:
+    case MultinaryOperatorType::ADDITION:
     {
       Real sum = 0.0;
       for (auto & arg : _args)
@@ -273,7 +273,7 @@ MultinaryOperatorNode::value()
       return sum;
     }
 
-    case MultinaryOperatorNodeType::MULTIPLICATION:
+    case MultinaryOperatorType::MULTIPLICATION:
     {
       Real product = 1.0;
       for (auto & arg : _args)
@@ -326,17 +326,17 @@ MultinaryOperatorNode::simplify()
 
   switch (_type)
   {
-    case MultinaryOperatorNodeType::ADDITION:
+    case MultinaryOperatorType::ADDITION:
       for (auto & arg : _args)
       {
-        if (arg->is(NumberNodeType::_ANY))
+        if (arg->is(NumberType::_ANY))
         {
           if (!constant)
             constant = new RealNumberNode(arg->value());
           else
             constant->setValue(constant->value() + arg->value());
         }
-        else if (arg->is(MultinaryOperatorNodeType::ADDITION))
+        else if (arg->is(MultinaryOperatorType::ADDITION))
         {
           auto multi_arg = static_cast<MultinaryOperatorNode *>(arg.get());
           for (auto & child_arg : multi_arg->_args)
@@ -349,19 +349,19 @@ MultinaryOperatorNode::simplify()
       if (constant && constant->value() != 0.0)
         new_args.push_back(constant);
 
-      return new MultinaryOperatorNode(MultinaryOperatorNodeType::ADDITION, new_args);
+      return new MultinaryOperatorNode(MultinaryOperatorType::ADDITION, new_args);
 
-    case MultinaryOperatorNodeType::MULTIPLICATION:
+    case MultinaryOperatorType::MULTIPLICATION:
       for (auto & arg : _args)
       {
-        if (arg->is(NumberNodeType::_ANY))
+        if (arg->is(NumberType::_ANY))
         {
           if (!constant)
             constant = new RealNumberNode(arg->value());
           else
             constant->setValue(constant->value() * arg->value());
         }
-        else if (arg->is(MultinaryOperatorNodeType::MULTIPLICATION))
+        else if (arg->is(MultinaryOperatorType::MULTIPLICATION))
         {
           auto multi_arg = static_cast<MultinaryOperatorNode *>(arg.get());
           for (auto & child_arg : multi_arg->_args)
@@ -374,7 +374,7 @@ MultinaryOperatorNode::simplify()
       if (constant && constant->value() != 1.0)
         new_args.push_back(constant);
 
-      return new MultinaryOperatorNode(MultinaryOperatorNodeType::MULTIPLICATION, new_args);
+      return new MultinaryOperatorNode(MultinaryOperatorType::MULTIPLICATION, new_args);
 
     default:
       fatalError("Operator not implemented");
@@ -394,10 +394,10 @@ MultinaryOperatorNode::precedence()
 {
   switch (_type)
   {
-    case MultinaryOperatorNodeType::ADDITION:
+    case MultinaryOperatorType::ADDITION:
       return 6;
 
-    case MultinaryOperatorNodeType::MULTIPLICATION:
+    case MultinaryOperatorType::MULTIPLICATION:
       return 5;
 
     default:
@@ -416,82 +416,82 @@ UnaryFunctionNode::value()
 
   switch (_type)
   {
-    case UnaryFunctionNodeType::ABS:
+    case UnaryFunctionType::ABS:
       return std::abs(A);
 
-    case UnaryFunctionNodeType::ACOS:
+    case UnaryFunctionType::ACOS:
       return std::acos(A);
 
-    case UnaryFunctionNodeType::ACOSH:
+    case UnaryFunctionType::ACOSH:
       return std::acosh(A);
 
-    case UnaryFunctionNodeType::ASIN:
+    case UnaryFunctionType::ASIN:
       return std::asin(A);
 
-    case UnaryFunctionNodeType::ASINH:
+    case UnaryFunctionType::ASINH:
       return std::asinh(A);
 
-    case UnaryFunctionNodeType::ATAN:
+    case UnaryFunctionType::ATAN:
       return std::atan(A);
 
-    case UnaryFunctionNodeType::ATANH:
+    case UnaryFunctionType::ATANH:
       return std::atanh(A);
 
-    case UnaryFunctionNodeType::CBRT:
+    case UnaryFunctionType::CBRT:
       return std::cbrt(A);
 
-    case UnaryFunctionNodeType::CEIL:
+    case UnaryFunctionType::CEIL:
       return std::ceil(A);
 
-    case UnaryFunctionNodeType::COS:
+    case UnaryFunctionType::COS:
       return std::cos(A);
 
-    case UnaryFunctionNodeType::COSH:
+    case UnaryFunctionType::COSH:
       return std::cosh(A);
 
-    case UnaryFunctionNodeType::COT:
+    case UnaryFunctionType::COT:
       return 1.0 / std::tan(A);
 
-    case UnaryFunctionNodeType::CSC:
+    case UnaryFunctionType::CSC:
       return 1.0 / std::sin(A);
 
-    case UnaryFunctionNodeType::EXP:
+    case UnaryFunctionType::EXP:
       return std::exp(A);
 
-    case UnaryFunctionNodeType::EXP2:
+    case UnaryFunctionType::EXP2:
       return std::exp2(A);
 
-    case UnaryFunctionNodeType::FLOOR:
+    case UnaryFunctionType::FLOOR:
       return std::floor(A);
 
-    case UnaryFunctionNodeType::INT:
+    case UnaryFunctionType::INT:
       return A < 0 ? std::ceil(A - 0.5) : std::floor(A + 0.5);
 
-    case UnaryFunctionNodeType::LOG:
+    case UnaryFunctionType::LOG:
       return std::log(A);
 
-    case UnaryFunctionNodeType::LOG10:
+    case UnaryFunctionType::LOG10:
       return std::log10(A);
 
-    case UnaryFunctionNodeType::LOG2:
+    case UnaryFunctionType::LOG2:
       return std::log2(A);
 
-    case UnaryFunctionNodeType::SEC:
+    case UnaryFunctionType::SEC:
       return 1.0 / std::cos(A);
 
-    case UnaryFunctionNodeType::SIN:
+    case UnaryFunctionType::SIN:
       return std::sin(A);
 
-    case UnaryFunctionNodeType::SINH:
+    case UnaryFunctionType::SINH:
       return std::sinh(A);
 
-    case UnaryFunctionNodeType::TAN:
+    case UnaryFunctionType::TAN:
       return std::tan(A);
 
-    case UnaryFunctionNodeType::TANH:
+    case UnaryFunctionType::TANH:
       return std::tanh(A);
 
-    case UnaryFunctionNodeType::TRUNC:
+    case UnaryFunctionType::TRUNC:
       return static_cast<int>(A);
 
     default:
@@ -523,17 +523,17 @@ UnaryFunctionNode::D(unsigned int id)
 {
   switch (_type)
   {
-    case UnaryFunctionNodeType::COS:
+    case UnaryFunctionType::COS:
       return new UnaryOperatorNode(
-          UnaryOperatorNodeType::MINUS,
-          new UnaryFunctionNode(UnaryFunctionNodeType::SIN, _args[0].release()));
+          UnaryOperatorType::MINUS,
+          new UnaryFunctionNode(UnaryFunctionType::SIN, _args[0].release()));
 
-    case UnaryFunctionNodeType::EXP:
-      return new MultinaryOperatorNode(MultinaryOperatorNodeType::MULTIPLICATION,
+    case UnaryFunctionType::EXP:
+      return new MultinaryOperatorNode(MultinaryOperatorType::MULTIPLICATION,
                                        {_args[0]->D(id), this->clone()});
 
-    case UnaryFunctionNodeType::SIN:
-      return new UnaryFunctionNode(UnaryFunctionNodeType::COS, _args[0].release());
+    case UnaryFunctionType::SIN:
+      return new UnaryFunctionNode(UnaryFunctionType::COS, _args[0].release());
 
     default:
       fatalError("Derivative not implemented");
@@ -552,28 +552,28 @@ BinaryFunctionNode::value()
 
   switch (_type)
   {
-    case BinaryFunctionNodeType::ATAN2:
+    case BinaryFunctionType::ATAN2:
       return std::atan2(A, B);
 
-    case BinaryFunctionNodeType::HYPOT:
+    case BinaryFunctionType::HYPOT:
       return std::sqrt(A * A + B * B);
 
-    case BinaryFunctionNodeType::MIN:
+    case BinaryFunctionType::MIN:
       return std::min(A, B);
 
-    case BinaryFunctionNodeType::MAX:
+    case BinaryFunctionType::MAX:
       return std::max(A, B);
 
-    case BinaryFunctionNodeType::PLOG:
+    case BinaryFunctionType::PLOG:
       return A < B
                  ? std::log(B) + (A - B) / B - (A - B) * (A - B) / (2.0 * B * B) +
                        (A - B) * (A - B) * (A - B) / (3.0 * B * B * B)
                  : std::log(A);
 
-    case BinaryFunctionNodeType::POW:
+    case BinaryFunctionType::POW:
       return std::pow(A, B);
 
-    case BinaryFunctionNodeType::POLAR:
+    case BinaryFunctionType::POLAR:
     default:
       fatalError("Function not implemented");
   }
@@ -618,7 +618,7 @@ BinaryFunctionNode::simplify()
 Real
 ConditionalNode::value()
 {
-  if (_type != ConditionalNodeType::IF)
+  if (_type != ConditionalType::IF)
     fatalError("Conditional not implemented");
 
   if (_args[0]->value() != 0.0)
@@ -653,7 +653,7 @@ ConditionalNode::clone()
 Node *
 ConditionalNode::simplify()
 {
-  if (_type != ConditionalNodeType::IF)
+  if (_type != ConditionalType::IF)
     fatalError("Conditional not implemented");
 
   _args[0].reset(_args[0]->simplify());
@@ -661,7 +661,7 @@ ConditionalNode::simplify()
   _args[2].reset(_args[2]->simplify());
 
   // if the conditional is constant we can drop a branch
-  if (_args[0]->is(NumberNodeType::_ANY))
+  if (_args[0]->is(NumberType::_ANY))
   {
     if (_args[0]->value() != 0.0)
       return _args[1].release();
@@ -675,11 +675,11 @@ ConditionalNode::simplify()
 Node *
 ConditionalNode::D(unsigned int id)
 {
-  if (_type != ConditionalNodeType::IF)
+  if (_type != ConditionalType::IF)
     fatalError("Conditional not implemented");
 
   return new ConditionalNode(
-      ConditionalNodeType::IF, _args[0].release(), _args[1]->D(id), _args[2]->D(id));
+      ConditionalType::IF, _args[0].release(), _args[1]->D(id), _args[2]->D(id));
 }
 
 /********************************************************

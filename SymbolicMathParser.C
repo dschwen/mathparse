@@ -220,10 +220,10 @@ Parser::preprocessToken()
     if (!_last_token->isNumber() && !_last_token->isSymbol() && !_last_token->isClosingBracket())
     {
       // turn addition into unary plus and subtraction into unary minus
-      if (_token->is(MultinaryOperatorNodeType::ADDITION))
-        _token.reset(new UnaryOperatorToken(UnaryOperatorNodeType::PLUS));
-      else if (_token->is(BinaryOperatorNodeType::SUBTRACTION))
-        _token.reset(new UnaryOperatorToken(UnaryOperatorNodeType::MINUS));
+      if (_token->is(MultinaryOperatorType::ADDITION))
+        _token.reset(new UnaryOperatorToken(UnaryOperatorType::PLUS));
+      else if (_token->is(BinaryOperatorType::SUBTRACTION))
+        _token.reset(new UnaryOperatorToken(UnaryOperatorType::MINUS));
       else
         fatalError(formatError("Did not expect operator here"));
     }

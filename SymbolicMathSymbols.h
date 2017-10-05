@@ -19,7 +19,7 @@ struct OperatorProperties
   const std::string _form;
 };
 
-enum class NumberNodeType
+enum class NumberType
 {
   REAL,
   INTEGER,
@@ -28,7 +28,7 @@ enum class NumberNodeType
   _INVALID
 };
 
-enum class UnaryOperatorNodeType
+enum class UnaryOperatorType
 {
   PLUS,
   MINUS,
@@ -38,13 +38,13 @@ enum class UnaryOperatorNodeType
   _INVALID
 };
 
-const std::map<UnaryOperatorNodeType, OperatorProperties> _unary_operators = {
-    {UnaryOperatorNodeType::PLUS, {3, false, "+"}},
-    {UnaryOperatorNodeType::MINUS, {3, false, "-"}},
-    {UnaryOperatorNodeType::FACULTY, {3, false, "!"}},
-    {UnaryOperatorNodeType::NOT, {3, false, "~"}}};
+const std::map<UnaryOperatorType, OperatorProperties> _unary_operators = {
+    {UnaryOperatorType::PLUS, {3, false, "+"}},
+    {UnaryOperatorType::MINUS, {3, false, "-"}},
+    {UnaryOperatorType::FACULTY, {3, false, "!"}},
+    {UnaryOperatorType::NOT, {3, false, "~"}}};
 
-enum class BinaryOperatorNodeType
+enum class BinaryOperatorType
 {
   SUBTRACTION,
   DIVISION,
@@ -62,20 +62,20 @@ enum class BinaryOperatorNodeType
   _INVALID
 };
 
-const std::map<BinaryOperatorNodeType, OperatorProperties> _binary_operators = {
-    {BinaryOperatorNodeType::SUBTRACTION, {6, true, "-"}},
-    {BinaryOperatorNodeType::DIVISION, {5, true, "/"}},
-    {BinaryOperatorNodeType::POWER, {4, true, "^"}},
-    {BinaryOperatorNodeType::LOGICAL_OR, {14, true, "|"}},
-    {BinaryOperatorNodeType::LOGICAL_AND, {13, true, "&"}},
-    {BinaryOperatorNodeType::LESS_THAN, {8, true, "<"}},
-    {BinaryOperatorNodeType::GREATER_THAN, {8, true, ">"}},
-    {BinaryOperatorNodeType::LESS_EQUAL, {8, true, "<="}},
-    {BinaryOperatorNodeType::GREATER_EQUAL, {8, true, ">="}},
-    {BinaryOperatorNodeType::EQUAL, {9, true, "=="}},
-    {BinaryOperatorNodeType::NOT_EQUAL, {9, true, "!="}}};
+const std::map<BinaryOperatorType, OperatorProperties> _binary_operators = {
+    {BinaryOperatorType::SUBTRACTION, {6, true, "-"}},
+    {BinaryOperatorType::DIVISION, {5, true, "/"}},
+    {BinaryOperatorType::POWER, {4, true, "^"}},
+    {BinaryOperatorType::LOGICAL_OR, {14, true, "|"}},
+    {BinaryOperatorType::LOGICAL_AND, {13, true, "&"}},
+    {BinaryOperatorType::LESS_THAN, {8, true, "<"}},
+    {BinaryOperatorType::GREATER_THAN, {8, true, ">"}},
+    {BinaryOperatorType::LESS_EQUAL, {8, true, "<="}},
+    {BinaryOperatorType::GREATER_EQUAL, {8, true, ">="}},
+    {BinaryOperatorType::EQUAL, {9, true, "=="}},
+    {BinaryOperatorType::NOT_EQUAL, {9, true, "!="}}};
 
-enum class MultinaryOperatorNodeType
+enum class MultinaryOperatorType
 {
   ADDITION,
   MULTIPLICATION,
@@ -84,11 +84,11 @@ enum class MultinaryOperatorNodeType
   _INVALID
 };
 
-const std::map<MultinaryOperatorNodeType, OperatorProperties> _multinary_operators = {
-    {MultinaryOperatorNodeType::ADDITION, {6, true, "+"}},
-    {MultinaryOperatorNodeType::MULTIPLICATION, {5, true, "*"}}};
+const std::map<MultinaryOperatorType, OperatorProperties> _multinary_operators = {
+    {MultinaryOperatorType::ADDITION, {6, true, "+"}},
+    {MultinaryOperatorType::MULTIPLICATION, {5, true, "*"}}};
 
-enum class UnaryFunctionNodeType
+enum class UnaryFunctionType
 {
   ABS,
   ACOS,
@@ -126,25 +126,25 @@ enum class UnaryFunctionNodeType
   _INVALID
 };
 
-const std::map<UnaryFunctionNodeType, std::string> _unary_functions = {
-    {UnaryFunctionNodeType::ABS, "abs"},     {UnaryFunctionNodeType::ACOS, "acos"},
-    {UnaryFunctionNodeType::ACOSH, "acosh"}, {UnaryFunctionNodeType::ARG, "arg"},
-    {UnaryFunctionNodeType::ASIN, "asin"},   {UnaryFunctionNodeType::ASINH, "asinh"},
-    {UnaryFunctionNodeType::ATAN, "atan"},   {UnaryFunctionNodeType::ATANH, "atanh"},
-    {UnaryFunctionNodeType::CBRT, "cbrt"},   {UnaryFunctionNodeType::CEIL, "ceil"},
-    {UnaryFunctionNodeType::CONJ, "conj"},   {UnaryFunctionNodeType::COS, "cos"},
-    {UnaryFunctionNodeType::COSH, "cosh"},   {UnaryFunctionNodeType::COT, "cot"},
-    {UnaryFunctionNodeType::CSC, "csc"},     {UnaryFunctionNodeType::EXP, "exp"},
-    {UnaryFunctionNodeType::EXP2, "exp2"},   {UnaryFunctionNodeType::FLOOR, "floor"},
-    {UnaryFunctionNodeType::IMAG, "imag"},   {UnaryFunctionNodeType::INT, "int"},
-    {UnaryFunctionNodeType::LOG, "log"},     {UnaryFunctionNodeType::LOG10, "log10"},
-    {UnaryFunctionNodeType::LOG2, "log2"},   {UnaryFunctionNodeType::REAL, "real"},
-    {UnaryFunctionNodeType::SEC, "sec"},     {UnaryFunctionNodeType::SIN, "sin"},
-    {UnaryFunctionNodeType::SINH, "sinh"},   {UnaryFunctionNodeType::SQRT, "sqrt"},
-    {UnaryFunctionNodeType::T, "T"},         {UnaryFunctionNodeType::TAN, "tan"},
-    {UnaryFunctionNodeType::TANH, "tanh"},   {UnaryFunctionNodeType::TRUNC, "trunc"}};
+const std::map<UnaryFunctionType, std::string> _unary_functions = {
+    {UnaryFunctionType::ABS, "abs"},     {UnaryFunctionType::ACOS, "acos"},
+    {UnaryFunctionType::ACOSH, "acosh"}, {UnaryFunctionType::ARG, "arg"},
+    {UnaryFunctionType::ASIN, "asin"},   {UnaryFunctionType::ASINH, "asinh"},
+    {UnaryFunctionType::ATAN, "atan"},   {UnaryFunctionType::ATANH, "atanh"},
+    {UnaryFunctionType::CBRT, "cbrt"},   {UnaryFunctionType::CEIL, "ceil"},
+    {UnaryFunctionType::CONJ, "conj"},   {UnaryFunctionType::COS, "cos"},
+    {UnaryFunctionType::COSH, "cosh"},   {UnaryFunctionType::COT, "cot"},
+    {UnaryFunctionType::CSC, "csc"},     {UnaryFunctionType::EXP, "exp"},
+    {UnaryFunctionType::EXP2, "exp2"},   {UnaryFunctionType::FLOOR, "floor"},
+    {UnaryFunctionType::IMAG, "imag"},   {UnaryFunctionType::INT, "int"},
+    {UnaryFunctionType::LOG, "log"},     {UnaryFunctionType::LOG10, "log10"},
+    {UnaryFunctionType::LOG2, "log2"},   {UnaryFunctionType::REAL, "real"},
+    {UnaryFunctionType::SEC, "sec"},     {UnaryFunctionType::SIN, "sin"},
+    {UnaryFunctionType::SINH, "sinh"},   {UnaryFunctionType::SQRT, "sqrt"},
+    {UnaryFunctionType::T, "T"},         {UnaryFunctionType::TAN, "tan"},
+    {UnaryFunctionType::TANH, "tanh"},   {UnaryFunctionType::TRUNC, "trunc"}};
 
-enum class BinaryFunctionNodeType
+enum class BinaryFunctionType
 {
   ATAN2,
   HYPOT,
@@ -157,16 +157,16 @@ enum class BinaryFunctionNodeType
   _INVALID
 };
 
-const std::map<BinaryFunctionNodeType, std::string> _binary_functions = {
-    {BinaryFunctionNodeType::ATAN2, "atan2"},
-    {BinaryFunctionNodeType::HYPOT, "hypot"},
-    {BinaryFunctionNodeType::MAX, "max"},
-    {BinaryFunctionNodeType::MIN, "min"},
-    {BinaryFunctionNodeType::PLOG, "plog"},
-    {BinaryFunctionNodeType::POLAR, "polar"},
-    {BinaryFunctionNodeType::POW, "pow"}};
+const std::map<BinaryFunctionType, std::string> _binary_functions = {
+    {BinaryFunctionType::ATAN2, "atan2"},
+    {BinaryFunctionType::HYPOT, "hypot"},
+    {BinaryFunctionType::MAX, "max"},
+    {BinaryFunctionType::MIN, "min"},
+    {BinaryFunctionType::PLOG, "plog"},
+    {BinaryFunctionType::POLAR, "polar"},
+    {BinaryFunctionType::POW, "pow"}};
 
-enum class ConditionalNodeType
+enum class ConditionalType
 {
   IF,
   _ANY,
@@ -182,7 +182,7 @@ enum class BracketType
 };
 
 inline const OperatorProperties &
-operatorProperty(UnaryOperatorNodeType op)
+operatorProperty(UnaryOperatorType op)
 {
   auto it = _unary_operators.find(op);
   if (it == _unary_operators.end())
@@ -191,7 +191,7 @@ operatorProperty(UnaryOperatorNodeType op)
 }
 
 inline const OperatorProperties &
-operatorProperty(BinaryOperatorNodeType op)
+operatorProperty(BinaryOperatorType op)
 {
   auto it = _binary_operators.find(op);
   if (it == _binary_operators.end())
@@ -199,13 +199,13 @@ operatorProperty(BinaryOperatorNodeType op)
   return it->second;
 }
 
-std::string stringify(NumberNodeType type);
-std::string stringify(UnaryOperatorNodeType type);
-std::string stringify(BinaryOperatorNodeType type);
-std::string stringify(MultinaryOperatorNodeType type);
-std::string stringify(UnaryFunctionNodeType type);
-std::string stringify(BinaryFunctionNodeType type);
-std::string stringify(ConditionalNodeType type);
+std::string stringify(NumberType type);
+std::string stringify(UnaryOperatorType type);
+std::string stringify(BinaryOperatorType type);
+std::string stringify(MultinaryOperatorType type);
+std::string stringify(UnaryFunctionType type);
+std::string stringify(BinaryFunctionType type);
+std::string stringify(ConditionalType type);
 
 template <typename T>
 std::string

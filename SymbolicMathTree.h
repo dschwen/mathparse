@@ -42,13 +42,13 @@ public:
   virtual Node * clone() = 0;
 
   virtual bool is(Real) { return false; };
-  virtual bool is(NumberNodeType) { return false; };
-  virtual bool is(UnaryOperatorNodeType) { return false; };
-  virtual bool is(BinaryOperatorNodeType) { return false; };
-  virtual bool is(MultinaryOperatorNodeType) { return false; };
-  virtual bool is(UnaryFunctionNodeType) { return false; };
-  virtual bool is(BinaryFunctionNodeType) { return false; };
-  virtual bool is(ConditionalNodeType) { return false; };
+  virtual bool is(NumberType) { return false; };
+  virtual bool is(UnaryOperatorType) { return false; };
+  virtual bool is(BinaryOperatorType) { return false; };
+  virtual bool is(MultinaryOperatorType) { return false; };
+  virtual bool is(UnaryFunctionType) { return false; };
+  virtual bool is(BinaryFunctionType) { return false; };
+  virtual bool is(ConditionalType) { return false; };
 
   // virtual Shape shape() = 0;
   virtual Shape shape() { return {1}; };
@@ -137,7 +137,7 @@ public:
   Node * D(unsigned int /*id*/) override;
 
 protected:
-  NumberNodeType _type;
+  NumberType _type;
 };
 
 class RealNumberNode : public NumberNode
@@ -150,7 +150,7 @@ public:
 
   Node * clone() override { return new RealNumberNode(_value); };
 
-  bool is(NumberNodeType type) override;
+  bool is(NumberType type) override;
   bool is(Real value) override { return value == _value; };
 
   void setValue(Real value) { _value = value; }
@@ -162,9 +162,9 @@ protected:
 /**
  * Operators o of the form 'oA'
  */
-class UnaryOperatorNode : public FixedArgumentNode<UnaryOperatorNodeType, 1>
+class UnaryOperatorNode : public FixedArgumentNode<UnaryOperatorType, 1>
 {
-  using FixedArgumentNode<UnaryOperatorNodeType, 1>::FixedArgumentNode;
+  using FixedArgumentNode<UnaryOperatorType, 1>::FixedArgumentNode;
 
 public:
   Real value() override;
@@ -182,9 +182,9 @@ public:
 /**
  * Operators o of the form 'A o B'
  */
-class BinaryOperatorNode : public FixedArgumentNode<BinaryOperatorNodeType, 2>
+class BinaryOperatorNode : public FixedArgumentNode<BinaryOperatorType, 2>
 {
-  using FixedArgumentNode<BinaryOperatorNodeType, 2>::FixedArgumentNode;
+  using FixedArgumentNode<BinaryOperatorType, 2>::FixedArgumentNode;
 
 public:
   Real value() override;
@@ -202,9 +202,9 @@ public:
   unsigned short precedence() override;
 };
 
-class MultinaryOperatorNode : public MultinaryNode<MultinaryOperatorNodeType>
+class MultinaryOperatorNode : public MultinaryNode<MultinaryOperatorType>
 {
-  using MultinaryNode<MultinaryOperatorNodeType>::MultinaryNode;
+  using MultinaryNode<MultinaryOperatorType>::MultinaryNode;
 
 public:
   Real value() override;
@@ -222,9 +222,9 @@ public:
 /**
  * Functions o of the form 'F(A)'
  */
-class UnaryFunctionNode : public FixedArgumentNode<UnaryFunctionNodeType, 1>
+class UnaryFunctionNode : public FixedArgumentNode<UnaryFunctionType, 1>
 {
-  using FixedArgumentNode<UnaryFunctionNodeType, 1>::FixedArgumentNode;
+  using FixedArgumentNode<UnaryFunctionType, 1>::FixedArgumentNode;
 
 public:
   Real value() override;
@@ -242,9 +242,9 @@ public:
 /**
  * Functions o of the form 'F(A,B)'
  */
-class BinaryFunctionNode : public FixedArgumentNode<BinaryFunctionNodeType, 2>
+class BinaryFunctionNode : public FixedArgumentNode<BinaryFunctionType, 2>
 {
-  using FixedArgumentNode<BinaryFunctionNodeType, 2>::FixedArgumentNode;
+  using FixedArgumentNode<BinaryFunctionType, 2>::FixedArgumentNode;
 
 public:
   Real value() override;
@@ -257,9 +257,9 @@ public:
   Node * D(unsigned int _id) override;
 };
 
-class ConditionalNode : public FixedArgumentNode<ConditionalNodeType, 3>
+class ConditionalNode : public FixedArgumentNode<ConditionalType, 3>
 {
-  using FixedArgumentNode<ConditionalNodeType, 3>::FixedArgumentNode;
+  using FixedArgumentNode<ConditionalType, 3>::FixedArgumentNode;
 
 public:
   Real value() override;
