@@ -125,35 +125,43 @@ protected:
   BracketType _type;
 };
 
-class InvalidOperatorToken : public Token
+class OperatorToken : public Token
 {
   using Token::Token;
 
 public:
   bool isOperator() override { return true; }
+
+  static OperatorToken * build(const std::string & string, std::size_t pos);
+};
+
+class InvalidOperatorToken : public OperatorToken
+{
+  using OperatorToken::OperatorToken;
+
+public:
   bool isInvalid() override { return true; }
 };
 
-class OperatorToken : public Token
+class OperatorTokenBase : public OperatorToken
 {
 public:
-  OperatorToken(OperatorProperties prop, std::size_t pos) : Token(pos), _prop(prop) {}
+  OperatorTokenBase(OperatorProperties prop, std::size_t pos) : OperatorToken(pos), _prop(prop) {}
   bool isOperator() override { return true; }
   bool isInvalid() override { return true; }
   unsigned short precedence() override { return _prop._precedence; }
   bool isLeftAssociative() override { return _prop._left_associative; }
-  static OperatorToken * build(const std::string & string, std::size_t pos);
 
 protected:
   OperatorProperties _prop;
 };
 
-class UnaryOperatorToken : public OperatorToken
+class UnaryOperatorToken : public OperatorTokenBase
 {
 public:
   UnaryOperatorToken(std::pair<UnaryOperatorNodeType, OperatorProperties> type_prop,
                      std::size_t pos)
-    : OperatorToken(type_prop.second, pos), _type(type_prop.first)
+    : OperatorTokenBase(type_prop.second, pos), _type(type_prop.first)
   {
   }
   bool isInvalid() override { return _type == UnaryOperatorNodeType::_INVALID; }
@@ -165,12 +173,12 @@ protected:
   UnaryOperatorNodeType _type;
 };
 
-class BinaryOperatorToken : public OperatorToken
+class BinaryOperatorToken : public OperatorTokenBase
 {
 public:
   BinaryOperatorToken(std::pair<BinaryOperatorNodeType, OperatorProperties> type_prop,
                       std::size_t pos)
-    : OperatorToken(type_prop.second, pos), _type(type_prop.first)
+    : OperatorTokenBase(type_prop.second, pos), _type(type_prop.first)
   {
   }
   bool isInvalid() override { return _type == BinaryOperatorNodeType::_INVALID; }
@@ -182,12 +190,12 @@ protected:
   BinaryOperatorNodeType _type;
 };
 
-class MultinaryOperatorToken : public OperatorToken
+class MultinaryOperatorToken : public OperatorTokenBase
 {
 public:
   MultinaryOperatorToken(std::pair<MultinaryOperatorNodeType, OperatorProperties> type_prop,
                          std::size_t pos)
-    : OperatorToken(type_prop.second, pos), _type(type_prop.first)
+    : OperatorTokenBase(type_prop.second, pos), _type(type_prop.first)
   {
   }
   bool isInvalid() override { return _type == MultinaryOperatorNodeType::_INVALID; }

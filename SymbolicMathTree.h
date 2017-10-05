@@ -118,6 +118,7 @@ class ValueProviderNode : public Node
 public:
   ValueProviderNode(unsigned int id) : _id(id) {}
   Real value() override { fatalError("Cannot evaluate node"); };
+  Node * clone() override { fatalError("Cannot clone node"); };
 
   std::string format() override { return "_val" + std::to_string(_id); }
   std::string formatTree(std::string indent = "") override;

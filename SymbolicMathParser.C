@@ -243,12 +243,11 @@ Parser::validateToken()
     fatalError(formatError("Operator expected here"));
 
   // check closing bracket state
-  if (_token._type == TokenType::CLOSING_BRACKET &&
-      (_last_token._type == TokenType::OPERATOR || _last_token._type == TokenType::COMMA))
+  if (_token->isClosingBracket() && (_last_token->isOperator() || _last_token->isComma()))
     fatalError(formatError("Did not expect closing bracket here"));
 
   // lastly check if token is completely invalid
-  if (_token.->isInvalid())
+  if (_token->isInvalid())
     fatalError(formatError("Parse error"));
 }
 
@@ -259,28 +258,25 @@ Parser::formatToken()
 }
 
 std::string
-Parser::formatToken(TokePtr token)
+Parser::formatToken(TokenPtr token)
 {
-  switch (token._type)
-  {
-    case TokenType::OPERATOR:
-      return "OPERATOR    \t" + operatorProperty(token._operator_type)._form + " (" +
-             std::to_string(operatorProperty(token._operator_type)._precedence) + ')';
-    case TokenType::OPENING_BRACKET:
-      return "OPENING_BRACKET \t" + token._string;
-    case TokenType::CLOSING_BRACKET:
-      return "CLOSING_BRACKET\t" + token._string;
-    case TokenType::FUNCTION:
-      return "FUNCTION    \t" + functionProperty(token._function_type)._form;
-    case TokenType::VARIABLE:
-      return "VARIABLE    \t" + token._string;
-    case TokenType::NUMBER:
-      return "NUMBER      \t" + std::to_string(token._real);
-    case TokenType::COMMA:
-      return "COMMA       \t,";
-    default:
-      return "???";
-  }
+  // if (token->isOperator())
+  //   return "OPERATOR    \t" + token->asString() + " (" + std::to_string(token->precedence()) +
+  //   ')';
+  // else if (token->isOpeningBracket())
+  //   return "OPENING_BRACKET \t" + token->asString();
+  // else if (token->isClosingBracket())
+  //   return "CLOSING_BRACKET\t" + token->asString();
+  // case TokenType::FUNCTION:
+  //   return "FUNCTION    \t" + functionProperty(token._function_type)._form;
+  // case TokenType::VARIABLE:
+  //   return "VARIABLE    \t" + token._string;
+  // case TokenType::NUMBER:
+  //   return "NUMBER      \t" + std::to_string(token._real);
+  // case TokenType::COMMA:
+  //   return "COMMA       \t,";
+  // default:
+  return "???";
 }
 
 std::string
