@@ -10,8 +10,6 @@
 namespace SymbolicMath
 {
 
-typedef double Real;
-
 struct OperatorProperties
 {
   const unsigned short _precedence;

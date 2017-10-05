@@ -145,7 +145,7 @@ class RealNumberNode : public NumberNode
 public:
   RealNumberNode(Real value) : NumberNode(), _value(value) {}
   Real value() override { return _value; };
-  std::string format() override { return std::to_string(_value); };
+  std::string format() override { return stringify(_value); };
   std::string formatTree(std::string indent = "") override;
 
   Node * clone() override { return new RealNumberNode(_value); };

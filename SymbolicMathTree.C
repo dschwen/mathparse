@@ -54,7 +54,7 @@ NumberNode::D(unsigned int /*id*/)
 std::string
 RealNumberNode::formatTree(std::string indent)
 {
-  return indent + std::to_string(_value) + '\n';
+  return indent + stringify(_value) + '\n';
 }
 
 bool
@@ -350,9 +350,25 @@ MultinaryOperatorNode::simplifyHelper(RealNumberNode *& constant,
     if (!constant)
       constant = new RealNumberNode(arg->value());
     else
-      constant->setValue(constant->value() + arg->value());
+    {
+      auto val = constant->value();
+      switch (_type)
+      {
+        case MultinaryOperatorType::ADDITION:
+          val += arg->value();
+          break;
+
+        case MultinaryOperatorType::MULTIPLICATION:
+          val *= arg->value();
+          break;
+
+        default:
+          fatalError("Unknown multinary operator");
+      }
+      constant->setValue(val);
+    }
   }
-  else if (arg->is(MultinaryOperatorType::ADDITION))
+  else if (arg->is(_type))
   {
     auto multi_arg = static_cast<MultinaryOperatorNode *>(arg.get());
     for (auto & child_arg : multi_arg->_args)
@@ -392,7 +408,7 @@ MultinaryOperatorNode::simplify()
 
       if (constant && constant->value() != 1.0)
       {
-        if (new_args.empty())
+        if (new_args.empty() || constant->value() == 0.0)
           return constant;
         new_args.push_back(constant);
       }

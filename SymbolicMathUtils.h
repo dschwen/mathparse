@@ -8,7 +8,11 @@
 namespace SymbolicMath
 {
 
+typedef double Real;
+
 _Noreturn void fatalError(const std::string & error);
+
+std::string stringify(Real number);
 
 // end namespace SymbolicMath
 }
