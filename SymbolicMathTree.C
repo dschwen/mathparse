@@ -8,6 +8,12 @@ namespace SymbolicMath
 {
 
 void
+simplify(NodePtr & node)
+{
+  node.reset(node->simplify());
+}
+
+void
 Node::checkIndex(const std::vector<unsigned int> & index)
 {
   auto s = shape();
@@ -334,6 +340,28 @@ MultinaryOperatorNode::clone()
   return new MultinaryOperatorNode(_type, cloned_args);
 }
 
+void
+MultinaryOperatorNode::simplifyHelper(RealNumberNode *& constant,
+                                      std::vector<Node *> & new_args,
+                                      NodePtr & arg)
+{
+  if (arg->is(NumberType::_ANY))
+  {
+    if (!constant)
+      constant = new RealNumberNode(arg->value());
+    else
+      constant->setValue(constant->value() + arg->value());
+  }
+  else if (arg->is(MultinaryOperatorType::ADDITION))
+  {
+    auto multi_arg = static_cast<MultinaryOperatorNode *>(arg.get());
+    for (auto & child_arg : multi_arg->_args)
+      simplifyHelper(constant, new_args, child_arg);
+  }
+  else
+    new_args.push_back(arg.release());
+}
+
 Node *
 MultinaryOperatorNode::simplify()
 {
@@ -347,51 +375,27 @@ MultinaryOperatorNode::simplify()
   {
     case MultinaryOperatorType::ADDITION:
       for (auto & arg : _args)
-      {
-        if (arg->is(NumberType::_ANY))
-        {
-          if (!constant)
-            constant = new RealNumberNode(arg->value());
-          else
-            constant->setValue(constant->value() + arg->value());
-        }
-        else if (arg->is(MultinaryOperatorType::ADDITION))
-        {
-          auto multi_arg = static_cast<MultinaryOperatorNode *>(arg.get());
-          for (auto & child_arg : multi_arg->_args)
-            new_args.push_back(child_arg.release());
-        }
-        else
-          new_args.push_back(arg.release());
-      }
+        simplifyHelper(constant, new_args, arg);
 
       if (constant && constant->value() != 0.0)
+      {
+        if (new_args.empty())
+          return constant;
         new_args.push_back(constant);
+      }
 
       return new MultinaryOperatorNode(MultinaryOperatorType::ADDITION, new_args);
 
     case MultinaryOperatorType::MULTIPLICATION:
       for (auto & arg : _args)
-      {
-        if (arg->is(NumberType::_ANY))
-        {
-          if (!constant)
-            constant = new RealNumberNode(arg->value());
-          else
-            constant->setValue(constant->value() * arg->value());
-        }
-        else if (arg->is(MultinaryOperatorType::MULTIPLICATION))
-        {
-          auto multi_arg = static_cast<MultinaryOperatorNode *>(arg.get());
-          for (auto & child_arg : multi_arg->_args)
-            new_args.push_back(child_arg.release());
-        }
-        else
-          new_args.push_back(arg.release());
-      }
+        simplifyHelper(constant, new_args, arg);
 
       if (constant && constant->value() != 1.0)
+      {
+        if (new_args.empty())
+          return constant;
         new_args.push_back(constant);
+      }
 
       return new MultinaryOperatorNode(MultinaryOperatorType::MULTIPLICATION, new_args);
 

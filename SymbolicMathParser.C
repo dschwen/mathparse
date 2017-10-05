@@ -60,7 +60,7 @@ Parser::parse(const std::string & expression)
       {
         // bracket pair containing an expression
         while (!operator_stack.empty() &&
-               (operator_stack.top()->isOpeningBracket() ||
+               (!operator_stack.top()->isOpeningBracket() ||
                 operator_stack.top()->bracketType() != _token->bracketType()))
         {
           pushToOutput(operator_stack.top());
@@ -161,7 +161,7 @@ Parser::parse(const std::string & expression)
 void
 Parser::pushToOutput(TokenPtr token)
 {
-  std::cout << "PUSHING " << formatToken(token) << '\n';
+  // std::cout << "PUSHING " << formatToken(token) << '\n';
 
   if (token->isNumber())
   {
@@ -287,6 +287,10 @@ Parser::formatToken(TokenPtr token)
     return "NUMBER      \t" + std::to_string(token->asNumber());
   else if (token->isComma())
     return "COMMA       \t,";
+  else if (token->isEnd())
+    return "[END]";
+  else if (token->isInvalid())
+    return "[INVALID]";
   else
     return "???";
 }

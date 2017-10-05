@@ -19,7 +19,7 @@ main(int argc, char * argv[])
 
   std::cout << func->format() << '\n' << func->formatTree("\t") << '\n';
 
-  func->simplify();
+  SymbolicMath::simplify(func);
 
   std::cout << " = " << func->format() << '\n' << func->formatTree("\t") << '\n';
 

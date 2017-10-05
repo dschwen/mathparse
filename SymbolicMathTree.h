@@ -217,6 +217,9 @@ public:
   Node * D(unsigned int id) override;
 
   unsigned short precedence() override;
+
+private:
+  void simplifyHelper(RealNumberNode *& constant, std::vector<Node *> & new_args, NodePtr & arg);
 };
 
 /**
