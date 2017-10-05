@@ -14,6 +14,7 @@ Parser::parse(const std::string & expression)
 {
   Tokenizer tokenizer(expression);
   _expression = expression;
+  _last_token.reset(new InvalidToken(0));
 
   std::stack<TokenPtr> operator_stack;
   std::stack<unsigned short> argument_count_stack;
@@ -24,6 +25,8 @@ Parser::parse(const std::string & expression)
     _token.reset(tokenizer.getToken());
     preprocessToken();
     validateToken();
+
+    std::cout << formatToken() << '\n';
 
     //
     // Shunting yard core
@@ -42,7 +45,7 @@ Parser::parse(const std::string & expression)
         pushToOutput(operator_stack.top());
         operator_stack.pop();
       }
-      operator_stack.push(std::move(_token));
+      operator_stack.push(_token);
     }
     else if (_token->isFunction())
     {
@@ -158,6 +161,8 @@ Parser::parse(const std::string & expression)
 void
 Parser::pushToOutput(TokenPtr token)
 {
+  std::cout << "PUSHING " << formatToken(token) << '\n';
+
   if (token->isNumber())
   {
     _output_stack.push(new RealNumberNode(token->asNumber()));
@@ -268,23 +273,22 @@ Parser::formatToken()
 std::string
 Parser::formatToken(TokenPtr token)
 {
-  // if (token->isOperator())
-  //   return "OPERATOR    \t" + token->asString() + " (" + std::to_string(token->precedence()) +
-  //   ')';
-  // else if (token->isOpeningBracket())
-  //   return "OPENING_BRACKET \t" + token->asString();
-  // else if (token->isClosingBracket())
-  //   return "CLOSING_BRACKET\t" + token->asString();
-  // case TokenType::FUNCTION:
-  //   return "FUNCTION    \t" + functionProperty(token._function_type)._form;
-  // case TokenType::VARIABLE:
-  //   return "VARIABLE    \t" + token._string;
-  // case TokenType::NUMBER:
-  //   return "NUMBER      \t" + std::to_string(token._real);
-  // case TokenType::COMMA:
-  //   return "COMMA       \t,";
-  // default:
-  return "???";
+  if (token->isOperator())
+    return "OPERATOR    \t" + token->asString() + " (" + std::to_string(token->precedence()) + ')';
+  else if (token->isOpeningBracket())
+    return "OPENING_BRACKET \t"; // + token->asString();
+  else if (token->isClosingBracket())
+    return "CLOSING_BRACKET\t"; // + token->asString();
+  else if (token->isFunction())
+    return "FUNCTION    \t" + token->asString();
+  else if (token->isSymbol())
+    return "VARIABLE    \t" + token->asString();
+  else if (token->isNumber())
+    return "NUMBER      \t" + std::to_string(token->asNumber());
+  else if (token->isComma())
+    return "COMMA       \t,";
+  else
+    return "???";
 }
 
 std::string

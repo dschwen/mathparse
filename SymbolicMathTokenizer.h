@@ -151,6 +151,7 @@ public:
   bool isInvalid() override { return true; }
   unsigned short precedence() override { return _prop._precedence; }
   bool isLeftAssociative() override { return _prop._left_associative; }
+  std::string asString() override { return _prop._form; };
 
 protected:
   OperatorProperties _prop;
@@ -226,6 +227,7 @@ public:
   bool isInvalid() override { return _type == UnaryFunctionType::_INVALID; }
   unsigned short arguments() override { return 1; }
   Node * node(std::stack<Node *> & stack) override { return new UnaryFunctionNode(_type, stack); }
+  std::string asString() override { return stringify(_type); };
 
 protected:
   UnaryFunctionType _type;
@@ -238,6 +240,7 @@ public:
   bool isInvalid() override { return _type == BinaryFunctionType::_INVALID; }
   unsigned short arguments() override { return 2; }
   Node * node(std::stack<Node *> & stack) override { return new BinaryFunctionNode(_type, stack); }
+  std::string asString() override { return stringify(_type); };
 
 protected:
   BinaryFunctionType _type;
@@ -250,6 +253,7 @@ public:
   bool isInvalid() override { return _type == ConditionalType::_INVALID; }
   unsigned short arguments() override { return 3; }
   Node * node(std::stack<Node *> & stack) override { return new ConditionalNode(_type, stack); }
+  std::string asString() override { return stringify(_type); };
 
 protected:
   ConditionalType _type;

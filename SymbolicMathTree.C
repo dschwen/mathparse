@@ -243,6 +243,16 @@ BinaryOperatorNode::simplify()
   }
 }
 
+Node *
+BinaryOperatorNode::D(unsigned int id)
+{
+  switch (_type)
+  {
+    default:
+      fatalError("Derivative not implemnted");
+  }
+}
+
 unsigned short
 BinaryOperatorNode::precedence()
 {
@@ -313,6 +323,15 @@ MultinaryOperatorNode::formatTree(std::string indent)
   for (auto & arg : _args)
     out += arg->formatTree(indent + "  ");
   return out;
+}
+
+Node *
+MultinaryOperatorNode::clone()
+{
+  std::vector<Node *> cloned_args;
+  for (auto & arg : _args)
+    cloned_args.push_back(arg->clone());
+  return new MultinaryOperatorNode(_type, cloned_args);
 }
 
 Node *
@@ -608,6 +627,17 @@ BinaryFunctionNode::simplify()
   {
     default:
       return this;
+  }
+}
+
+Node *
+BinaryFunctionNode::D(unsigned int id)
+{
+  switch (_type)
+  {
+    case BinaryFunctionType::POW:
+    default:
+      fatalError("Derivative not implemented");
   }
 }
 
