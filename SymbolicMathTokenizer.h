@@ -52,13 +52,18 @@ public:
   std::size_t pos() { return _pos; }
 
   virtual unsigned short arguments() { return 0; }
+  virtual BracketType bracketType() { return BracketType::_INVALID; }
+  virtual unsigned short precedence() { return 0; }
+  virtual bool isUnary() { return false; }
+  virtual bool isLeftAssociative() { return false; }
+
   virtual Node * node(std::stack<Node *> & stack) { return nullptr; }
 
 protected:
   std::size_t _pos;
 };
 
-using TokenPtr = std::unique_ptr<Token>;
+using TokenPtr = std::shared_ptr<Token>;
 
 class EndToken : public Token
 {
@@ -94,6 +99,7 @@ protected:
 
 class NumberToken : public Token
 {
+public:
   NumberToken(Real number, std::size_t pos) : Token(pos), _number(number) {}
   bool isNumber() override { return true; }
   Real asNumber() override { return _number; };
@@ -104,9 +110,12 @@ protected:
 
 class BracketToken : public Token
 {
+public:
   BracketToken(char bracket, std::size_t pos);
   bool isOpeningBracket() override { return _opening; }
   bool isClosingBracket() override { return !_opening; }
+
+  BracketType bracketType() override { return _type; }
 
   static BracketType opening(char c);
   static BracketType closing(char c);
@@ -116,23 +125,39 @@ protected:
   BracketType _type;
 };
 
-class OperatorToken : public Token
+class InvalidOperatorToken : public Token
 {
   using Token::Token;
 
 public:
   bool isOperator() override { return true; }
-  virtual bool isInvalid() override { return true; }
+  bool isInvalid() override { return true; }
+};
+
+class OperatorToken : public Token
+{
+public:
+  OperatorToken(OperatorProperties prop, std::size_t pos) : Token(pos), _prop(prop) {}
+  bool isOperator() override { return true; }
+  bool isInvalid() override { return true; }
+  unsigned short precedence() override { return _prop._precedence; }
+  bool isLeftAssociative() override { return _prop._left_associative; }
   static OperatorToken * build(const std::string & string, std::size_t pos);
+
+protected:
+  OperatorProperties _prop;
 };
 
 class UnaryOperatorToken : public OperatorToken
 {
 public:
-  UnaryOperatorToken(UnaryOperatorNodeType type, std::size_t pos) : OperatorToken(pos), _type(type)
+  UnaryOperatorToken(std::pair<UnaryOperatorNodeType, OperatorProperties> type_prop,
+                     std::size_t pos)
+    : OperatorToken(type_prop.second, pos), _type(type_prop.first)
   {
   }
   bool isInvalid() override { return _type == UnaryOperatorNodeType::_INVALID; }
+  bool isUnary() override { return true; }
   unsigned short arguments() override { return 1; }
   Node * node(std::stack<Node *> & stack) override { return new UnaryOperatorNode(_type, stack); }
 
@@ -143,8 +168,9 @@ protected:
 class BinaryOperatorToken : public OperatorToken
 {
 public:
-  BinaryOperatorToken(BinaryOperatorNodeType type, std::size_t pos)
-    : OperatorToken(pos), _type(type)
+  BinaryOperatorToken(std::pair<BinaryOperatorNodeType, OperatorProperties> type_prop,
+                      std::size_t pos)
+    : OperatorToken(type_prop.second, pos), _type(type_prop.first)
   {
   }
   bool isInvalid() override { return _type == BinaryOperatorNodeType::_INVALID; }
@@ -159,8 +185,9 @@ protected:
 class MultinaryOperatorToken : public OperatorToken
 {
 public:
-  MultinaryOperatorToken(MultinaryOperatorNodeType type, std::size_t pos)
-    : OperatorToken(pos), _type(type)
+  MultinaryOperatorToken(std::pair<MultinaryOperatorNodeType, OperatorProperties> type_prop,
+                         std::size_t pos)
+    : OperatorToken(type_prop.second, pos), _type(type_prop.first)
   {
   }
   bool isInvalid() override { return _type == MultinaryOperatorNodeType::_INVALID; }
@@ -236,7 +263,7 @@ public:
   Tokenizer(const std::string expression);
 
   /// gets the next complete token from the expression
-  Token getToken();
+  Token * getToken();
 
 private:
   const std::string _mpt_expression;

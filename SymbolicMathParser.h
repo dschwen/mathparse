@@ -41,8 +41,8 @@ public:
   */
 
 protected:
-  void pushToOutput(Token * token);
-  void pushFunctionToOutput(const Token & token, unsigned int num_arguments);
+  void pushToOutput(TokenPtr token);
+  void pushFunctionToOutput(TokenPtr token, unsigned int num_arguments);
 
   void preprocessToken();
   void validateToken();
@@ -51,7 +51,7 @@ private:
   /// current token
   TokenPtr _token;
 
-  /// previous token
+  /// previous token (no ownership, this token may be on the stack)
   TokenPtr _last_token;
 
   /// output stack where the Tree is formed
@@ -70,7 +70,7 @@ private:
   std::string formatToken();
 
   /// format a given token for debugging purposes
-  std::string formatToken(const Token & token);
+  std::string formatToken(TokenPtr token);
 
   /// format a given error message with an expression excerpt and a visual pointer to the current token
   std::string formatError(const std::string & message, std::size_t width = 80);

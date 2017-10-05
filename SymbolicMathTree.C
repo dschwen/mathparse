@@ -27,7 +27,7 @@ ValueProviderNode::formatTree(std::string indent)
 }
 
 Node *
-ValueProviderNode::D(unsigned int /*_id*/)
+ValueProviderNode::D(unsigned int id)
 {
   if (id == _id)
     return new RealNumberNode(1.0);
@@ -36,7 +36,7 @@ ValueProviderNode::D(unsigned int /*_id*/)
 }
 
 Node *
-NumberNode::D(unsigned int /*_id*/)
+NumberNode::D(unsigned int /*id*/)
 {
   return new RealNumberNode(0.0);
 }
@@ -529,8 +529,8 @@ UnaryFunctionNode::D(unsigned int id)
           new UnaryFunctionNode(UnaryFunctionNodeType::SIN, _args[0].release()));
 
     case UnaryFunctionNodeType::EXP:
-      return new BinaryOperatorNode(
-          BinaryOperatorNodeType::MULTIPLICATION, _args[0]->D(id), this->clone());
+      return new MultinaryOperatorNode(MultinaryOperatorNodeType::MULTIPLICATION,
+                                       {_args[0]->D(id), this->clone()});
 
     case UnaryFunctionNodeType::SIN:
       return new UnaryFunctionNode(UnaryFunctionNodeType::COS, _args[0].release());

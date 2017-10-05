@@ -10,24 +10,42 @@ namespace SymbolicMath
 
 BracketToken::BracketToken(char bracket, std::size_t pos) : Token(pos), _opening(false)
 {
-  if ((_type = opening(c)) != BracketType::_INVALID)
+  if ((_type = opening(bracket)) != BracketType::_INVALID)
     _opening = true;
   else
-    _type = closing(c);
+    _type = closing(bracket);
 }
 
 BracketType
 BracketToken::opening(char c)
 {
-  const std::string parenthesis("([{");
-  return parenthesis.find_first_of(c) != std::string::npos;
+  switch (c)
+  {
+    case '(':
+      return BracketType::ROUND;
+    case '[':
+      return BracketType::SQUARE;
+    case '{':
+      return BracketType::CURLY;
+    default:
+      return BracketType::_INVALID;
+  }
 }
 
 BracketType
 BracketToken::closing(char c)
 {
-  const std::string parenthesis(")]}");
-  return parenthesis.find_first_of(c) != std::string::npos;
+  switch (c)
+  {
+    case ')':
+      return BracketType::ROUND;
+    case ']':
+      return BracketType::SQUARE;
+    case '}':
+      return BracketType::CURLY;
+    default:
+      return BracketType::_INVALID;
+  }
 }
 
 OperatorToken *
@@ -48,7 +66,7 @@ OperatorToken::build(const std::string & string, std::size_t pos)
       return new UnaryOperatorToken(pair, pos);
 
   // return an invalid operator token
-  return new OperatorToken(pos);
+  return new InvalidOperatorToken(pos);
 }
 
 FunctionToken *
@@ -154,7 +172,7 @@ Tokenizer::getToken()
   }
 
   if (isBracket())
-    return newBracketToken(*(_c++), pos());
+    return new BracketToken(*(_c++), pos());
 
   // consume symbol
   if (isAlphaFirst())
@@ -166,7 +184,7 @@ Tokenizer::getToken()
     if (*_c == '(')
       return FunctionToken::build(symbol, pos());
     else
-      return SymbolToken(symbol, pos());
+      return new SymbolToken(symbol, pos());
   }
 
   // consume number

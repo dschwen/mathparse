@@ -117,10 +117,12 @@ class ValueProviderNode : public Node
 {
 public:
   ValueProviderNode(unsigned int id) : _id(id) {}
+  Real value() override { fatalError("Cannot evaluate node"); };
+
   std::string format() override { return "_val" + std::to_string(_id); }
   std::string formatTree(std::string indent = "") override;
 
-  Node * D(unsigned int _id) override;
+  Node * D(unsigned int id) override;
 
 protected:
   unsigned int _id;
@@ -131,7 +133,7 @@ class NumberNode : public Node
 public:
   Shape shape() override { return {1}; }
 
-  Node * D(unsigned int /*_id*/) override;
+  Node * D(unsigned int /*id*/) override;
 
 protected:
   NumberNodeType _type;
