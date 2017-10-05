@@ -19,7 +19,7 @@ class Parser
 public:
   Parser();
 
-  std::unique_ptr<Tree> parse(const std::string & expression);
+  NodePtr parse(const std::string & expression);
 
   unsigned int registerValueProvider(std::string name);
 
@@ -41,21 +41,21 @@ public:
   */
 
 protected:
-  void pushToOutput(const Token & token);
-  void pushFunctionToOutput(const Token & token, unsigned int num_arguments);
+  void pushToOutput(TokenPtr token);
+  void pushFunctionToOutput(TokenPtr token, unsigned int num_arguments);
 
   void preprocessToken();
   void validateToken();
 
 private:
   /// current token
-  Token _token;
+  TokenPtr _token;
 
-  /// previous token
-  Token _last_token;
+  /// previous token (no ownership, this token may be on the stack)
+  TokenPtr _last_token;
 
   /// output stack where the Tree is formed
-  std::stack<std::unique_ptr<Tree>> _output_stack;
+  std::stack<Node *> _output_stack;
 
   /// value provider ID map
   std::map<std::string, unsigned int> _value_providers;
@@ -70,7 +70,7 @@ private:
   std::string formatToken();
 
   /// format a given token for debugging purposes
-  std::string formatToken(const Token & token);
+  std::string formatToken(TokenPtr token);
 
   /// format a given error message with an expression excerpt and a visual pointer to the current token
   std::string formatError(const std::string & message, std::size_t width = 80);

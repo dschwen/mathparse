@@ -1,6 +1,6 @@
 CXX ?= clang++
 
-OBJS := SymbolicMathTokenizer.o SymbolicMathParser.o SymbolicMathSymbols.o SymbolicMathTree.o
+OBJS := SymbolicMathTokenizer.o SymbolicMathParser.o SymbolicMathSymbols.o SymbolicMathTree.o SymbolicMathUtils.o
 #SymbolicMathTerm.o
 
 mathparse: main.C $(OBJS)

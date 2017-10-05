@@ -96,7 +96,7 @@ protected:
 class UnaryFuncTermNode : public UnaryTermNode
 {
 public:
-  enum NodeType
+  enum Type
   {
     SIN,
     COS,
@@ -110,7 +110,7 @@ public:
     COSH
   } _type;
 
-  UnaryFuncTermNode(TermNode * subnode, NodeType type) : UnaryTermNode(subnode), _type(type){};
+  UnaryFuncTermNode(TermNode * subnode, Type type) : UnaryTermNode(subnode), _type(type){};
   virtual UnaryFuncTermNode * clone() const
   {
     return new UnaryFuncTermNode(_subnode->clone(), _type);
@@ -124,13 +124,13 @@ public:
 class UnaryOpTermNode : public UnaryTermNode
 {
 public:
-  enum NodeType
+  enum Type
   {
     NEG,
     LOGICNOT
   } _type;
 
-  UnaryOpTermNode(TermNode * subnode, NodeType type) : UnaryTermNode(subnode), _type(type){};
+  UnaryOpTermNode(TermNode * subnode, Type type) : UnaryTermNode(subnode), _type(type){};
   virtual UnaryOpTermNode * clone() const { return new UnaryOpTermNode(_subnode->clone(), _type); };
 
   virtual std::string stringify() const;
@@ -159,7 +159,7 @@ protected:
 class BinaryOpTermNode : public BinaryTermNode
 {
 public:
-  enum NodeType
+  enum Type
   {
     ADD,
     SUB,
@@ -175,7 +175,7 @@ public:
     NOTEQ
   };
 
-  BinaryOpTermNode(TermNode * left, TermNode * right, NodeType type)
+  BinaryOpTermNode(TermNode * left, TermNode * right, Type type)
     : BinaryTermNode(left, right), _type(type){};
   virtual BinaryOpTermNode * clone() const
   {
@@ -186,14 +186,14 @@ public:
   virtual int precedence() const;
 
 protected:
-  NodeType _type;
+  Type _type;
 };
 
 /// Node representing a function with two arguments
 class BinaryFuncTermNode : public BinaryTermNode
 {
 public:
-  enum NodeType
+  enum Type
   {
     MIN,
     MAX,
@@ -202,7 +202,7 @@ public:
     PLOG
   } _type;
 
-  BinaryFuncTermNode(TermNode * left, TermNode * right, NodeType type)
+  BinaryFuncTermNode(TermNode * left, TermNode * right, Type type)
     : BinaryTermNode(left, right), _type(type){};
   virtual BinaryFuncTermNode * clone() const
   {
@@ -231,12 +231,12 @@ protected:
 class TernaryFuncTermNode : public TernaryTermNode
 {
 public:
-  enum NodeType
+  enum Type
   {
     CONDITIONAL
   } _type;
 
-  TernaryFuncTermNode(TermNode * left, TermNode * middle, TermNode * right, NodeType type)
+  TernaryFuncTermNode(TermNode * left, TermNode * middle, TermNode * right, Type type)
     : TernaryTermNode(left, middle, right), _type(type){};
   virtual TernaryFuncTermNode * clone() const
   {

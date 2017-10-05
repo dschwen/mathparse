@@ -1,35 +1,94 @@
-#ifndef SYMBOLICMATH_SYMBOLS_H
-#define SYMBOLICMATH_SYMBOLS_H
+#ifndef SYMBOLICMATHSYMBOLS_H
+#define SYMBOLICMATHSYMBOLS_H
 
 #include <string>
 #include <vector>
-#include <type_traits>
+#include <map>
+
+#include "SymbolicMathUtils.h"
 
 namespace SymbolicMath
 {
 
-enum class TokenType
+typedef double Real;
+
+struct OperatorProperties
 {
-  OPERATOR,
-  FUNCTION,
-  OPENING_BRACKET,
-  CLOSING_BRACKET,
-  NUMBER,
-  VARIABLE,
-  COMMA,
+  const unsigned short _precedence;
+  const bool _left_associative;
+  const std::string _form;
+};
+
+enum class NumberType
+{
+  REAL,
+  INTEGER,
+  RATIONAL,
+  _ANY,
+  _INVALID
+};
+
+enum class UnaryOperatorType
+{
+  PLUS,
+  MINUS,
+  FACULTY,
+  NOT,
+  _ANY,
+  _INVALID
+};
+
+const std::map<UnaryOperatorType, OperatorProperties> _unary_operators = {
+    {UnaryOperatorType::PLUS, {3, false, "+"}},
+    {UnaryOperatorType::MINUS, {3, false, "-"}},
+    {UnaryOperatorType::FACULTY, {3, false, "!"}},
+    {UnaryOperatorType::NOT, {3, false, "~"}}};
+
+enum class BinaryOperatorType
+{
+  SUBTRACTION,
+  DIVISION,
+  MODULO,
+  POWER,
+  LOGICAL_OR,
+  LOGICAL_AND,
+  LESS_THAN,
+  GREATER_THAN,
+  LESS_EQUAL,
+  GREATER_EQUAL,
+  EQUAL,
+  NOT_EQUAL,
+  _ANY,
+  _INVALID
+};
+
+const std::map<BinaryOperatorType, OperatorProperties> _binary_operators = {
+    {BinaryOperatorType::SUBTRACTION, {6, true, "-"}},
+    {BinaryOperatorType::DIVISION, {5, true, "/"}},
+    {BinaryOperatorType::POWER, {4, true, "^"}},
+    {BinaryOperatorType::LOGICAL_OR, {14, true, "|"}},
+    {BinaryOperatorType::LOGICAL_AND, {13, true, "&"}},
+    {BinaryOperatorType::LESS_THAN, {8, true, "<"}},
+    {BinaryOperatorType::GREATER_THAN, {8, true, ">"}},
+    {BinaryOperatorType::LESS_EQUAL, {8, true, "<="}},
+    {BinaryOperatorType::GREATER_EQUAL, {8, true, ">="}},
+    {BinaryOperatorType::EQUAL, {9, true, "=="}},
+    {BinaryOperatorType::NOT_EQUAL, {9, true, "!="}}};
+
+enum class MultinaryOperatorType
+{
+  ADDITION,
+  MULTIPLICATION,
   COMPONENT,
-  INVALID,
-  END
+  _ANY,
+  _INVALID
 };
 
-enum class BracketType
-{
-  ROUND,
-  SQUARE,
-  CURLY
-};
+const std::map<MultinaryOperatorType, OperatorProperties> _multinary_operators = {
+    {MultinaryOperatorType::ADDITION, {6, true, "+"}},
+    {MultinaryOperatorType::MULTIPLICATION, {5, true, "*"}}};
 
-enum class FunctionType
+enum class UnaryFunctionType
 {
   ABS,
   ACOS,
@@ -38,7 +97,6 @@ enum class FunctionType
   ASIN,
   ASINH,
   ATAN,
-  ATAN2,
   ATANH,
   CBRT,
   CEIL,
@@ -50,18 +108,11 @@ enum class FunctionType
   EXP,
   EXP2,
   FLOOR,
-  HYPOT,
-  IF,
   IMAG,
   INT,
   LOG,
   LOG10,
   LOG2,
-  MAX,
-  MIN,
-  PLOG,
-  POLAR,
-  POW,
   REAL,
   SEC,
   SIN,
@@ -71,95 +122,101 @@ enum class FunctionType
   TAN,
   TANH,
   TRUNC,
-
-  INVALID
+  _ANY,
+  _INVALID
 };
 
-struct FunctionProperties
+const std::map<UnaryFunctionType, std::string> _unary_functions = {
+    {UnaryFunctionType::ABS, "abs"},     {UnaryFunctionType::ACOS, "acos"},
+    {UnaryFunctionType::ACOSH, "acosh"}, {UnaryFunctionType::ARG, "arg"},
+    {UnaryFunctionType::ASIN, "asin"},   {UnaryFunctionType::ASINH, "asinh"},
+    {UnaryFunctionType::ATAN, "atan"},   {UnaryFunctionType::ATANH, "atanh"},
+    {UnaryFunctionType::CBRT, "cbrt"},   {UnaryFunctionType::CEIL, "ceil"},
+    {UnaryFunctionType::CONJ, "conj"},   {UnaryFunctionType::COS, "cos"},
+    {UnaryFunctionType::COSH, "cosh"},   {UnaryFunctionType::COT, "cot"},
+    {UnaryFunctionType::CSC, "csc"},     {UnaryFunctionType::EXP, "exp"},
+    {UnaryFunctionType::EXP2, "exp2"},   {UnaryFunctionType::FLOOR, "floor"},
+    {UnaryFunctionType::IMAG, "imag"},   {UnaryFunctionType::INT, "int"},
+    {UnaryFunctionType::LOG, "log"},     {UnaryFunctionType::LOG10, "log10"},
+    {UnaryFunctionType::LOG2, "log2"},   {UnaryFunctionType::REAL, "real"},
+    {UnaryFunctionType::SEC, "sec"},     {UnaryFunctionType::SIN, "sin"},
+    {UnaryFunctionType::SINH, "sinh"},   {UnaryFunctionType::SQRT, "sqrt"},
+    {UnaryFunctionType::T, "T"},         {UnaryFunctionType::TAN, "tan"},
+    {UnaryFunctionType::TANH, "tanh"},   {UnaryFunctionType::TRUNC, "trunc"}};
+
+enum class BinaryFunctionType
 {
-  const unsigned short _arguments;
-  const std::string _form;
+  ATAN2,
+  HYPOT,
+  MAX,
+  MIN,
+  PLOG,
+  POLAR,
+  POW,
+  _ANY,
+  _INVALID
 };
 
-static const std::vector<FunctionProperties> _functions = {
-    {1, "abs"},   {1, "acos"},  {1, "acosh"}, {1, "arg"},   {1, "asin"},  {1, "asinh"}, {1, "atan"},
-    {2, "atan2"}, {1, "atanh"}, {1, "cbrt"},  {1, "ceil"},  {1, "conj"},  {1, "cos"},   {1, "cosh"},
-    {1, "cot"},   {1, "csc"},   {1, "exp"},   {1, "exp2"},  {1, "floor"}, {2, "hypot"}, {3, "if"},
-    {1, "imag"},  {1, "int"},   {1, "log"},   {1, "log10"}, {1, "log2"},  {2, "max"},   {2, "min"},
-    {2, "plog"},  {2, "polar"}, {2, "pow"},   {1, "real"},  {1, "sec"},   {1, "sin"},   {1, "sinh"},
-    {1, "sqrt"},  {1, "T"},     {1, "tan"},   {1, "tanh"},  {1, "trunc"}};
+const std::map<BinaryFunctionType, std::string> _binary_functions = {
+    {BinaryFunctionType::ATAN2, "atan2"},
+    {BinaryFunctionType::HYPOT, "hypot"},
+    {BinaryFunctionType::MAX, "max"},
+    {BinaryFunctionType::MIN, "min"},
+    {BinaryFunctionType::PLOG, "plog"},
+    {BinaryFunctionType::POLAR, "polar"},
+    {BinaryFunctionType::POW, "pow"}};
 
-enum class OperatorType
+enum class ConditionalType
 {
-  UNARY_PLUS,
-  UNARY_MINUS,
-  FACULTY,
-  LOGICAL_NOT,
-
-  POWER,
-
-  MULTIPLICATION,
-  DIVISION,
-  MODULO,
-
-  ADDITION,
-  SUBTRACTION,
-
-  LESS_THAN,
-  GREATER_THAN,
-  LESS_EQUAL,
-  GREATER_EQUAL,
-
-  EQUAL,
-  NOT_EQUAL,
-
-  LOGICAL_AND,
-  LOGICAL_OR,
-
-  INVALID
+  IF,
+  _ANY,
+  _INVALID
 };
 
-struct OperatorProperties
+enum class BracketType
 {
-  const unsigned short _precedence;
-  const bool _left_associative;
-  const bool _unary;
-  const std::string _form;
+  ROUND,
+  SQUARE,
+  CURLY,
+  _INVALID
 };
-
-const std::vector<OperatorProperties> _operators = {{3, false, true, "+"},
-                                                    {3, false, true, "-"},
-                                                    {3, false, true, "!"},
-                                                    {3, false, true, "~"},
-                                                    {4, true, false, "^"},
-                                                    {5, true, false, "*"},
-                                                    {5, true, false, "/"},
-                                                    {5, true, false, "%"},
-                                                    {6, true, false, "+"},
-                                                    {6, true, false, "-"},
-                                                    {8, true, false, "<"},
-                                                    {8, true, false, ">"},
-                                                    {8, true, false, "<="},
-                                                    {8, true, false, ">="},
-                                                    {9, true, false, "=="},
-                                                    {9, true, false, "!="},
-                                                    {13, true, false, "&"},
-                                                    {14, true, false, "|"}};
-
-FunctionType identifyFunction(const std::string & op);
-
-inline const FunctionProperties &
-functionProperty(FunctionType op)
-{
-  return _functions[static_cast<int>(op)];
-}
-
-OperatorType identifyOperator(const std::string & op);
 
 inline const OperatorProperties &
-operatorProperty(OperatorType op)
+operatorProperty(UnaryOperatorType op)
 {
-  return _operators[static_cast<int>(op)];
+  auto it = _unary_operators.find(op);
+  if (it == _unary_operators.end())
+    fatalError("Unknown operator");
+  return it->second;
+}
+
+inline const OperatorProperties &
+operatorProperty(BinaryOperatorType op)
+{
+  auto it = _binary_operators.find(op);
+  if (it == _binary_operators.end())
+    fatalError("Unknown operator");
+  return it->second;
+}
+
+std::string stringify(NumberType type);
+std::string stringify(UnaryOperatorType type);
+std::string stringify(BinaryOperatorType type);
+std::string stringify(MultinaryOperatorType type);
+std::string stringify(UnaryFunctionType type);
+std::string stringify(BinaryFunctionType type);
+std::string stringify(ConditionalType type);
+
+template <typename T>
+std::string
+stringifyHelper(T type, const std::vector<std::string> list)
+{
+  const auto index = static_cast<int>(type);
+
+  if (index >= list.size())
+    fatalError("Unknown type");
+
+  return list[index];
 }
 
 // end namespace SymbolicMath

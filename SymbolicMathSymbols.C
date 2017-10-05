@@ -3,28 +3,50 @@
 namespace SymbolicMath
 {
 
-FunctionType
-identifyFunction(const std::string & func)
+std::string
+stringify(NumberType type)
 {
-  std::size_t i = 0;
-  const auto last = static_cast<std::size_t>(FunctionType::INVALID);
-  for (; i < last; ++i)
-    if (_functions[i]._form == func)
-      break;
-
-  return static_cast<FunctionType>(i);
+  return stringifyHelper(type, {"real", "integer", "rational"});
 }
 
-OperatorType
-identifyOperator(const std::string & op)
+std::string
+stringify(UnaryOperatorType type)
 {
-  // we search from the back to avoid matching with the unary operators
-  int i = static_cast<int>(OperatorType::INVALID) - 1;
-  for (; i >= 0; --i)
-    if (_operators[i]._form == op)
-      return static_cast<OperatorType>(i);
+  return stringifyHelper(type, {"+", "-", "!", "^"});
+}
 
-  return OperatorType::INVALID;
+std::string
+stringify(BinaryOperatorType type)
+{
+  return stringifyHelper(type, {"-", "/", "%", "^", "|", "&"});
+}
+
+std::string
+stringify(MultinaryOperatorType type)
+{
+  return stringifyHelper(type, {"+", "*", "[]"});
+}
+
+std::string
+stringify(UnaryFunctionType type)
+{
+  return stringifyHelper(type,
+                         {"abs",  "acos",  "acosh", "arg",  "asin", "asinh", "atan", "atanh",
+                          "cbrt", "ceil",  "conj",  "cos",  "cosh", "cot",   "csc",  "exp",
+                          "exp2", "floor", "imag",  "int",  "log",  "log10", "log2", "real",
+                          "sec",  "sin",   "sinh",  "sqrt", "T",    "tan",   "tanh", "trunc"});
+}
+
+std::string
+stringify(BinaryFunctionType type)
+{
+  return stringifyHelper(type, {"atan2", "hypot", "max", "min", "plog", "polar", "pow"});
+}
+
+std::string
+stringify(ConditionalType type)
+{
+  return stringifyHelper(type, {"if"});
 }
 
 // end namespace SymbolicMath

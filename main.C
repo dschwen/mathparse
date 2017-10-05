@@ -12,14 +12,14 @@ main(int argc, char * argv[])
 
   SymbolicMath::Parser parser;
   parser.registerValueProvider("a");
-  parser.registerValueProvider("bee");
-  parser.registerValueProvider("cee");
+  parser.registerValueProvider("b");
+  parser.registerValueProvider("c");
 
   auto func = parser.parse(argv[1]);
 
   std::cout << func->format() << '\n' << func->formatTree("\t") << '\n';
 
-  func->simplify();
+  SymbolicMath::simplify(func);
 
   std::cout << " = " << func->format() << '\n' << func->formatTree("\t") << '\n';
 
