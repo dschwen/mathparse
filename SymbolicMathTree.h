@@ -1,7 +1,5 @@
-#ifndef SYMBOLICMATH_TREE_H
-#define SYMBOLICMATH_TREE_H
-
-#include "SymbolicMathSymbols.h"
+#ifndef SYMBOLICMATHTREE_H
+#define SYMBOLICMATHTREE_H
 
 #include <vector>
 #include <memory>
@@ -9,7 +7,7 @@
 #include <stack>
 #include <type_traits>
 
-typedef double Real;
+#include "SymbolicMathSymbols.h"
 
 namespace SymbolicMath
 {
@@ -27,6 +25,8 @@ public:
       std::unique_ptr<Node>::reset(ptr);
   }
 };
+
+void simplify(NodePtr & node);
 
 using Shape = std::vector<unsigned int>;
 
@@ -97,6 +97,14 @@ public:
     for (auto arg : args)
       _args.emplace_back(arg);
   }
+  MultinaryNode(Enum type, std::stack<Node *> & stack, std::size_t nargs) : _type(type)
+  {
+    for (std::size_t i = 0; i < nargs; ++i)
+    {
+      _args.emplace(_args.begin(), stack.top());
+      stack.pop();
+    }
+  }
 
   bool is(Enum type) override { return _type == type || type == Enum::_ANY; }
 
@@ -108,6 +116,7 @@ protected:
 class ValueProviderNode : public Node
 {
 public:
+  ValueProviderNode(unsigned int id) : _id(id) {}
   std::string format() override { return "_val" + std::to_string(_id); }
   std::string formatTree(std::string indent = "") override;
 

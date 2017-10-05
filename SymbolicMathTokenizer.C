@@ -138,11 +138,11 @@ Tokenizer::getToken()
 
   // end of expression
   if (*_c == '\0')
-    return makeToken(TokenType::END);
+    return new EndToken(pos());
 
   // comma
   if (*_c == ',')
-    return makeToken(TokenType::COMMA);
+    return new CommaToken(pos());
 
   if (isOperator())
   {
@@ -150,30 +150,11 @@ Tokenizer::getToken()
     // parse >= <= == but NOT *-
     while (*_c == '=')
       op += *(_c++);
-    return makeToken(identifyOperator(op));
+    return OperatorToken::build(op, pos());
   }
 
-  if (isOpeningBracket())
-    switch (*(_c++))
-    {
-      case '(':
-        return makeToken(TokenType::OPENING_BRACKET, BracketType::ROUND);
-      case '[':
-        return makeToken(TokenType::OPENING_BRACKET, BracketType::SQUARE);
-      case '{':
-        return makeToken(TokenType::OPENING_BRACKET, BracketType::CURLY);
-    }
-
-  if (isClosingBracket())
-    switch (*(_c++))
-    {
-      case ')':
-        return makeToken(TokenType::CLOSING_BRACKET, BracketType::ROUND);
-      case ']':
-        return makeToken(TokenType::CLOSING_BRACKET, BracketType::SQUARE);
-      case '}':
-        return makeToken(TokenType::CLOSING_BRACKET, BracketType::CURLY);
-    }
+  if (isBracket())
+    return newBracketToken(*(_c++), pos());
 
   // consume symbol
   if (isAlphaFirst())
@@ -183,9 +164,9 @@ Tokenizer::getToken()
       symbol += *(_c++);
 
     if (*_c == '(')
-      return makeToken(identifyFunction(symbol));
+      return FunctionToken::build(symbol, pos());
     else
-      return makeToken(TokenType::VARIABLE, symbol);
+      return SymbolToken(symbol, pos());
   }
 
   // consume number
@@ -224,105 +205,13 @@ Tokenizer::getToken()
     }
 
     if (decimals == 0.0 && exponent == 0)
-      return makeToken(integer);
+      return new NumberToken(integer, pos());
     else
-      return makeToken((integer + decimals) * std::pow(10.0, exponent));
+      return new NumberToken((integer + decimals) * std::pow(10.0, exponent), pos());
   }
 
   // unable to parse
-  return makeToken(TokenType::INVALID);
-}
-
-/**
- * Token building helpers
- */
-Token
-Tokenizer::makeToken(TokenType type)
-{
-  return Token(type, std::string(1, *(_c++)), _token_start);
-}
-
-Token
-Tokenizer::makeToken(TokenType type, const std::string & data)
-{
-  return Token(type, data, _token_start);
-}
-
-Token
-Tokenizer::makeToken(TokenType type, BracketType bracket_type)
-{
-  return Token(type, bracket_type, _token_start);
-}
-
-Token
-Tokenizer::makeToken(OperatorType operator_type)
-{
-  return Token(TokenType::OPERATOR, operator_type, _token_start);
-}
-
-Token
-Tokenizer::makeToken(FunctionType function_type)
-{
-  return Token(TokenType::FUNCTION, function_type, _token_start);
-}
-
-Token
-Tokenizer::makeToken(int integer)
-{
-  return Token(TokenType::NUMBER, Real(integer), _token_start);
-}
-
-Token
-Tokenizer::makeToken(Real real)
-{
-  return Token(TokenType::NUMBER, real, _token_start);
-}
-
-/**
- * Token constructors
- */
-Token::Token(TokenType type, const std::string & string, std::size_t pos)
-  : _type(type), _pos(pos), _string(string), _integer(0)
-{
-  // validate parameter for the given type
-  switch (type)
-  {
-    case TokenType::VARIABLE:
-    case TokenType::COMMA:
-    case TokenType::INVALID:
-    case TokenType::END:
-      break;
-    default:
-      throw std::invalid_argument("string");
-  }
-}
-
-Token::Token(TokenType type, OperatorType operator_type, std::size_t pos)
-  : _type(type), _pos(pos), _operator_type(operator_type), _integer(0)
-{
-  if (type != TokenType::OPERATOR)
-    throw std::invalid_argument("operator_type");
-}
-
-Token::Token(TokenType type, FunctionType function_type, std::size_t pos)
-  : _type(type), _pos(pos), _function_type(function_type), _integer(0)
-{
-  if (type != TokenType::FUNCTION)
-    throw std::invalid_argument("function_type");
-}
-
-Token::Token(TokenType type, BracketType bracket_type, std::size_t pos)
-  : _type(type), _pos(pos), _bracket_type(bracket_type), _integer(0)
-{
-  if (type != TokenType::OPENING_BRACKET && type != TokenType::CLOSING_BRACKET)
-    throw std::invalid_argument("bracket_type");
-}
-
-Token::Token(TokenType type, Real real, std::size_t pos)
-  : _type(type), _pos(pos), _integer(0), _real(real)
-{
-  if (type != TokenType::NUMBER)
-    throw std::invalid_argument("operator_type");
+  return new InvalidToken(pos());
 }
 
 // end namespace SymbolicMath

@@ -9,18 +9,18 @@ namespace SymbolicMath
 
 Parser::Parser() : _qp_ptr(nullptr) {}
 
-std::unique_ptr<Tree>
+NodePtr
 Parser::parse(const std::string & expression)
 {
   Tokenizer tokenizer(expression);
   _expression = expression;
 
-  std::stack<Token> operator_stack;
+  std::stack<TokenPtr> operator_stack;
 
   // process tokens
   do
   {
-    _token = tokenizer.getToken();
+    _token.reset(tokenizer.getToken());
     preprocessToken();
     validateToken();
 
@@ -28,12 +28,12 @@ Parser::parse(const std::string & expression)
     // Shunting yard core
     //
 
-    if (_token._type == TokenType::NUMBER || _token._type == TokenType::VARIABLE)
-      pushToOutput(_token);
-    else if (_token._type == TokenType::OPERATOR)
+    if (_token->isNumber() || _token->isSymbol())
+      pushToOutput(_token.get());
+    else if (_token->isOperator())
     {
       auto precedence = _operators[static_cast<int>(_token._operator_type)]._precedence;
-      while (!operator_stack.empty() && operator_stack.top()._type == TokenType::OPERATOR &&
+      while (!operator_stack.empty() && operator_stack.top()->isOperator() &&
              ((operatorProperty(operator_stack.top()._operator_type)._precedence <= precedence &&
                operatorProperty(operator_stack.top()._operator_type)._left_associative) ||
               (operatorProperty(operator_stack.top()._operator_type)._precedence < precedence &&
@@ -42,113 +42,87 @@ Parser::parse(const std::string & expression)
         pushToOutput(operator_stack.top());
         operator_stack.pop();
       }
-      operator_stack.push(_token);
+      operator_stack.push(std::move(_token));
     }
-    else if (_token._type == TokenType::FUNCTION)
+    else if (_token->isFunction())
       operator_stack.push(_token);
-    else if (_token._type == TokenType::OPENING_BRACKET)
+    else if (_token->isOpeningBracket())
       operator_stack.push(_token);
-    else if (_token._type == TokenType::CLOSING_BRACKET)
+    else if (_token->isClosingBracket())
     {
-      if (_last_token._type != TokenType::OPENING_BRACKET)
+      if (!_last_token->isOpeningBracket())
       {
         // bracket pair containing an expression
         while (!operator_stack.empty() &&
-               (operator_stack.top()._type != TokenType::OPENING_BRACKET ||
+               (operator_stack.top()->isOpeningBracket() ||
                 operator_stack.top()._bracket_type != _token._bracket_type))
         {
           pushToOutput(operator_stack.top());
           operator_stack.pop();
         }
         if (operator_stack.empty())
-        {
-          std::cerr << formatError("Unmatched closing bracket");
-          throw std::domain_error("parenthesis");
-        }
+          fatalError(formatError("Unmatched closing bracket"));
+
         auto open_parens = operator_stack.top();
         operator_stack.pop();
 
         // check if this bracket pair was a function argument list
         if (!operator_stack.empty())
         {
-          if (operator_stack.top()._type == TokenType::FUNCTION)
+          if (operator_stack.top()->isFunction())
           {
             auto function = operator_stack.top();
             auto expected_argments = functionProperty(function._function_type)._arguments;
             if (expected_argments != open_parens._integer + 1)
-            {
-              {
-                std::cerr << formatError(function._pos,
-                                         "Expected " + std::to_string(expected_argments) +
-                                             " argument(s) but found " +
-                                             std::to_string(open_parens._integer + 1));
-                throw std::domain_error("parenthesis");
-              }
-            }
+              fatalError(formatError(function._pos,
+                                     "Expected " + std::to_string(expected_argments) +
+                                         " argument(s) but found " +
+                                         std::to_string(open_parens._integer + 1)));
+
             pushFunctionToOutput(operator_stack.top(), expected_argments);
             operator_stack.pop();
           }
           else if (operator_stack.top()._type == TokenType::VARIABLE)
-          {
-            // build a component operator node (e.g. M[1,3])
-            std::cerr << "Component operator not implemented yet\n";
-          }
+            fatalError("Component operator not implemented yet\n");
         }
       }
       else
       {
         // empty bracket pair
         auto open_parens = operator_stack.top();
-        if (open_parens._type != TokenType::OPENING_BRACKET)
-        {
-          std::cerr << "Internal error\n";
-          throw std::domain_error("parenthesis");
-        }
+        if (!open_parens->isOpeningBarcket())
+          fatalError("Internal error\n");
         if (open_parens._bracket_type != _token._bracket_type)
-        {
-          std::cerr << formatError(open_parens._pos, "Mismatching empty bracket pair");
-          throw std::domain_error("parenthesis");
-        }
+          fatalError(formatError(open_parens._pos, "Mismatching empty bracket pair"));
         if (_token._bracket_type != BracketType::ROUND)
-        {
-          std::cerr << formatError(open_parens._pos, "Invalid empty bracket pair");
-          throw std::domain_error("parenthesis");
-        }
+          fatalError(formatError(open_parens._pos, "Invalid empty bracket pair"));
 
         operator_stack.pop();
 
-        if (operator_stack.empty() || operator_stack.top()._type != TokenType::FUNCTION)
-        {
-          std::cerr << formatError(open_parens._pos,
-                                   "Empty round bracket pairs are only allowed after functions");
-          throw std::domain_error("parenthesis");
-        }
+        if (operator_stack.empty() || !operator_stack.top()->isFunction())
+          fatalError(formatError(open_parens->pos(),
+                                 "Empty round bracket pairs are only allowed after functions"));
 
         auto function = operator_stack.top();
         auto expected_argments = functionProperty(function._function_type)._arguments;
         if (expected_argments != 0)
-        {
-          std::cerr << formatError(function._pos,
-                                   "Function takes " + std::to_string(expected_argments) +
-                                       " argument(s), but none were given");
-          throw std::domain_error("parenthesis");
-        }
+          fatalError(formatError(function->pos(),
+                                 "Function takes " + std::to_string(expected_argments) +
+                                     " argument(s), but none were given"));
+
         pushFunctionToOutput(operator_stack.top(), 0);
         operator_stack.pop();
       }
     }
     else if (_token._type == TokenType::COMMA)
     {
-      while (!operator_stack.empty() && operator_stack.top()._type != TokenType::OPENING_BRACKET)
+      while (!operator_stack.empty() && !operator_stack.top()->isOpeningBracket())
       {
         pushToOutput(operator_stack.top());
         operator_stack.pop();
       }
       if (operator_stack.empty())
-      {
-        std::cerr << formatError("Comma outside of brackets");
-        throw std::domain_error("parenthesis");
-      }
+        fatalError(formatError("Comma outside of brackets"));
 
       // count the function arguments encountered for validation purposes
       // assert(operator_stack.top()._type != TokenType::OPENING_BRACKET)
@@ -163,11 +137,8 @@ Parser::parse(const std::string & expression)
   while (!operator_stack.empty())
   {
     auto _token = operator_stack.top();
-    if (_token._type == TokenType::OPENING_BRACKET)
-    {
-      std::cerr << formatError("Unmatched opening bracket");
-      throw std::domain_error("parenthesis");
-    }
+    if (_token->isOpeningBracket())
+      fatalError(formatError("Unmatched opening bracket"));
 
     pushToOutput(_token);
     operator_stack.pop();
@@ -179,68 +150,38 @@ Parser::parse(const std::string & expression)
 void
 Parser::pushToOutput(const Token & token)
 {
-  switch (token._type)
+  if (token->isNumber())
   {
-    case TokenType::NUMBER:
-      _output_stack.push(std::unique_ptr<Tree>(new Tree(token._real)));
-      return;
-
-    case TokenType::OPERATOR:
-    {
-      auto right = std::move(_output_stack.top());
-      _output_stack.pop();
-
-      if (operatorProperty(token._operator_type)._unary)
-      {
-        _output_stack.push(
-            std::unique_ptr<Tree>(new Tree(token._operator_type, {right.release()})));
-      }
-      else
-      {
-        auto left = std::move(_output_stack.top());
-        _output_stack.pop();
-
-        _output_stack.push(std::unique_ptr<Tree>(
-            new Tree(token._operator_type, {left.release(), right.release()})));
-      }
-      return;
-    }
-
-    case TokenType::VARIABLE:
-    {
-      auto it = _value_providers.find(token._string);
-      if (it == _value_providers.end())
-      {
-        std::cerr << formatError(token._pos, "Unknown value provider name");
-        throw std::domain_error("value_provider");
-      }
-
-      _output_stack.push(std::unique_ptr<Tree>(new Tree(it->second)));
-      return;
-    }
-
-    default:
-      throw std::domain_error("invalid_token");
+    _output_stack.push(new RealNumberNode(token->asNumber()));
+    return;
   }
+  else if (token->isOperator())
+  {
+    _output_stack.push(token->node(_output_stack));
+    return;
+  }
+
+  else if (token->isSymbol())
+  {
+    auto it = _value_providers.find(token->asString());
+    if (it == _value_providers.end())
+      fatalError(formatError(token->pos(), "Unknown value provider name"));
+
+    _output_stack.push(new ValueProviderNode(it->second));
+    return;
+  }
+
+  default:
+    fatalError("invalid_token");
 }
 
 void
 Parser::pushFunctionToOutput(const Token & token, unsigned int num_arguments)
 {
-  if (token._type != TokenType::FUNCTION)
-    throw std::domain_error("invalid_token");
+  if (!token->isFunction())
+    fatalError("invalid_token");
 
-  std::vector<Tree *> arguments;
-  for (unsigned int i = 0; i < num_arguments; ++i)
-  {
-    arguments.push_back(_output_stack.top().release());
-    _output_stack.pop();
-  }
-
-  if (token._function_type == FunctionType::POW)
-    _output_stack.push(std::unique_ptr<Tree>(new Tree(OperatorType::POWER, arguments)));
-  else
-    _output_stack.push(std::unique_ptr<Tree>(new Tree(token._function_type, arguments)));
+  _output_stack.push(token->node(_output_stack));
 }
 
 unsigned int
@@ -269,29 +210,22 @@ void
 Parser::preprocessToken()
 {
   // operator preprocessing
-  if (_token._type == TokenType::OPERATOR)
+  if (_token->isOperator())
   {
     // error on invalid operators
-    if (_token._operator_type == OperatorType::INVALID)
-    {
-      std::cerr << formatError("Unknown operator");
-      throw std::domain_error("operator");
-    }
+    if (_token->isInvalid())
+      fatalError(formatError("Unknown operator"));
 
     // preprocess operators to distinguish unary plus/minus from addition/subtraction
-    if (_last_token._type != TokenType::NUMBER && _last_token._type != TokenType::VARIABLE &&
-        _last_token._type != TokenType::CLOSING_BRACKET)
+    if (!_last_token->isNumber() && !_last_token->isSymbol() && !_last_token->isClosingBracket())
     {
       // turn addition into unary plus and subtraction into unary minus
-      if (_token._operator_type == OperatorType::ADDITION)
-        _token._operator_type = OperatorType::UNARY_PLUS;
-      else if (_token._operator_type == OperatorType::SUBTRACTION)
-        _token._operator_type = OperatorType::UNARY_MINUS;
+      if (_token->is(MultinaryOperatorType::ADDITION))
+        _token.reset(new UnaryOperatorToken(UnaryOperatorType::PLUS));
+      else if (_token->is(BinaryOperatorType::SUBTRACTION))
+        _token.reset(new UnaryOperatorToken(UnaryOperatorType::MINUS));
       else
-      {
-        std::cerr << formatError("Did not expect operator here");
-        throw std::domain_error("operator");
-      }
+        fatalError(formatError("Did not expect operator here"));
     }
   }
 }
@@ -299,36 +233,23 @@ Parser::preprocessToken()
 void
 Parser::validateToken()
 {
-  // check if token is invalid
-  if (_token._type == TokenType::INVALID)
-  {
-    std::cerr << formatError("Parse error");
-    throw std::domain_error("invalid");
-  }
-
-  // function checking
-  if (_token._type == TokenType::FUNCTION && _token._function_type == FunctionType::INVALID)
-  {
-    std::cerr << formatError("Unknown function");
-    throw std::domain_error("operator");
-  }
+  // invalid function checking
+  if (_token->isFunction() && _token->isInvalid())
+    fatalError(formatError("Unknown function"));
 
   // disallow consecutive variables/numbers (we could insert a multiplication here...)
-  if ((_token._type == TokenType::VARIABLE || _token._type == TokenType::NUMBER ||
-       _token._type == TokenType::FUNCTION) &&
-      (_last_token._type == TokenType::VARIABLE || _last_token._type == TokenType::NUMBER))
-  {
-    std::cerr << formatError("Operator expected here");
-    throw std::domain_error("operator");
-  }
+  if ((_token->isSymbol() || _token->isNumber() || _token->isFunction()) &&
+      (_last_token->isSymbol() || _last_token->isNumber()))
+    fatalError(formatError("Operator expected here"));
 
   // check closing bracket state
   if (_token._type == TokenType::CLOSING_BRACKET &&
       (_last_token._type == TokenType::OPERATOR || _last_token._type == TokenType::COMMA))
-  {
-    std::cerr << formatError("Did not expect closing bracket here");
-    throw std::domain_error("operator");
-  }
+    fatalError(formatError("Did not expect closing bracket here"));
+
+  // lastly check if token is completely invalid
+  if (_token.->isInvalid())
+    fatalError(formatError("Parse error"));
 }
 
 std::string
@@ -365,7 +286,7 @@ Parser::formatToken(const Token & token)
 std::string
 Parser::formatError(const std::string & message, std::size_t width)
 {
-  return formatError(_token._pos, message, width);
+  return formatError(_token->pos(), message, width);
 }
 
 std::string

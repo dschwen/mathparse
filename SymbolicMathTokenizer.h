@@ -43,8 +43,13 @@ public:
   virtual bool isComma() { return false; }
   virtual bool isEnd() { return false; }
 
-  virtual Real asNumber() { return NAN; };
+  virtual bool is(BinaryOperatorNodeType) { return false; }
+  virtual bool is(MultinaryOperatorNodeType) { return false; }
+
+  virtual Real asNumber() { return 0.0; };
   virtual std::string asString() { return ""; };
+
+  std::size_t pos() { return _pos; }
 
   virtual unsigned short arguments() { return 0; }
   virtual Node * node(std::stack<Node *> & stack) { return nullptr; }
@@ -52,6 +57,8 @@ public:
 protected:
   std::size_t _pos;
 };
+
+using TokenPtr = std::unique_ptr<Token>;
 
 class EndToken : public Token
 {
@@ -67,6 +74,13 @@ public:
   bool isInvalid() override { return true; }
 };
 
+class CommaToken : public Token
+{
+public:
+  CommaToken(std::size_t pos) : Token(pos) {}
+  bool isComma() override { return true; }
+};
+
 class SymbolToken : public Token
 {
 public:
@@ -80,7 +94,7 @@ protected:
 
 class NumberToken : public Token
 {
-  StringToken(Real number, std::size_t pos) : Token(pos), _number(number) {}
+  NumberToken(Real number, std::size_t pos) : Token(pos), _number(number) {}
   bool isNumber() override { return true; }
   Real asNumber() override { return _number; };
 
@@ -108,7 +122,7 @@ class OperatorToken : public Token
 
 public:
   bool isOperator() override { return true; }
-  virtual bool isInvalid() { return true; }
+  virtual bool isInvalid() override { return true; }
   static OperatorToken * build(const std::string & string, std::size_t pos);
 };
 
@@ -136,6 +150,7 @@ public:
   bool isInvalid() override { return _type == BinaryOperatorNodeType::_INVALID; }
   unsigned short arguments() override { return 2; }
   Node * node(std::stack<Node *> & stack) override { return new BinaryOperatorNode(_type, stack); }
+  bool is(BinaryOperatorNodeType type) override { return type == _type; }
 
 protected:
   BinaryOperatorNodeType _type;
@@ -152,8 +167,9 @@ public:
   unsigned short arguments() override { return 2; }
   Node * node(std::stack<Node *> & stack) override
   {
-    return new MultinaryOperatorNode(_type, stack);
+    return new MultinaryOperatorNode(_type, stack, 2);
   }
+  bool is(MultinaryOperatorNodeType type) override { return type == _type; }
 
 protected:
   MultinaryOperatorNodeType _type;
@@ -166,7 +182,7 @@ class FunctionToken : public Token
 public:
   static FunctionToken * build(const std::string & string, std::size_t pos);
   bool isFunction() override { return true; }
-  virtual bool isInvalid() { return true; }
+  virtual bool isInvalid() override { return true; }
 };
 
 class UnaryFunctionToken : public FunctionToken

@@ -19,7 +19,7 @@ class Parser
 public:
   Parser();
 
-  std::unique_ptr<Tree> parse(const std::string & expression);
+  NodePtr parse(const std::string & expression);
 
   unsigned int registerValueProvider(std::string name);
 
@@ -41,7 +41,7 @@ public:
   */
 
 protected:
-  void pushToOutput(const Token & token);
+  void pushToOutput(Token * token);
   void pushFunctionToOutput(const Token & token, unsigned int num_arguments);
 
   void preprocessToken();
@@ -49,10 +49,10 @@ protected:
 
 private:
   /// current token
-  Token _token;
+  TokenPtr _token;
 
   /// previous token
-  Token _last_token;
+  TokenPtr _last_token;
 
   /// output stack where the Tree is formed
   std::stack<Node *> _output_stack;

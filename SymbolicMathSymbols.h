@@ -1,12 +1,16 @@
-#ifndef SYMBOLICMATH_SYMBOLS_H
-#define SYMBOLICMATH_SYMBOLS_H
+#ifndef SYMBOLICMATHSYMBOLS_H
+#define SYMBOLICMATHSYMBOLS_H
 
 #include <string>
 #include <vector>
-#include <type_traits>
+#include <map>
+
+#include "SymbolicMathUtils.h"
 
 namespace SymbolicMath
 {
+
+typedef double Real;
 
 struct OperatorProperties
 {
@@ -58,7 +62,7 @@ enum class BinaryOperatorNodeType
   _INVALID
 };
 
-const std::map<UnaryOperatorNodeType, OperatorProperties> _binary_operators = {
+const std::map<BinaryOperatorNodeType, OperatorProperties> _binary_operators = {
     {BinaryOperatorNodeType::SUBTRACTION, {6, true, "-"}},
     {BinaryOperatorNodeType::DIVISION, {5, true, "/"}},
     {BinaryOperatorNodeType::POWER, {4, true, "^"}},
@@ -177,8 +181,6 @@ enum class BracketType
   _INVALID
 };
 
-FunctionType identifyFunction(const std::string & op);
-
 inline const OperatorProperties &
 operatorProperty(UnaryOperatorNodeType op)
 {
@@ -195,6 +197,26 @@ operatorProperty(BinaryOperatorNodeType op)
   if (it == _binary_operators.end())
     fatalError("Unknown operator");
   return it->second;
+}
+
+std::string stringify(NumberNodeType type);
+std::string stringify(UnaryOperatorNodeType type);
+std::string stringify(BinaryOperatorNodeType type);
+std::string stringify(MultinaryOperatorNodeType type);
+std::string stringify(UnaryFunctionNodeType type);
+std::string stringify(BinaryFunctionNodeType type);
+std::string stringify(ConditionalNodeType type);
+
+template <typename T>
+std::string
+stringifyHelper(T type, const std::vector<std::string> list)
+{
+  const auto index = static_cast<int>(type);
+
+  if (index >= list.size())
+    fatalError("Unknown type");
+
+  return list[index];
 }
 
 // end namespace SymbolicMath
