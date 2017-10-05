@@ -69,6 +69,18 @@ OperatorToken::build(const std::string & string, std::size_t pos)
   return new InvalidOperatorToken(pos);
 }
 
+OperatorToken *
+UnaryOperatorToken::build(UnaryOperatorType type, std::size_t pos)
+{
+  // unary operators + and - are discriminated in the parser
+  auto it = _unary_operators.find(type);
+
+  if (it == _unary_operators.end())
+    fatalError("Unknown unary operator");
+
+  return new UnaryOperatorToken(*it, pos);
+}
+
 FunctionToken *
 FunctionToken::build(const std::string & string, std::size_t pos)
 {

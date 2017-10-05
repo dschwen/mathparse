@@ -159,14 +159,14 @@ protected:
 class UnaryOperatorToken : public OperatorTokenBase
 {
 public:
-  UnaryOperatorToken(std::pair<UnaryOperatorType, OperatorProperties> type_prop,
-                     std::size_t pos)
+  UnaryOperatorToken(std::pair<UnaryOperatorType, OperatorProperties> type_prop, std::size_t pos)
     : OperatorTokenBase(type_prop.second, pos), _type(type_prop.first)
   {
   }
   bool isInvalid() override { return _type == UnaryOperatorType::_INVALID; }
   bool isUnary() override { return true; }
   unsigned short arguments() override { return 1; }
+  static OperatorToken * build(UnaryOperatorType type, std::size_t pos);
   Node * node(std::stack<Node *> & stack) override { return new UnaryOperatorNode(_type, stack); }
 
 protected:
@@ -176,8 +176,7 @@ protected:
 class BinaryOperatorToken : public OperatorTokenBase
 {
 public:
-  BinaryOperatorToken(std::pair<BinaryOperatorType, OperatorProperties> type_prop,
-                      std::size_t pos)
+  BinaryOperatorToken(std::pair<BinaryOperatorType, OperatorProperties> type_prop, std::size_t pos)
     : OperatorTokenBase(type_prop.second, pos), _type(type_prop.first)
   {
   }
@@ -223,9 +222,7 @@ public:
 class UnaryFunctionToken : public FunctionToken
 {
 public:
-  UnaryFunctionToken(UnaryFunctionType type, std::size_t pos) : FunctionToken(pos), _type(type)
-  {
-  }
+  UnaryFunctionToken(UnaryFunctionType type, std::size_t pos) : FunctionToken(pos), _type(type) {}
   bool isInvalid() override { return _type == UnaryFunctionType::_INVALID; }
   unsigned short arguments() override { return 1; }
   Node * node(std::stack<Node *> & stack) override { return new UnaryFunctionNode(_type, stack); }
@@ -237,10 +234,7 @@ protected:
 class BinaryFunctionToken : public FunctionToken
 {
 public:
-  BinaryFunctionToken(BinaryFunctionType type, std::size_t pos)
-    : FunctionToken(pos), _type(type)
-  {
-  }
+  BinaryFunctionToken(BinaryFunctionType type, std::size_t pos) : FunctionToken(pos), _type(type) {}
   bool isInvalid() override { return _type == BinaryFunctionType::_INVALID; }
   unsigned short arguments() override { return 2; }
   Node * node(std::stack<Node *> & stack) override { return new BinaryFunctionNode(_type, stack); }

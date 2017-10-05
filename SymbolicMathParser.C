@@ -45,7 +45,10 @@ Parser::parse(const std::string & expression)
       operator_stack.push(std::move(_token));
     }
     else if (_token->isFunction())
+    {
       operator_stack.push(_token);
+      argument_count_stack.push(1);
+    }
     else if (_token->isOpeningBracket())
       operator_stack.push(_token);
     else if (_token->isClosingBracket())
@@ -73,11 +76,14 @@ Parser::parse(const std::string & expression)
           {
             auto function = operator_stack.top();
             auto expected_argments = function->arguments();
-            if (expected_argments != open_parens._integer + 1)
+            auto provided_arguments = argument_count_stack.top();
+            argument_count_stack.pop();
+
+            if (expected_argments != provided_arguments)
               fatalError(formatError(function->pos(),
                                      "Expected " + std::to_string(expected_argments) +
                                          " argument(s) but found " +
-                                         std::to_string(open_parens._integer + 1)));
+                                         std::to_string(provided_arguments)));
 
             pushFunctionToOutput(operator_stack.top(), expected_argments);
             operator_stack.pop();
@@ -97,6 +103,7 @@ Parser::parse(const std::string & expression)
         if (_token->bracketType() != BracketType::ROUND)
           fatalError(formatError(open_parens->pos(), "Invalid empty bracket pair"));
 
+        argument_count_stack.pop();
         operator_stack.pop();
 
         if (operator_stack.empty() || !operator_stack.top()->isFunction())
@@ -125,8 +132,9 @@ Parser::parse(const std::string & expression)
         fatalError(formatError("Comma outside of brackets"));
 
       // count the function arguments encountered for validation purposes
-      // assert(operator_stack.top()._type != TokenType::OPENING_BRACKET)
-      operator_stack.top()._integer++;
+      if (argument_count_stack.empty())
+        fatalError("argument count stack is empty");
+      argument_count_stack.top()++;
     }
 
     // needed to discriminate unary plus and minus
@@ -221,9 +229,9 @@ Parser::preprocessToken()
     {
       // turn addition into unary plus and subtraction into unary minus
       if (_token->is(MultinaryOperatorType::ADDITION))
-        _token.reset(new UnaryOperatorToken(UnaryOperatorType::PLUS));
+        _token.reset(UnaryOperatorToken::build(UnaryOperatorType::PLUS, _token->pos()));
       else if (_token->is(BinaryOperatorType::SUBTRACTION))
-        _token.reset(new UnaryOperatorToken(UnaryOperatorType::MINUS));
+        _token.reset(UnaryOperatorToken::build(UnaryOperatorType::MINUS, _token->pos()));
       else
         fatalError(formatError("Did not expect operator here"));
     }
