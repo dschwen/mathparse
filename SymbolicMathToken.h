@@ -42,7 +42,7 @@ public:
   virtual bool isUnary() { return false; }
   virtual bool isLeftAssociative() { return false; }
 
-  virtual Node * node(std::stack<Node *> & stack) { return nullptr; }
+  virtual NodeData * node(std::stack<NodeData *> & stack) { return nullptr; }
 
 protected:
   std::size_t _pos;
@@ -153,7 +153,10 @@ public:
   bool isUnary() override { return true; }
   unsigned short arguments() override { return 1; }
   static OperatorToken * build(UnaryOperatorType type, std::size_t pos);
-  Node * node(std::stack<Node *> & stack) override { return new UnaryOperatorNode(_type, stack); }
+  NodeData * node(std::stack<NodeData *> & stack) override
+  {
+    return new UnaryOperatorNode(_type, stack);
+  }
 
 protected:
   UnaryOperatorType _type;
@@ -168,7 +171,10 @@ public:
   }
   bool isInvalid() override { return _type == BinaryOperatorType::_INVALID; }
   unsigned short arguments() override { return 2; }
-  Node * node(std::stack<Node *> & stack) override { return new BinaryOperatorNode(_type, stack); }
+  NodeData * node(std::stack<NodeData *> & stack) override
+  {
+    return new BinaryOperatorNode(_type, stack);
+  }
   bool is(BinaryOperatorType type) override { return type == _type; }
 
 protected:
@@ -185,7 +191,7 @@ public:
   }
   bool isInvalid() override { return _type == MultinaryOperatorType::_INVALID; }
   unsigned short arguments() override { return 2; }
-  Node * node(std::stack<Node *> & stack) override
+  NodeData * node(std::stack<NodeData *> & stack) override
   {
     return new MultinaryOperatorNode(_type, stack, 2);
   }
@@ -211,7 +217,10 @@ public:
   UnaryFunctionToken(UnaryFunctionType type, std::size_t pos) : FunctionToken(pos), _type(type) {}
   bool isInvalid() override { return _type == UnaryFunctionType::_INVALID; }
   unsigned short arguments() override { return 1; }
-  Node * node(std::stack<Node *> & stack) override { return new UnaryFunctionNode(_type, stack); }
+  NodeData * node(std::stack<NodeData *> & stack) override
+  {
+    return new UnaryFunctionNode(_type, stack);
+  }
   std::string asString() override { return stringify(_type); };
 
 protected:
@@ -224,7 +233,10 @@ public:
   BinaryFunctionToken(BinaryFunctionType type, std::size_t pos) : FunctionToken(pos), _type(type) {}
   bool isInvalid() override { return _type == BinaryFunctionType::_INVALID; }
   unsigned short arguments() override { return 2; }
-  Node * node(std::stack<Node *> & stack) override { return new BinaryFunctionNode(_type, stack); }
+  NodeData * node(std::stack<NodeData *> & stack) override
+  {
+    return new BinaryFunctionNode(_type, stack);
+  }
   std::string asString() override { return stringify(_type); };
 
 protected:
@@ -237,7 +249,10 @@ public:
   ConditionalToken(ConditionalType type, std::size_t pos) : FunctionToken(pos), _type(type) {}
   bool isInvalid() override { return _type == ConditionalType::_INVALID; }
   unsigned short arguments() override { return 3; }
-  Node * node(std::stack<Node *> & stack) override { return new ConditionalNode(_type, stack); }
+  NodeData * node(std::stack<NodeData *> & stack) override
+  {
+    return new ConditionalNode(_type, stack);
+  }
   std::string asString() override { return stringify(_type); };
 
 protected:

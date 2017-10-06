@@ -19,7 +19,7 @@ class Parser
 public:
   Parser();
 
-  NodePtr parse(const std::string & expression);
+  Node parse(const std::string & expression);
 
   unsigned int registerValueProvider(std::string name);
 
@@ -55,7 +55,7 @@ private:
   TokenPtr _last_token;
 
   /// output stack where the Tree is formed
-  std::stack<Node *> _output_stack;
+  std::stack<NodeData *> _output_stack;
 
   /// value provider ID map
   std::map<std::string, unsigned int> _value_providers;

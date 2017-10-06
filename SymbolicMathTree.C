@@ -7,11 +7,30 @@
 namespace SymbolicMath
 {
 
-void
-simplify(NodePtr & node)
+Node
+Node::operator+(Node r)
 {
-  node.reset(node->simplify());
+  return Node(new MultinaryOperatorNode(MultinaryOperatorType::ADDITION, *this, r));
 }
+
+Node
+Node::operator-(Node r)
+{
+  return Node(new BinaryOperatorNode(BinaryOperatorType::SUBTRACTION, *this, r));
+}
+
+Node Node::operator*(Node r)
+{
+  return Node(new MultinaryOperatorNode(MultinaryOperatorType::MULTIPLICATION, *this, r));
+}
+
+Node
+Node::operator/(Node r)
+{
+  return Node(new BinaryOperatorNode(BinaryOperatorType::DIVISION, *this, r));
+}
+
+Node Node::operator[](unsigned int i) { return _data->getArg(i); }
 
 void
 Node::checkIndex(const std::vector<unsigned int> & index)
@@ -32,7 +51,7 @@ ValueProviderNode::formatTree(std::string indent)
   return indent + "_val" + std::to_string(_id) + '\n';
 }
 
-Node *
+NodeData *
 ValueProviderNode::D(unsigned int id)
 {
   if (id == _id)
@@ -41,7 +60,7 @@ ValueProviderNode::D(unsigned int id)
     return new RealNumberNode(0.0);
 }
 
-Node *
+NodeData *
 NumberNode::D(unsigned int /*id*/)
 {
   return new RealNumberNode(0.0);
@@ -83,7 +102,7 @@ UnaryOperatorNode::value()
   }
 }
 
-Node *
+NodeData *
 UnaryOperatorNode::simplify()
 {
   _args[0].reset(_args[0]->simplify());
@@ -100,7 +119,7 @@ UnaryOperatorNode::simplify()
   }
 }
 
-Node *
+NodeData *
 UnaryOperatorNode::D(unsigned int id)
 {
   switch (_type)
@@ -192,7 +211,7 @@ BinaryOperatorNode::formatTree(std::string indent)
          _args[1]->formatTree(indent + "  ");
 }
 
-Node *
+NodeData *
 BinaryOperatorNode::simplify()
 {
   // constant folding
@@ -253,7 +272,7 @@ BinaryOperatorNode::simplify()
   }
 }
 
-Node *
+NodeData *
 BinaryOperatorNode::D(unsigned int id)
 {
   switch (_type)
@@ -364,10 +383,10 @@ MultinaryOperatorNode::formatTree(std::string indent)
   return out;
 }
 
-Node *
+NodeData *
 MultinaryOperatorNode::clone()
 {
-  std::vector<Node *> cloned_args;
+  std::vector<NodeData *> cloned_args;
   for (auto & arg : _args)
     cloned_args.push_back(arg->clone());
   return new MultinaryOperatorNode(_type, cloned_args);
@@ -375,7 +394,7 @@ MultinaryOperatorNode::clone()
 
 void
 MultinaryOperatorNode::simplifyHelper(RealNumberNode *& constant,
-                                      std::vector<Node *> & new_args,
+                                      std::vector<NodeData *> & new_args,
                                       NodePtr & arg)
 {
   if (arg->is(NumberType::_ANY))
@@ -411,13 +430,13 @@ MultinaryOperatorNode::simplifyHelper(RealNumberNode *& constant,
     new_args.push_back(arg.release());
 }
 
-Node *
+NodeData *
 MultinaryOperatorNode::simplify()
 {
   for (auto & arg : _args)
     arg.reset(arg->simplify());
 
-  std::vector<Node *> new_args;
+  std::vector<NodeData *> new_args;
   RealNumberNode * constant = nullptr;
 
   switch (_type)
@@ -453,10 +472,10 @@ MultinaryOperatorNode::simplify()
   return this;
 }
 
-Node *
+NodeData *
 MultinaryOperatorNode::D(unsigned int id)
 {
-  std::vector<Node *> new_args;
+  std::vector<NodeData *> new_args;
   switch (_type)
   {
     case MultinaryOperatorType::ADDITION:
@@ -591,14 +610,14 @@ UnaryFunctionNode::formatTree(std::string indent)
   return indent + stringify(_type) + '\n' + _args[0]->formatTree(indent + "  ");
 }
 
-Node *
+NodeData *
 UnaryFunctionNode::simplify()
 {
   _args[0].reset(_args[0]->simplify());
   return this;
 }
 
-Node *
+NodeData *
 UnaryFunctionNode::D(unsigned int id)
 {
   switch (_type)
@@ -678,13 +697,13 @@ BinaryFunctionNode::formatTree(std::string indent)
          _args[1]->formatTree(indent + "  ");
 }
 
-Node *
+NodeData *
 BinaryFunctionNode::clone()
 {
   return new BinaryFunctionNode(_type, _args[0]->clone(), _args[1]->clone());
 }
 
-Node *
+NodeData *
 BinaryFunctionNode::simplify()
 {
   _args[0].reset(_args[0]->simplify());
@@ -699,7 +718,7 @@ BinaryFunctionNode::simplify()
   }
 }
 
-Node *
+NodeData *
 BinaryFunctionNode::D(unsigned int id)
 {
   switch (_type)
@@ -743,13 +762,13 @@ ConditionalNode::formatTree(std::string indent)
          _args[2]->formatTree(indent + "  ");
 }
 
-Node *
+NodeData *
 ConditionalNode::clone()
 {
   return new ConditionalNode(_type, _args[0]->clone(), _args[1]->clone(), _args[2]->clone());
 }
 
-Node *
+NodeData *
 ConditionalNode::simplify()
 {
   if (_type != ConditionalType::IF)
@@ -771,7 +790,7 @@ ConditionalNode::simplify()
   return this;
 }
 
-Node *
+NodeData *
 ConditionalNode::D(unsigned int id)
 {
   if (_type != ConditionalType::IF)
