@@ -109,7 +109,7 @@ UnaryOperatorNode::D(unsigned int id)
       return _args[0]->D(id);
 
     case UnaryOperatorType::MINUS:
-      return new UnaryOperatorNode(UnaryOperatorType::MINUS, _args[0]->D(id));
+      return new UnaryOperatorNode(_type, _args[0]->D(id));
 
     default:
       fatalError("Unknown operator");
@@ -227,11 +227,11 @@ BinaryOperatorNode::simplify()
 
     case BinaryOperatorType::POWER:
       //(a^b)^c = a^(b*c) (c00^c01) ^ c1 = c00 ^ (c01*c1)
-      if (_args[0]->is(BinaryOperatorType::POWER))
+      if (_args[0]->is(_type))
       {
         auto arg0 = static_cast<BinaryOperatorNode *>(_args[0].get());
         return (new BinaryOperatorNode(
-                    BinaryOperatorType::POWER,
+                    _type,
                     arg0->_args[0].release(),
                     new MultinaryOperatorNode(MultinaryOperatorType::MULTIPLICATION,
                                               {arg0->_args[1].release(), _args[1].release()})))
@@ -258,6 +258,35 @@ BinaryOperatorNode::D(unsigned int id)
 {
   switch (_type)
   {
+    case BinaryOperatorType::SUBTRACTION: // d (A - B) = dA - dB
+      return new BinaryOperatorNode(_type, _args[0]->D(id), _args[1]->D(id));
+
+    case BinaryOperatorType::DIVISION: // d (A / B) = dA/B - dB/(B*B)
+      return new BinaryOperatorNode(
+          BinaryOperatorType::SUBTRACTION,
+          new BinaryOperatorNode(BinaryOperatorType::DIVISION, _args[0]->D(id), _args[1]->clone()),
+          new BinaryOperatorNode(
+              BinaryOperatorType::DIVISION,
+              _args[1]->D(id),
+              new MultinaryOperatorNode(MultinaryOperatorType::MULTIPLICATION,
+                                        {_args[1]->clone(), _args[1]->clone()})));
+
+    case BinaryOperatorType::POWER:
+      if (_args[1]->is(1.0))
+        return _args[1]->D(id);
+      else if (_args[1]->is(0.0))
+        return new RealNumberNode(0.0);
+
+      return new MultinaryOperatorNode(
+          MultinaryOperatorType::MULTIPLICATION,
+          {new BinaryOperatorNode(_type,
+                                  _args[0]->clone(),
+                                  new BinaryOperatorNode(BinaryOperatorType::SUBTRACTION,
+                                                         _args[1]->clone(),
+                                                         new RealNumberNode(1.0))),
+           _args[1]->clone(),
+           _args[0]->D(id)});
+
     default:
       fatalError("Derivative not implemnted");
   }
@@ -427,7 +456,17 @@ MultinaryOperatorNode::simplify()
 Node *
 MultinaryOperatorNode::D(unsigned int id)
 {
-  fatalError("Derivative not implemented");
+  std::vector<Node *> new_args;
+  switch (_type)
+  {
+    case MultinaryOperatorType::ADDITION:
+      for (auto & arg : _args)
+        new_args.push_back(arg->D(id));
+      return new MultinaryOperatorNode(_type, new_args);
+
+    default:
+      fatalError("Derivative not implemented");
+  }
 }
 
 unsigned short
@@ -569,12 +608,18 @@ UnaryFunctionNode::D(unsigned int id)
           UnaryOperatorType::MINUS,
           new UnaryFunctionNode(UnaryFunctionType::SIN, _args[0].release()));
 
-    case UnaryFunctionType::EXP:
+    case UnaryFunctionType::EXP: // d exp(A) = dA*exp(A)
       return new MultinaryOperatorNode(MultinaryOperatorType::MULTIPLICATION,
                                        {_args[0]->D(id), this->clone()});
 
-    case UnaryFunctionType::SIN:
-      return new UnaryFunctionNode(UnaryFunctionType::COS, _args[0].release());
+    case UnaryFunctionType::LOG: // d log(A) = dA/A
+      return new BinaryOperatorNode(
+          BinaryOperatorType::DIVISION, _args[0]->D(id), _args[0]->clone());
+
+    case UnaryFunctionType::SIN: // d sin(A) = dA*cos(A)
+      return new MultinaryOperatorNode(
+          MultinaryOperatorType::MULTIPLICATION,
+          {_args[0]->D(id), new UnaryFunctionNode(UnaryFunctionType::COS, _args[0].release())});
 
     default:
       fatalError("Derivative not implemented");

@@ -23,5 +23,13 @@ main(int argc, char * argv[])
 
   std::cout << " = " << func->format() << '\n' << func->formatTree("\t") << '\n';
 
+  SymbolicMath::NodePtr deriv(func->D(0));
+
+  std::cout << "D(F) = " << deriv->format() << '\n' << deriv->formatTree("\t") << '\n';
+
+  SymbolicMath::simplify(deriv);
+
+  std::cout << "D(F) = " << deriv->format() << '\n' << deriv->formatTree("\t") << '\n';
+
   return 0;
 }
