@@ -86,6 +86,10 @@ UnaryOperatorNode::value()
 Node *
 UnaryOperatorNode::simplify()
 {
+  _args[0].reset(_args[0]->simplify());
+  if (_args[0]->is(NumberType::_ANY))
+    return new RealNumberNode(value());
+
   switch (_type)
   {
     case UnaryOperatorType::PLUS:
@@ -394,26 +398,24 @@ MultinaryOperatorNode::simplify()
         simplifyHelper(constant, new_args, arg);
 
       if (constant && constant->value() != 0.0)
-      {
-        if (new_args.empty())
-          return constant;
         new_args.push_back(constant);
-      }
 
-      return new MultinaryOperatorNode(MultinaryOperatorType::ADDITION, new_args);
+      if (new_args.size() == 1)
+        return new_args[0];
+      else
+        return new MultinaryOperatorNode(MultinaryOperatorType::ADDITION, new_args);
 
     case MultinaryOperatorType::MULTIPLICATION:
       for (auto & arg : _args)
         simplifyHelper(constant, new_args, arg);
 
       if (constant && constant->value() != 1.0)
-      {
-        if (new_args.empty() || constant->value() == 0.0)
-          return constant;
         new_args.push_back(constant);
-      }
 
-      return new MultinaryOperatorNode(MultinaryOperatorType::MULTIPLICATION, new_args);
+      if (new_args.size() == 1)
+        return new_args[0];
+      else
+        return new MultinaryOperatorNode(MultinaryOperatorType::MULTIPLICATION, new_args);
 
     default:
       fatalError("Operator not implemented");
@@ -642,6 +644,8 @@ BinaryFunctionNode::simplify()
 {
   _args[0].reset(_args[0]->simplify());
   _args[1].reset(_args[1]->simplify());
+  if (_args[0]->is(NumberType::_ANY) && _args[1]->is(NumberType::_ANY))
+    return new RealNumberNode(value());
 
   switch (_type)
   {
