@@ -26,7 +26,7 @@ Parser::parse(const std::string & expression)
     preprocessToken();
     validateToken();
 
-    std::cout << formatToken() << '\n';
+    // std::cout << formatToken() << '\n';
 
     //
     // Shunting yard core
