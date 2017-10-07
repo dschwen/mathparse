@@ -10,6 +10,8 @@
 namespace SymbolicMath
 {
 
+using Shape = std::vector<unsigned int>;
+
 struct OperatorProperties
 {
   const unsigned short _precedence;

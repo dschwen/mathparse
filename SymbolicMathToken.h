@@ -2,7 +2,7 @@
 #define SYMBOLICMATHTOKEN_H
 
 #include "SymbolicMathSymbols.h"
-#include "SymbolicMathTree.h"
+#include "SymbolicMathNode.h"
 
 #include <string>
 
