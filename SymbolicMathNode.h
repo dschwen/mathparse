@@ -43,6 +43,7 @@ public:
   Node operator/(Node r);
 
   Node operator[](unsigned int i);
+  std::size_t size();
 
   // pass through functions
   Real value() const;

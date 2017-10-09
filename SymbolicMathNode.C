@@ -64,6 +64,12 @@ Node::operator/(Node r)
 
 Node Node::operator[](unsigned int i) { return _data->getArg(i); }
 
+std::size_t
+Node::size()
+{
+  return _data->size();
+}
+
 Real
 Node::value() const
 {

@@ -17,19 +17,19 @@ main(int argc, char * argv[])
 
   auto func = parser.parse(argv[1]);
 
-  std::cout << func->format() << '\n'; // << func->formatTree("\t") << '\n';
+  std::cout << func.format() << '\n'; // << func->formatTree("\t") << '\n';
 
-  SymbolicMath::simplify(func);
+  func.simplify();
 
-  std::cout << " = " << func->format() << '\n'; // << func->formatTree("\t") << '\n';
+  std::cout << " = " << func.format() << '\n'; // << func->formatTree("\t") << '\n';
 
-  SymbolicMath::NodePtr deriv(func->D(a_var));
+  auto deriv = func.D(a_var);
 
-  std::cout << "D(F) = " << deriv->format() << '\n'; // << deriv->formatTree("\t") << '\n';
+  std::cout << "D(F) = " << deriv.format() << '\n'; // << deriv->formatTree("\t") << '\n';
 
-  SymbolicMath::simplify(deriv);
+  deriv.simplify();
 
-  std::cout << "D(F) = " << deriv->format() << '\n'; // << deriv->formatTree("\t") << '\n';
+  std::cout << "D(F) = " << deriv.format() << '\n'; // << deriv->formatTree("\t") << '\n';
 
   return 0;
 }

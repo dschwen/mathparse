@@ -208,7 +208,7 @@ public:
   unsigned short precedence() override;
 
 private:
-  void simplifyHelper(RealNumberData *& constant, std::vector<Node> & new_args, Node arg);
+  void simplifyHelper(std::vector<Node> & new_args, Node arg);
 };
 
 /**

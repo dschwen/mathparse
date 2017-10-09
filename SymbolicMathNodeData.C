@@ -347,17 +347,15 @@ MultinaryOperatorData::clone()
 }
 
 void
-MultinaryOperatorData::simplifyHelper(RealNumberData *& constant,
-                                      std::vector<Node> & new_args,
-                                      Node arg)
+MultinaryOperatorData::simplifyHelper(std::vector<Node> & new_args, Node arg)
 {
   if (arg.is(NumberType::_ANY))
   {
-    if (!constant)
-      constant = new RealNumberData(arg.value());
+    if (new_args.empty() || !new_args[0].is(NumberType::_ANY))
+      new_args.insert(new_args.begin(), arg);
     else
     {
-      auto val = constant->value();
+      auto val = new_args[0].value();
       switch (_type)
       {
         case MultinaryOperatorType::ADDITION:
@@ -371,17 +369,16 @@ MultinaryOperatorData::simplifyHelper(RealNumberData *& constant,
         default:
           fatalError("Unknown multinary operator");
       }
-      constant->setValue(val);
+      new_args[0] = Node(val);
     }
   }
   else if (arg.is(_type))
   {
-    auto multi_arg = static_cast<MultinaryOperatorData *>(arg.get());
-    for (auto & child_arg : multi_arg->_args)
-      simplifyHelper(constant, new_args, child_arg);
+    for (std::size_t i = 0; i < arg.size(); ++i)
+      simplifyHelper(new_args, arg[i]);
   }
   else
-    new_args.push_back(arg.release());
+    new_args.push_back(arg);
 }
 
 Node
@@ -391,33 +388,26 @@ MultinaryOperatorData::simplify()
     arg.simplify();
 
   std::vector<Node> new_args;
-  RealNumberData * constant = nullptr;
 
   switch (_type)
   {
     case MultinaryOperatorType::ADDITION:
       for (auto & arg : _args)
-        simplifyHelper(constant, new_args, arg);
-
-      if (constant && constant->value() != 0.0)
-        new_args.push_back(constant);
+        simplifyHelper(new_args, arg);
 
       if (new_args.size() == 1)
         return new_args[0];
       else
-        return new MultinaryOperatorData(MultinaryOperatorType::ADDITION, new_args);
+        return Node(MultinaryOperatorType::ADDITION, new_args);
 
     case MultinaryOperatorType::MULTIPLICATION:
       for (auto & arg : _args)
-        simplifyHelper(constant, new_args, arg);
-
-      if (constant && constant->value() != 1.0)
-        new_args.push_back(constant);
+        simplifyHelper(new_args, arg);
 
       if (new_args.size() == 1)
         return new_args[0];
       else
-        return new MultinaryOperatorData(MultinaryOperatorType::MULTIPLICATION, new_args);
+        return Node(MultinaryOperatorType::MULTIPLICATION, new_args);
 
     default:
       fatalError("Operator not implemented");
@@ -656,7 +646,7 @@ BinaryFunctionData::formatTree(std::string indent)
 NodeDataPtr
 BinaryFunctionData::clone()
 {
-  return std::make_shared<BinaryFunctionNode>(_type, _args[0], _args[1]);
+  return std::make_shared<BinaryFunctionData>(_type, _args[0], _args[1]);
 }
 
 Node
@@ -721,7 +711,7 @@ ConditionalData::formatTree(std::string indent)
 NodeDataPtr
 ConditionalData::clone()
 {
-  return std::make_shared<ConditionalNode>(_type, _args[0], _args[1], _args[2]);
+  return std::make_shared<ConditionalData>(_type, _args[0], _args[1], _args[2]);
 }
 
 Node
@@ -752,7 +742,7 @@ ConditionalData::D(unsigned int id)
   if (_type != ConditionalType::IF)
     fatalError("Conditional not implemented");
 
-  return Node(ConditionalType::IF, _args[0], _args[1].D(id), _args[2]->D(id));
+  return Node(ConditionalType::IF, _args[0], _args[1].D(id), _args[2].D(id));
 }
 
 /********************************************************
