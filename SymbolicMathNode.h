@@ -16,16 +16,23 @@ class NodeData;
 
 using NodeDataPtr = std::shared_ptr<NodeData>;
 
+/**
+ * The Node class is the building block for the SymbolicMath tree structures that
+ * represent mathematical expressions. It is the non-polymorphous wrapper for the
+ * polymorphous NodeData, which is stored as a shared pointer. This design allows
+ * the operator overloading to construct expression trees in C++ (in addition to
+ * trees constructed by the Parser object).
+ */
 class Node
 {
 public:
-  // default constructor builds an empty node
+  /// Default constructor builds an empty node
   Node();
 
-  // construct form given data object
+  /// Construct form given data object
   Node(NodeDataPtr data) : _data(data) {}
 
-  // short cuts
+  /// Short cuts
   Node(Real val);
   Node(UnaryOperatorType type, Node arg);
   Node(BinaryOperatorType type, Node arg0, Node arg1);
@@ -34,9 +41,10 @@ public:
   Node(BinaryFunctionType type, Node arg0, Node arg1);
   Node(ConditionalType type, Node arg0, Node arg1, Node arg2);
 
-  /// copy constructor
+  /// Copy constructor (clones the data content as a deep copy)
   Node(const Node & copy);
 
+  /// Operators to construct expression trees
   Node operator+(Node r);
   Node operator-(Node r);
   Node operator*(Node r);
@@ -49,12 +57,15 @@ public:
   Node operator!=(Node r);
   Node operator-();
 
+  /// Bracket operator for child node access
   Node operator[](unsigned int i);
+  /// Number of child nodes
   std::size_t size();
 
-  // pass through functions
+  /// pass through functions
   Real value() const;
 
+  /// subtree output
   std::string format() const;
   std::string formatTree(std::string indent = "") const;
 
@@ -75,6 +86,7 @@ public:
   unsigned short precedence() const;
 
 protected:
+  /// shared pointer to the actual guts of the node
   NodeDataPtr _data;
 };
 

@@ -12,6 +12,11 @@
 namespace SymbolicMath
 {
 
+/**
+ * Node data base class. This class defines a common interface for all node data
+ * objects. Node data holds the semantic content of a Node object. Node data
+ * utilizes polymorphism to store a variety of different node behaviors.
+ */
 class NodeData
 {
 public:
@@ -50,6 +55,11 @@ public:
   friend Node;
 };
 
+/**
+ * Data class for empty invalid nodes that are constructed using the Node()
+ * default constructor. Invalid nodes are returned by NodeData::simplify()
+ * when no simplification can be performed.
+ */
 class EmptyData : public NodeData
 {
 public:
@@ -63,6 +73,9 @@ public:
   Node D(unsigned int id) override { return Node(); }
 };
 
+/**
+ * Base class template for NodeData objects with exactly N child nodes
+ */
 template <typename Enum, std::size_t N>
 class FixedArgumentData : public NodeData
 {
@@ -82,6 +95,9 @@ protected:
   Enum _type;
 };
 
+/**
+ * Base class template for NodeData objects with an arbitrary number of child nodes
+ */
 template <typename Enum>
 class MultinaryData : public NodeData
 {
@@ -98,6 +114,9 @@ protected:
   Enum _type;
 };
 
+/**
+ * Base class for any childless node that can be evaluated directly
+ */
 class ValueProviderData : public NodeData
 {
 public:
@@ -119,6 +138,9 @@ protected:
   unsigned int _id;
 };
 
+/**
+ * Base class for any childless nodes that represent a constant quantity
+ */
 class NumberData : public NodeData
 {
 public:
@@ -132,6 +154,9 @@ protected:
   NumberType _type;
 };
 
+/**
+ * Floating point constant node
+ */
 class RealNumberData : public NumberData
 {
 public:
@@ -191,6 +216,9 @@ public:
   unsigned short precedence() override;
 };
 
+/**
+ * Operators o of the form 'A o B o B o C o D ... o Z'
+ */
 class MultinaryOperatorData : public MultinaryData<MultinaryOperatorType>
 {
   using MultinaryData<MultinaryOperatorType>::MultinaryData;
@@ -249,6 +277,10 @@ public:
   Node D(unsigned int _id) override;
 };
 
+/**
+ * Binary branch if(A, B, C). The condition A is evaluated first and iff A is
+ * true B is evaluates otherwise C is evaluated.
+ */
 class ConditionalData : public FixedArgumentData<ConditionalType, 3>
 {
   using FixedArgumentData<ConditionalType, 3>::FixedArgumentData;

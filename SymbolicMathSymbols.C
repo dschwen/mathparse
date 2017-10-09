@@ -32,7 +32,7 @@ stringify(MultinaryOperatorType type)
       return "+";
 
     case MultinaryOperatorType::MULTIPLICATION:
-      return "+";
+      return "*";
 
     default:
       fatalError("Unknown operator");

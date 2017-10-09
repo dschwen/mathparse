@@ -213,25 +213,12 @@ BinaryOperatorData::simplify()
       return Node();
 
     case BinaryOperatorType::POWER:
-      //(a^b)^c = a^(b*c) (c00^c01) ^ c1 = c00 ^ (c01*c1)
-      if (_args[0].is(_type))
-      {
-        auto p = Node(_type,
-                      _args[0][0],
-                      Node(MultinaryOperatorType::MULTIPLICATION, {_args[0][1], _args[1]}));
-        p.simplify();
-        return p;
-      }
-
-      // a^0 = 1
-      if (_args[1].is(0.0))
-        return Node(1.0);
-
-      // a^1 = a
-      else if (_args[1].is(1.0))
-        return _args[0];
-
-      return Node();
+    {
+      // turn operator into function and simplify
+      auto pfunc = Node(BinaryFunctionType::POW, _args[0], _args[1]);
+      pfunc.simplify();
+      return pfunc;
+    }
 
     default:
       return Node();
@@ -255,17 +242,10 @@ BinaryOperatorData::D(unsigned int id)
       return dA / B - dB / (B * B);
 
     case BinaryOperatorType::POWER:
-      if (B.is(NumberType::_ANY))
-      {
-        if (B.is(1.0))
-          return dB;
-        else if (B.is(0.0))
-          return Node(0.0);
-
-        return Node(_type, A, B - Node(1.0)) * B * dA;
-      }
-
-      return Node(_type, A, B) * (dB * Node(UnaryFunctionType::LOG, A) + B * dA / A);
+    {
+      auto pfunc = Node(BinaryFunctionType::POW, A, B);
+      return pfunc.D(id);
+    }
 
     case BinaryOperatorType::LESS_THAN:
     case BinaryOperatorType::GREATER_THAN:
@@ -616,8 +596,17 @@ UnaryFunctionData::D(unsigned int id)
 
   switch (_type)
   {
-    case UnaryFunctionType::ABS: // da*a/|a|
+    case UnaryFunctionType::ABS:
       return dA * A / Node(_type, A);
+
+    case UnaryFunctionType::ACOS:
+      return -dA * A / Node(BinaryOperatorType::POWER, Node(1.0) - A * A, Node(0.5));
+
+    case UnaryFunctionType::ASIN:
+      return dA * A / Node(BinaryOperatorType::POWER, Node(1.0) - A * A, Node(0.5));
+
+    case UnaryFunctionType::ATAN:
+      return dA / (A * A + Node(1.0));
 
     case UnaryFunctionType::COS:
       return -dA * Node(UnaryFunctionType::SIN, A);
@@ -710,6 +699,27 @@ BinaryFunctionData::simplify()
 
   switch (_type)
   {
+    case BinaryFunctionType::POW:
+      //(a^b)^c = a^(b*c) (c00^c01) ^ c1 = c00 ^ (c01*c1)
+      if (_args[0].is(_type))
+      {
+        auto p = Node(_type,
+                      _args[0][0],
+                      Node(MultinaryOperatorType::MULTIPLICATION, {_args[0][1], _args[1]}));
+        p.simplify();
+        return p;
+      }
+
+      // a^0 = 1
+      if (_args[1].is(0.0))
+        return Node(1.0);
+
+      // a^1 = a
+      else if (_args[1].is(1.0))
+        return _args[0];
+
+      return Node();
+
     default:
       return Node();
   }
@@ -725,7 +735,7 @@ BinaryFunctionData::D(unsigned int id)
 
   switch (_type)
   {
-    case BinaryFunctionType::ATAN2: // (b*da-a*db)/(a^2+b^2)
+    case BinaryFunctionType::ATAN2:
       return (B * dA - A * dB) / (A * A + B * B);
 
     case BinaryFunctionType::MIN:
@@ -741,6 +751,18 @@ BinaryFunctionData::D(unsigned int id)
                        Node(1.0) / A);
 
     case BinaryFunctionType::POW:
+      if (B.is(NumberType::_ANY))
+      {
+        if (B.is(1.0))
+          return dB;
+        else if (B.is(0.0))
+          return Node(0.0);
+
+        return Node(_type, A, B - Node(1.0)) * B * dA;
+      }
+
+      return Node(_type, A, B) * (dB * Node(UnaryFunctionType::LOG, A) + B * dA / A);
+
     default:
       fatalError("Derivative not implemented");
   }
