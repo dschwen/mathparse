@@ -8,31 +8,58 @@
 namespace SymbolicMath
 {
 
+Node::Node() : _data(std::make_shared<EmptyData>()) {}
+
 Node::Node(const Node & copy) : _data(copy._data->clone()) {}
 
 Node::Node(Real val) : _data(new RealNumberData(val)) {}
 
+Node::Node(UnaryOperatorType type, Node arg) : _data(std::make_shared<UnaryOperatorData>(type, arg))
+{
+}
+
+Node::Node(BinaryOperatorType type, Node arg0, Node arg1)
+  : _data(std::make_shared<BinaryOperatorData>(type, arg0, arg1))
+{
+}
+
+Node::Node(MultinaryOperatorType type, std::vector<Node> args)
+  : _data(std::make_shared<MultinaryOperatorData>(type, args))
+{
+}
+
+Node::Node(UnaryFunctionType type, Node arg) : _data(std::make_shared<UnaryFunctionData>(type, arg))
+{
+}
+
+Node::Node(BinaryFunctionType type, Node arg0, Node arg1)
+  : _data(std::make_shared<BinaryFunctionData>(type, arg0, arg1))
+{
+}
+
+Node::Node(ConditionalType type, Node arg0, Node arg1, Node arg2)
+  : _data(std::make_shared<ConditionalData>(type, arg0, arg1, arg2))
+{
+}
+
 Node
 Node::operator+(Node r)
 {
-  return Node(new MultinaryOperatorNode(MultinaryOperatorType::ADDITION, *this, r));
+  return Node(MultinaryOperatorType::ADDITION, {*this, r});
 }
 
 Node
 Node::operator-(Node r)
 {
-  return Node(new BinaryOperatorNode(BinaryOperatorType::SUBTRACTION, *this, r));
+  return Node(BinaryOperatorType::SUBTRACTION, *this, r);
 }
 
-Node Node::operator*(Node r)
-{
-  return Node(new MultinaryOperatorNode(MultinaryOperatorType::MULTIPLICATION, *this, r));
-}
+Node Node::operator*(Node r) { return Node(MultinaryOperatorType::MULTIPLICATION, {*this, r}); }
 
 Node
 Node::operator/(Node r)
 {
-  return Node(new BinaryOperatorNode(BinaryOperatorType::DIVISION, *this, r));
+  return Node(BinaryOperatorType::DIVISION, *this, r);
 }
 
 Node Node::operator[](unsigned int i) { return _data->getArg(i); }
@@ -50,9 +77,9 @@ Node::format() const
 }
 
 std::string
-Node::formatTree() const
+Node::formatTree(std::string indent) const
 {
-  return _data->formatTree();
+  return _data->formatTree(indent);
 }
 
 bool
@@ -103,6 +130,12 @@ Node::is(ConditionalType t) const
   return _data->is(t);
 }
 
+bool
+Node::isValid() const
+{
+  return _data->isValid();
+}
+
 Node
 Node::D(unsigned int id) const
 {
@@ -112,7 +145,9 @@ Node::D(unsigned int id) const
 void
 Node::simplify()
 {
-  _data.reset(_data->simplify());
+  auto simplified = _data->simplify();
+  if (simplified.isValid())
+    _data = simplified._data;
 }
 
 unsigned short

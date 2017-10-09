@@ -1,4 +1,5 @@
 #include "SymbolicMathParser.h"
+#include "SymbolicMathNodeData.h"
 
 #include <iostream>
 #include <string>
@@ -155,7 +156,7 @@ Parser::parse(const std::string & expression)
     operator_stack.pop();
   }
 
-  return NodePtr(_output_stack.top());
+  return _output_stack.top();
 }
 
 void
@@ -180,7 +181,7 @@ Parser::pushToOutput(TokenPtr token)
     if (it == _value_providers.end())
       fatalError(formatError(token->pos(), "Unknown value provider name"));
 
-    _output_stack.push(Node(new ValueProviderNode(it->second)));
+    _output_stack.push(Node(std::make_shared<ValueProviderData>(it->second)));
     return;
   }
 

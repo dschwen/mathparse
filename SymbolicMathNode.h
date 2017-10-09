@@ -14,13 +14,25 @@ namespace SymbolicMath
 
 class NodeData;
 
+using NodeDataPtr = std::shared_ptr<NodeData>;
+
 class Node
 {
 public:
-  Node(NodeData * data) : _data(data) {}
+  // default constructor builds an empty node
+  Node();
+
+  // construct form given data object
+  Node(NodeDataPtr data) : _data(data) {}
 
   // short cuts
   Node(Real val);
+  Node(UnaryOperatorType type, Node arg);
+  Node(BinaryOperatorType type, Node arg0, Node arg1);
+  Node(MultinaryOperatorType type, std::vector<Node> args);
+  Node(UnaryFunctionType type, Node arg);
+  Node(BinaryFunctionType type, Node arg0, Node arg1);
+  Node(ConditionalType type, Node arg0, Node arg1, Node arg2);
 
   /// copy constructor
   Node(const Node & copy);
@@ -36,7 +48,7 @@ public:
   Real value() const;
 
   std::string format() const;
-  std::string formatTree() const;
+  std::string formatTree(std::string indent = "") const;
 
   bool is(Real) const;
   bool is(NumberType) const;
@@ -47,16 +59,15 @@ public:
   bool is(BinaryFunctionType) const;
   bool is(ConditionalType) const;
 
+  bool isValid() const;
+
   Node D(unsigned int id) const;
   void simplify();
 
   unsigned short precedence() const;
 
-  // do we really need this
-  std::shared_ptr<NodeData> data() { return _data; }
-
 protected:
-  std::shared_ptr<NodeData> _data;
+  NodeDataPtr _data;
 };
 
 // end namespace SymbolicMath

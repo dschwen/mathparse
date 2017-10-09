@@ -4,7 +4,7 @@
 #include <vector>
 #include <memory>
 #include <array>
-#include <stack>
+#include <cmath>
 #include <type_traits>
 
 #include "SymbolicMathNode.h"
@@ -19,9 +19,9 @@ public:
   // virtual Real value(const std::vector<unsigned int> & index) = 0;
 
   virtual std::string format() = 0;
-  virtual std::string formatTree(std::string indent = "") = 0;
+  virtual std::string formatTree(std::string indent) = 0;
 
-  virtual Node clone() = 0;
+  virtual NodeDataPtr clone() = 0;
 
   virtual Node getArg(unsigned int i) = 0;
   virtual std::size_t size() { return 0; }
@@ -35,12 +35,14 @@ public:
   virtual bool is(BinaryFunctionType) { return false; };
   virtual bool is(ConditionalType) { return false; };
 
+  virtual bool isValid() { return true; };
+
   // virtual Shape shape() = 0;
   virtual Shape shape() { return {1}; };
 
   virtual void checkIndex(const std::vector<unsigned int> & index);
 
-  virtual Node simplify() { return this; };
+  virtual Node simplify() { return Node(); };
   virtual Node D(unsigned int id) = 0;
 
   virtual unsigned short precedence() { return 0; }
@@ -48,24 +50,26 @@ public:
   friend Node;
 };
 
+class EmptyData : public NodeData
+{
+public:
+  bool isValid() override { return false; };
+
+  Real value() override { return NAN; };
+  std::string format() override { return "[???]"; };
+  std::string formatTree(std::string indent) override { return "[???]"; };
+  NodeDataPtr clone() override { return nullptr; };
+  Node getArg(unsigned int i) override { return 0; }
+  Node D(unsigned int id) override { return Node(); }
+};
+
 template <typename Enum, std::size_t N>
 class FixedArgumentData : public NodeData
 {
 public:
   template <typename... Args, typename = typename std::enable_if<N == sizeof...(Args), void>::type>
-  FixedArgumentData(Enum type, Args &&... args) : _type(type)
+  FixedArgumentData(Enum type, Args &&... args) : _type(type), _args({args...})
   {
-    Node argArray[] = {args...};
-    for (std::size_t i = 0; i < sizeof...(args); ++i)
-      _args[i].reset(argArray[i]);
-  }
-  FixedArgumentData(Enum type, std::stack<Node> & stack) : _type(type)
-  {
-    for (std::size_t i = 0; i < N; ++i)
-    {
-      _args[N - 1 - i].reset(stack.top());
-      stack.pop();
-    }
   }
 
   Node getArg(unsigned int i) override { return _args[i]; };
@@ -83,14 +87,6 @@ class MultinaryData : public NodeData
 {
 public:
   MultinaryData(Enum type, std::vector<Node> args) : _type(type), _args(args) {}
-  MultinaryData(Enum type, std::stack<Node> & stack, std::size_t nargs) : _type(type)
-  {
-    for (std::size_t i = 0; i < nargs; ++i)
-    {
-      _args.insert(_args.begin(), stack.top());
-      stack.pop();
-    }
-  }
 
   Node getArg(unsigned int i) override { return _args[i]; };
   std::size_t size() override { return _args.size(); }
@@ -107,12 +103,15 @@ class ValueProviderData : public NodeData
 public:
   ValueProviderData(unsigned int id) : _id(id) {}
   Real value() override { fatalError("Cannot evaluate node"); };
-  Node clone() override { return new ValueProviderData(_id); /* for debugging only! */ };
+  NodeDataPtr clone() override
+  {
+    return std::make_shared<ValueProviderData>(_id); /* for debugging only! */
+  };
 
   Node getArg(unsigned int i) override { fatalError("Node has no arguments"); };
 
   std::string format() override { return "_val" + std::to_string(_id); }
-  std::string formatTree(std::string indent = "") override;
+  std::string formatTree(std::string indent) override;
 
   Node D(unsigned int id) override;
 
@@ -139,9 +138,9 @@ public:
   RealNumberData(Real value) : NumberData(), _value(value) {}
   Real value() override { return _value; };
   std::string format() override { return stringify(_value); };
-  std::string formatTree(std::string indent = "") override;
+  std::string formatTree(std::string indent) override;
 
-  Node clone() override { return new RealNumberData(_value); };
+  NodeDataPtr clone() override { return std::make_shared<RealNumberData>(_value); };
 
   bool is(NumberType type) override;
   bool is(Real value) override { return value == _value; };
@@ -162,9 +161,9 @@ class UnaryOperatorData : public FixedArgumentData<UnaryOperatorType, 1>
 public:
   Real value() override;
   std::string format() override;
-  std::string formatTree(std::string indent = "") override;
+  std::string formatTree(std::string indent) override;
 
-  Node clone() override { return new UnaryOperatorData(_type, _args[0]); };
+  NodeDataPtr clone() override;
 
   Node simplify() override;
   Node D(unsigned int _id) override;
@@ -182,9 +181,9 @@ class BinaryOperatorData : public FixedArgumentData<BinaryOperatorType, 2>
 public:
   Real value() override;
   std::string format() override;
-  std::string formatTree(std::string indent = "") override;
+  std::string formatTree(std::string indent) override;
 
-  Node clone() override { return new BinaryOperatorData(_type, _args[0], _args[1]); };
+  NodeDataPtr clone() override;
 
   Node simplify() override;
   Node D(unsigned int _id) override;
@@ -199,9 +198,9 @@ class MultinaryOperatorData : public MultinaryData<MultinaryOperatorType>
 public:
   Real value() override;
   std::string format() override;
-  std::string formatTree(std::string indent = "") override;
+  std::string formatTree(std::string indent) override;
 
-  Node clone() override;
+  NodeDataPtr clone() override;
 
   Node simplify() override;
   Node D(unsigned int id) override;
@@ -222,9 +221,9 @@ class UnaryFunctionData : public FixedArgumentData<UnaryFunctionType, 1>
 public:
   Real value() override;
   std::string format() override;
-  std::string formatTree(std::string indent = "") override;
+  std::string formatTree(std::string indent) override;
 
-  Node clone() override { return new UnaryFunctionData(_type, _args[0]); }
+  NodeDataPtr clone() override;
 
   Node simplify() override;
   Node D(unsigned int _id) override;
@@ -242,9 +241,9 @@ class BinaryFunctionData : public FixedArgumentData<BinaryFunctionType, 2>
 public:
   Real value() override;
   std::string format() override;
-  std::string formatTree(std::string indent = "") override;
+  std::string formatTree(std::string indent) override;
 
-  Node clone() override;
+  NodeDataPtr clone() override;
 
   Node simplify() override;
   Node D(unsigned int _id) override;
@@ -257,9 +256,9 @@ class ConditionalData : public FixedArgumentData<ConditionalType, 3>
 public:
   Real value() override;
   std::string format() override;
-  std::string formatTree(std::string indent = "") override;
+  std::string formatTree(std::string indent) override;
 
-  Node clone() override;
+  NodeDataPtr clone() override;
 
   Node simplify() override;
   Node D(unsigned int _id) override;

@@ -17,15 +17,15 @@ Node
 ValueProviderData::D(unsigned int id)
 {
   if (id == _id)
-    return new RealNumberData(1.0);
+    return Node(1.0);
   else
-    return new RealNumberData(0.0);
+    return Node(0.0);
 }
 
 Node
 NumberData::D(unsigned int /*id*/)
 {
-  return new RealNumberData(0.0);
+  return Node(0.0);
 }
 
 /********************************************************
@@ -64,32 +64,6 @@ UnaryOperatorData::value()
   }
 }
 
-Node
-UnaryOperatorData::simplify()
-{
-  _args[0].simplify();
-  if (_args[0].is(NumberType::_ANY))
-    return new RealNumberData(value());
-
-  return this;
-}
-
-Node
-UnaryOperatorData::D(unsigned int id)
-{
-  switch (_type)
-  {
-    case UnaryOperatorType::PLUS:
-      return _args[0].D(id);
-
-    case UnaryOperatorType::MINUS:
-      return new UnaryOperatorData(_type, _args[0].D(id));
-
-    default:
-      fatalError("Unknown operator");
-  }
-}
-
 std::string
 UnaryOperatorData::format()
 {
@@ -104,7 +78,39 @@ UnaryOperatorData::format()
 std::string
 UnaryOperatorData::formatTree(std::string indent)
 {
-  return indent + '{' + stringify(_type) + "}\n" + _args[0].data()->formatTree(indent + "  ");
+  return indent + '{' + stringify(_type) + "}\n" + _args[0].formatTree(indent + "  ");
+}
+
+NodeDataPtr
+UnaryOperatorData::clone()
+{
+  return std::make_shared<UnaryOperatorData>(_type, _args[0]);
+}
+
+Node
+UnaryOperatorData::simplify()
+{
+  _args[0].simplify();
+  if (_args[0].is(NumberType::_ANY))
+    return Node(value());
+
+  return Node(clone());
+}
+
+Node
+UnaryOperatorData::D(unsigned int id)
+{
+  switch (_type)
+  {
+    case UnaryOperatorType::PLUS:
+      return _args[0].D(id);
+
+    case UnaryOperatorType::MINUS:
+      return Node(_type, _args[0].D(id));
+
+    default:
+      fatalError("Unknown operator");
+  }
 }
 
 /********************************************************
@@ -162,8 +168,14 @@ BinaryOperatorData::format()
 std::string
 BinaryOperatorData::formatTree(std::string indent)
 {
-  return indent + '{' + stringify(_type) + "}\n" + _args[0].data()->formatTree(indent + "  ") +
-         _args[1].data()->formatTree(indent + "  ");
+  return indent + '{' + stringify(_type) + "}\n" + _args[0].formatTree(indent + "  ") +
+         _args[1].formatTree(indent + "  ");
+}
+
+NodeDataPtr
+BinaryOperatorData::clone()
+{
+  return std::make_shared<BinaryOperatorData>(_type, _args[0], _args[1]);
 }
 
 Node
@@ -173,20 +185,20 @@ BinaryOperatorData::simplify()
   _args[0].simplify();
   _args[1].simplify();
   if (_args[0].is(NumberType::_ANY) && _args[1].is(NumberType::_ANY))
-    return new RealNumberData(value());
+    return Node(value());
 
   switch (_type)
   {
     case BinaryOperatorType::SUBTRACTION:
       // 0 - b = -b
       if (_args[0].is(0.0))
-        return Node(new UnaryOperatorData(UnaryOperatorType::MINUS, _args[1]));
+        return Node(UnaryOperatorType::MINUS, _args[1]);
 
       // a - 0 = a
       else if (_args[1].is(0.0))
         return _args[0];
 
-      return this;
+      return Node(clone());
 
     case BinaryOperatorType::DIVISION:
       // a/1 = a
@@ -197,19 +209,17 @@ BinaryOperatorData::simplify()
       if (_args[0].is(0.0))
         return Node(0.0);
 
-      return this;
+      return Node(clone());
 
     case BinaryOperatorType::POWER:
       //(a^b)^c = a^(b*c) (c00^c01) ^ c1 = c00 ^ (c01*c1)
       if (_args[0].is(_type))
       {
-        auto arg0 = std::static_pointer_cast<BinaryOperatorData>(_args[0].data());
-        return (new BinaryOperatorData(
-                    _type,
-                    arg0->_args[0],
-                    new MultinaryOperatorData(MultinaryOperatorType::MULTIPLICATION,
-                                              {arg0->_args[1], _args[1]})))
-            ->simplify();
+        auto p = Node(_type,
+                      _args[0][0],
+                      Node(MultinaryOperatorType::MULTIPLICATION, {_args[0][1], _args[1]}));
+        p.simplify();
+        return p;
       }
 
       // a^0 = 1
@@ -220,10 +230,10 @@ BinaryOperatorData::simplify()
       else if (_args[1].is(1.0))
         return _args[0];
 
-      return this;
+      return Node();
 
     default:
-      return this;
+      return Node();
   }
 }
 
@@ -233,16 +243,10 @@ BinaryOperatorData::D(unsigned int id)
   switch (_type)
   {
     case BinaryOperatorType::SUBTRACTION: // d (A - B) = dA - dB
-      return new BinaryOperatorData(_type, _args[0].D(id), _args[1].D(id));
+      return _args[0].D(id) - _args[1].D(id);
 
     case BinaryOperatorType::DIVISION: // d (A / B) = dA/B - dB/(B*B)
-      return new BinaryOperatorData(
-          BinaryOperatorType::SUBTRACTION,
-          new BinaryOperatorData(BinaryOperatorType::DIVISION, _args[0].D(id), _args[1]),
-          new BinaryOperatorData(BinaryOperatorType::DIVISION,
-                                 _args[1].D(id),
-                                 new MultinaryOperatorData(MultinaryOperatorType::MULTIPLICATION,
-                                                           {_args[1], _args[1]})));
+      return _args[0].D(id) / _args[1] - _args[1].D(id) / (_args[1] * _args[1]);
 
     case BinaryOperatorType::POWER:
       if (_args[1].is(1.0))
@@ -250,12 +254,9 @@ BinaryOperatorData::D(unsigned int id)
       else if (_args[1].is(0.0))
         return Node(0.0);
 
-      return new MultinaryOperatorData(
+      return Node(
           MultinaryOperatorType::MULTIPLICATION,
-          {new BinaryOperatorData(
-               _type,
-               _args[0],
-               new BinaryOperatorData(BinaryOperatorType::SUBTRACTION, _args[1], Node(1.0))),
+          {Node(_type, _args[0], Node(BinaryOperatorType::SUBTRACTION, _args[1], Node(1.0))),
            _args[1],
            _args[0].D(id)});
 
@@ -332,17 +333,17 @@ MultinaryOperatorData::formatTree(std::string indent)
 {
   std::string out = indent + '{' + stringify(_type) + "}\n";
   for (auto & arg : _args)
-    out += arg.data()->formatTree(indent + "  ");
+    out += arg.formatTree(indent + "  ");
   return out;
 }
 
-Node
+NodeDataPtr
 MultinaryOperatorData::clone()
 {
   std::vector<Node> cloned_args;
   for (auto & arg : _args)
     cloned_args.push_back(arg);
-  return new MultinaryOperatorData(_type, cloned_args);
+  return std::make_shared<MultinaryOperatorData>(_type, cloned_args);
 }
 
 void
@@ -422,19 +423,20 @@ MultinaryOperatorData::simplify()
       fatalError("Operator not implemented");
   }
 
-  return this;
+  return Node();
 }
 
 Node
 MultinaryOperatorData::D(unsigned int id)
 {
   std::vector<Node> new_args;
+
   switch (_type)
   {
     case MultinaryOperatorType::ADDITION:
       for (auto & arg : _args)
         new_args.push_back(arg.D(id));
-      return new MultinaryOperatorData(_type, new_args);
+      return Node(_type, new_args);
 
     default:
       fatalError("Derivative not implemented");
@@ -560,14 +562,20 @@ UnaryFunctionData::format()
 std::string
 UnaryFunctionData::formatTree(std::string indent)
 {
-  return indent + stringify(_type) + '\n' + _args[0].data()->formatTree(indent + "  ");
+  return indent + stringify(_type) + '\n' + _args[0].formatTree(indent + "  ");
+}
+
+NodeDataPtr
+UnaryFunctionData::clone()
+{
+  return std::make_shared<UnaryFunctionData>(_type, _args[0]);
 }
 
 Node
 UnaryFunctionData::simplify()
 {
   _args[0].simplify();
-  return this;
+  return Node(clone());
 }
 
 Node
@@ -576,21 +584,17 @@ UnaryFunctionData::D(unsigned int id)
   switch (_type)
   {
     case UnaryFunctionType::COS:
-      return new UnaryOperatorData(
-          UnaryOperatorType::MINUS,
-          new UnaryFunctionNode(UnaryFunctionType::SIN, _args[0].release()));
+      return _args[0].D(id) *
+             Node(UnaryOperatorType::MINUS, Node(UnaryFunctionType::SIN, _args[0]));
 
     case UnaryFunctionType::EXP: // d exp(A) = dA*exp(A)
-      return new MultinaryOperatorData(MultinaryOperatorType::MULTIPLICATION,
-                                       {_args[0].D(id), this->clone()});
+      return _args[0].D(id) * Node(_type, _args[0]);
 
     case UnaryFunctionType::LOG: // d log(A) = dA/A
-      return new BinaryOperatorData(BinaryOperatorType::DIVISION, _args[0].D(id), _args[0].clone());
+      return _args[0].D(id) / _args[0];
 
     case UnaryFunctionType::SIN: // d sin(A) = dA*cos(A)
-      return new MultinaryOperatorData(
-          MultinaryOperatorType::MULTIPLICATION,
-          {_args[0].D(id), new UnaryFunctionNode(UnaryFunctionType::COS, _args[0].release())});
+      return _args[0].D(id) * Node(UnaryFunctionType::COS, _args[0]);
 
     default:
       fatalError("Derivative not implemented");
@@ -645,14 +649,14 @@ BinaryFunctionData::format()
 std::string
 BinaryFunctionData::formatTree(std::string indent)
 {
-  return indent + stringify(_type) + '\n' + _args[0].data()->formatTree(indent + "  ") +
-         _args[1].data()->formatTree(indent + "  ");
+  return indent + stringify(_type) + '\n' + _args[0].formatTree(indent + "  ") +
+         _args[1].formatTree(indent + "  ");
 }
 
-Node
+NodeDataPtr
 BinaryFunctionData::clone()
 {
-  return new BinaryFunctionNode(_type, _args[0].clone(), _args[1].clone());
+  return std::make_shared<BinaryFunctionNode>(_type, _args[0], _args[1]);
 }
 
 Node
@@ -661,12 +665,12 @@ BinaryFunctionData::simplify()
   _args[0].simplify();
   _args[1].simplify();
   if (_args[0].is(NumberType::_ANY) && _args[1].is(NumberType::_ANY))
-    return new RealNumberData(value());
+    return Node(value());
 
   switch (_type)
   {
     default:
-      return this;
+      return Node(clone());
   }
 }
 
@@ -709,15 +713,15 @@ ConditionalData::format()
 std::string
 ConditionalData::formatTree(std::string indent)
 {
-  return indent + stringify(_type) + '\n' + _args[0].data()->formatTree(indent + "  ") + indent +
-         "do\n" + _args[1].data()->formatTree(indent + "  ") + indent + "otherwise\n" +
-         _args[2].data()->formatTree(indent + "  ");
+  return indent + stringify(_type) + '\n' + _args[0].formatTree(indent + "  ") + indent + "do\n" +
+         _args[1].formatTree(indent + "  ") + indent + "otherwise\n" +
+         _args[2].formatTree(indent + "  ");
 }
 
-Node
+NodeDataPtr
 ConditionalData::clone()
 {
-  return new ConditionalNode(_type, _args[0].clone(), _args[1].clone(), _args[2].clone());
+  return std::make_shared<ConditionalNode>(_type, _args[0], _args[1], _args[2]);
 }
 
 Node
@@ -734,12 +738,12 @@ ConditionalData::simplify()
   if (_args[0].is(NumberType::_ANY))
   {
     if (_args[0].value() != 0.0)
-      return _args[1].release();
+      return _args[1];
     else
-      return _args[2].release();
+      return _args[2];
   }
 
-  return this;
+  return Node(clone());
 }
 
 Node
@@ -748,8 +752,7 @@ ConditionalData::D(unsigned int id)
   if (_type != ConditionalType::IF)
     fatalError("Conditional not implemented");
 
-  return new ConditionalNode(
-      ConditionalType::IF, _args[0].release(), _args[1].D(id), _args[2]->D(id));
+  return Node(ConditionalType::IF, _args[0], _args[1].D(id), _args[2]->D(id));
 }
 
 /********************************************************
