@@ -94,19 +94,20 @@ UnaryOperatorData::simplify()
   if (_args[0].is(NumberType::_ANY))
     return Node(value());
 
-  return Node(clone());
+  return Node();
 }
 
 Node
 UnaryOperatorData::D(unsigned int id)
 {
+  auto dA = _args[0].D(id);
   switch (_type)
   {
     case UnaryOperatorType::PLUS:
-      return _args[0].D(id);
+      return dA;
 
     case UnaryOperatorType::MINUS:
-      return Node(_type, _args[0].D(id));
+      return -dA;
 
     default:
       fatalError("Unknown operator");
@@ -198,7 +199,7 @@ BinaryOperatorData::simplify()
       else if (_args[1].is(0.0))
         return _args[0];
 
-      return Node(clone());
+      return Node();
 
     case BinaryOperatorType::DIVISION:
       // a/1 = a
@@ -209,7 +210,7 @@ BinaryOperatorData::simplify()
       if (_args[0].is(0.0))
         return Node(0.0);
 
-      return Node(clone());
+      return Node();
 
     case BinaryOperatorType::POWER:
       //(a^b)^c = a^(b*c) (c00^c01) ^ c1 = c00 ^ (c01*c1)
@@ -240,25 +241,39 @@ BinaryOperatorData::simplify()
 Node
 BinaryOperatorData::D(unsigned int id)
 {
+  auto & A = _args[0];
+  auto & B = _args[1];
+  auto dA = _args[0].D(id);
+  auto dB = _args[1].D(id);
+
   switch (_type)
   {
-    case BinaryOperatorType::SUBTRACTION: // d (A - B) = dA - dB
-      return _args[0].D(id) - _args[1].D(id);
+    case BinaryOperatorType::SUBTRACTION:
+      return dA - dB;
 
-    case BinaryOperatorType::DIVISION: // d (A / B) = dA/B - dB/(B*B)
-      return _args[0].D(id) / _args[1] - _args[1].D(id) / (_args[1] * _args[1]);
+    case BinaryOperatorType::DIVISION:
+      return dA / B - dB / (B * B);
 
     case BinaryOperatorType::POWER:
-      if (_args[1].is(1.0))
-        return _args[1].D(id);
-      else if (_args[1].is(0.0))
-        return Node(0.0);
+      if (B.is(NumberType::_ANY))
+      {
+        if (B.is(1.0))
+          return dB;
+        else if (B.is(0.0))
+          return Node(0.0);
 
-      return Node(
-          MultinaryOperatorType::MULTIPLICATION,
-          {Node(_type, _args[0], Node(BinaryOperatorType::SUBTRACTION, _args[1], Node(1.0))),
-           _args[1],
-           _args[0].D(id)});
+        return Node(_type, A, B - Node(1.0)) * B * dA;
+      }
+
+      return Node(_type, A, B) * (dB * Node(UnaryFunctionType::LOG, A) + B * dA / A);
+
+    case BinaryOperatorType::LESS_THAN:
+    case BinaryOperatorType::GREATER_THAN:
+    case BinaryOperatorType::LESS_EQUAL:
+    case BinaryOperatorType::GREATER_EQUAL:
+    case BinaryOperatorType::EQUAL:
+    case BinaryOperatorType::NOT_EQUAL:
+      return Node(0.0);
 
     default:
       fatalError("Derivative not implemnted");
@@ -268,14 +283,11 @@ BinaryOperatorData::D(unsigned int id)
 unsigned short
 BinaryOperatorData::precedence()
 {
-  const auto index = static_cast<int>(_type);
-  //                                        -  /  %  ^  |   &
-  const std::vector<unsigned short> list = {6, 5, 5, 4, 14, 13};
-
-  if (index >= list.size())
+  auto it = _binary_operators.find(_type);
+  if (it == _binary_operators.end())
     fatalError("Unknown operator");
 
-  return list[index];
+  return it->second._precedence;
 }
 
 /********************************************************
@@ -395,6 +407,9 @@ MultinaryOperatorData::simplify()
       for (auto & arg : _args)
         simplifyHelper(new_args, arg);
 
+      if (new_args.size() > 1 && new_args[0].is(0.0))
+        new_args.erase(new_args.begin());
+
       if (new_args.size() == 1)
         return new_args[0];
       else
@@ -404,7 +419,10 @@ MultinaryOperatorData::simplify()
       for (auto & arg : _args)
         simplifyHelper(new_args, arg);
 
-      if (new_args.size() == 1)
+      if (new_args.size() > 1 && new_args[0].is(1.0))
+        new_args.erase(new_args.begin());
+
+      if (new_args.size() == 1 || (new_args.size() > 1 && new_args[0].is(0.0)))
         return new_args[0];
       else
         return Node(MultinaryOperatorType::MULTIPLICATION, new_args);
@@ -427,6 +445,21 @@ MultinaryOperatorData::D(unsigned int id)
       for (auto & arg : _args)
         new_args.push_back(arg.D(id));
       return Node(_type, new_args);
+
+    case MultinaryOperatorType::MULTIPLICATION:
+    {
+      const auto nargs = _args.size();
+      std::vector<Node> summands;
+      for (std::size_t i = 0; i < nargs; ++i)
+      {
+        std::vector<Node> factors;
+        for (std::size_t j = 0; j < nargs; ++j)
+          factors.push_back(i == j ? _args[j].D(id) : _args[j]);
+        summands.push_back(Node(MultinaryOperatorType::MULTIPLICATION, factors));
+      }
+
+      return Node(MultinaryOperatorType::ADDITION, summands);
+    }
 
     default:
       fatalError("Derivative not implemented");
@@ -565,26 +598,44 @@ Node
 UnaryFunctionData::simplify()
 {
   _args[0].simplify();
-  return Node(clone());
+  if (_args[0].is(NumberType::_ANY))
+    return Node(value());
+
+  switch (_type)
+  {
+    default:
+      return Node();
+  }
 }
 
 Node
 UnaryFunctionData::D(unsigned int id)
 {
+  auto & A = _args[0];
+  auto dA = _args[0].D(id);
+
   switch (_type)
   {
+    case UnaryFunctionType::ABS: // da*a/|a|
+      return dA * A / Node(_type, A);
+
     case UnaryFunctionType::COS:
-      return _args[0].D(id) *
-             Node(UnaryOperatorType::MINUS, Node(UnaryFunctionType::SIN, _args[0]));
+      return -dA * Node(UnaryFunctionType::SIN, A);
+
+    case UnaryFunctionType::COSH:
+      return dA * Node(UnaryFunctionType::SINH, A);
 
     case UnaryFunctionType::EXP: // d exp(A) = dA*exp(A)
-      return _args[0].D(id) * Node(_type, _args[0]);
+      return dA * Node(_type, A);
 
     case UnaryFunctionType::LOG: // d log(A) = dA/A
-      return _args[0].D(id) / _args[0];
+      return dA / A;
 
     case UnaryFunctionType::SIN: // d sin(A) = dA*cos(A)
-      return _args[0].D(id) * Node(UnaryFunctionType::COS, _args[0]);
+      return dA * Node(UnaryFunctionType::COS, A);
+
+    case UnaryFunctionType::SINH:
+      return dA * Node(UnaryFunctionType::COSH, A);
 
     default:
       fatalError("Derivative not implemented");
@@ -660,15 +711,35 @@ BinaryFunctionData::simplify()
   switch (_type)
   {
     default:
-      return Node(clone());
+      return Node();
   }
 }
 
 Node
 BinaryFunctionData::D(unsigned int id)
 {
+  auto & A = _args[0];
+  auto & B = _args[1];
+  auto dA = _args[0].D(id);
+  auto dB = _args[1].D(id);
+
   switch (_type)
   {
+    case BinaryFunctionType::ATAN2: // (b*da-a*db)/(a^2+b^2)
+      return (B * dA - A * dB) / (A * A + B * B);
+
+    case BinaryFunctionType::MIN:
+      return Node(ConditionalType::IF, A < B, dA, dB);
+
+    case BinaryFunctionType::MAX:
+      return Node(ConditionalType::IF, A < B, dB, dA);
+
+    case BinaryFunctionType::PLOG:
+      return dA * Node(ConditionalType::IF,
+                       A < B,
+                       Node(1.0) / B - (A - B) / (B * B) + (A - B) * (A - B) / (B * B * B),
+                       Node(1.0) / A);
+
     case BinaryFunctionType::POW:
     default:
       fatalError("Derivative not implemented");
@@ -733,7 +804,7 @@ ConditionalData::simplify()
       return _args[2];
   }
 
-  return Node(clone());
+  return Node();
 }
 
 Node
@@ -744,44 +815,6 @@ ConditionalData::D(unsigned int id)
 
   return Node(ConditionalType::IF, _args[0], _args[1].D(id), _args[2].D(id));
 }
-
-/********************************************************
- *
- ********************************************************/
-
-#if 0
-
-std::string
-Tree::format()
-{
-  switch (_type)
-  {
-    case TokenType::VARIABLE:
-      return "val" + std::to_string(_value_provider_id);
-  }
-}
-
-std::string
-Tree::formatTree(std::string indent)
-{
-  std::string out;
-  switch (_type)
-  {
-    case TokenType::VARIABLE:
-      out = indent + "val" + std::to_string(_value_provider_id) + '\n';
-      break;
-
-    case TokenType::COMPONENT:
-      out = indent + "[]\n";
-      for (auto & child : _children)
-        out += child->formatTree(indent + "  ");
-      break;
-  }
-
-  return out;
-}
-
-#endif
 
 // end namespace SymbolicMath
 }

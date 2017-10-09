@@ -62,6 +62,48 @@ Node::operator/(Node r)
   return Node(BinaryOperatorType::DIVISION, *this, r);
 }
 
+Node
+Node::operator<(Node r)
+{
+  return Node(BinaryOperatorType::LESS_THAN, *this, r);
+}
+
+Node
+Node::operator<=(Node r)
+{
+  return Node(BinaryOperatorType::LESS_EQUAL, *this, r);
+}
+
+Node
+Node::operator>(Node r)
+{
+  return Node(BinaryOperatorType::GREATER_THAN, *this, r);
+}
+
+Node
+Node::operator>=(Node r)
+{
+  return Node(BinaryOperatorType::GREATER_EQUAL, *this, r);
+}
+
+Node
+Node::operator==(Node r)
+{
+  return Node(BinaryOperatorType::EQUAL, *this, r);
+}
+
+Node
+Node::operator!=(Node r)
+{
+  return Node(BinaryOperatorType::NOT_EQUAL, *this, r);
+}
+
+Node
+Node::operator-()
+{
+  return Node(UnaryOperatorType::MINUS, *this);
+}
+
 Node Node::operator[](unsigned int i) { return _data->getArg(i); }
 
 std::size_t

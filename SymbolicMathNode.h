@@ -41,6 +41,13 @@ public:
   Node operator-(Node r);
   Node operator*(Node r);
   Node operator/(Node r);
+  Node operator<(Node r);
+  Node operator<=(Node r);
+  Node operator>(Node r);
+  Node operator>=(Node r);
+  Node operator==(Node r);
+  Node operator!=(Node r);
+  Node operator-();
 
   Node operator[](unsigned int i);
   std::size_t size();

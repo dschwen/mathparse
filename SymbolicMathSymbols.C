@@ -4,49 +4,68 @@ namespace SymbolicMath
 {
 
 std::string
-stringify(NumberType type)
-{
-  return stringifyHelper(type, {"real", "integer", "rational"});
-}
-
-std::string
 stringify(UnaryOperatorType type)
 {
-  return stringifyHelper(type, {"+", "-", "!", "^"});
+  auto it = _unary_operators.find(type);
+  if (it == _unary_operators.end())
+    fatalError("Unknown operator");
+
+  return it->second._form;
 }
 
 std::string
 stringify(BinaryOperatorType type)
 {
-  return stringifyHelper(type, {"-", "/", "%", "^", "|", "&"});
+  auto it = _binary_operators.find(type);
+  if (it == _binary_operators.end())
+    fatalError("Unknown operator");
+
+  return it->second._form;
 }
 
 std::string
 stringify(MultinaryOperatorType type)
 {
-  return stringifyHelper(type, {"+", "*", "[]"});
+  switch (type)
+  {
+    case MultinaryOperatorType::ADDITION:
+      return "+";
+
+    case MultinaryOperatorType::MULTIPLICATION:
+      return "+";
+
+    default:
+      fatalError("Unknown operator");
+  }
 }
 
 std::string
 stringify(UnaryFunctionType type)
 {
-  return stringifyHelper(type,
-                         {"abs",  "acos",  "acosh", "arg",  "asin", "asinh", "atan", "atanh",
-                          "cbrt", "ceil",  "conj",  "cos",  "cosh", "cot",   "csc",  "exp",
-                          "exp2", "floor", "imag",  "int",  "log",  "log10", "log2", "real",
-                          "sec",  "sin",   "sinh",  "sqrt", "T",    "tan",   "tanh", "trunc"});
+  auto it = _unary_functions.find(type);
+  if (it == _unary_functions.end())
+    fatalError("Unknown function");
+
+  return it->second;
 }
 
 std::string
 stringify(BinaryFunctionType type)
 {
-  return stringifyHelper(type, {"atan2", "hypot", "max", "min", "plog", "polar", "pow"});
+  auto it = _binary_functions.find(type);
+  if (it == _binary_functions.end())
+    fatalError("Unknown function");
+
+  return it->second;
 }
 
 std::string
 stringify(ConditionalType type)
 {
-  return stringifyHelper(type, {"if"});
+  if (type == ConditionalType::IF)
+    return "if";
+
+  fatalError("Unknown conditional");
 }
 
 // end namespace SymbolicMath

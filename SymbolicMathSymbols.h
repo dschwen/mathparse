@@ -105,6 +105,7 @@ enum class UnaryFunctionType
   COSH,
   COT,
   CSC,
+  ERF,
   EXP,
   EXP2,
   FLOOR,
@@ -134,15 +135,16 @@ const std::map<UnaryFunctionType, std::string> _unary_functions = {
     {UnaryFunctionType::CBRT, "cbrt"},   {UnaryFunctionType::CEIL, "ceil"},
     {UnaryFunctionType::CONJ, "conj"},   {UnaryFunctionType::COS, "cos"},
     {UnaryFunctionType::COSH, "cosh"},   {UnaryFunctionType::COT, "cot"},
-    {UnaryFunctionType::CSC, "csc"},     {UnaryFunctionType::EXP, "exp"},
-    {UnaryFunctionType::EXP2, "exp2"},   {UnaryFunctionType::FLOOR, "floor"},
-    {UnaryFunctionType::IMAG, "imag"},   {UnaryFunctionType::INT, "int"},
-    {UnaryFunctionType::LOG, "log"},     {UnaryFunctionType::LOG10, "log10"},
-    {UnaryFunctionType::LOG2, "log2"},   {UnaryFunctionType::REAL, "real"},
-    {UnaryFunctionType::SEC, "sec"},     {UnaryFunctionType::SIN, "sin"},
-    {UnaryFunctionType::SINH, "sinh"},   {UnaryFunctionType::SQRT, "sqrt"},
-    {UnaryFunctionType::T, "T"},         {UnaryFunctionType::TAN, "tan"},
-    {UnaryFunctionType::TANH, "tanh"},   {UnaryFunctionType::TRUNC, "trunc"}};
+    {UnaryFunctionType::CSC, "csc"},     {UnaryFunctionType::ERF, "exp"},
+    {UnaryFunctionType::EXP, "exp"},     {UnaryFunctionType::EXP2, "exp2"},
+    {UnaryFunctionType::FLOOR, "floor"}, {UnaryFunctionType::IMAG, "imag"},
+    {UnaryFunctionType::INT, "int"},     {UnaryFunctionType::LOG, "log"},
+    {UnaryFunctionType::LOG10, "log10"}, {UnaryFunctionType::LOG2, "log2"},
+    {UnaryFunctionType::REAL, "real"},   {UnaryFunctionType::SEC, "sec"},
+    {UnaryFunctionType::SIN, "sin"},     {UnaryFunctionType::SINH, "sinh"},
+    {UnaryFunctionType::SQRT, "sqrt"},   {UnaryFunctionType::T, "T"},
+    {UnaryFunctionType::TAN, "tan"},     {UnaryFunctionType::TANH, "tanh"},
+    {UnaryFunctionType::TRUNC, "trunc"}};
 
 enum class BinaryFunctionType
 {
@@ -199,25 +201,12 @@ operatorProperty(BinaryOperatorType op)
   return it->second;
 }
 
-std::string stringify(NumberType type);
 std::string stringify(UnaryOperatorType type);
 std::string stringify(BinaryOperatorType type);
 std::string stringify(MultinaryOperatorType type);
 std::string stringify(UnaryFunctionType type);
 std::string stringify(BinaryFunctionType type);
 std::string stringify(ConditionalType type);
-
-template <typename T>
-std::string
-stringifyHelper(T type, const std::vector<std::string> list)
-{
-  const auto index = static_cast<int>(type);
-
-  if (index >= list.size())
-    fatalError("Unknown type");
-
-  return list[index];
-}
 
 // end namespace SymbolicMath
 }
