@@ -1,4 +1,5 @@
 #include "SymbolicMathParser.h"
+#include "SymbolicMathNodeData.h"
 
 #include <iostream>
 #include <string>
@@ -9,7 +10,7 @@ namespace SymbolicMath
 
 Parser::Parser() : _qp_ptr(nullptr) {}
 
-NodePtr
+Node
 Parser::parse(const std::string & expression)
 {
   Tokenizer tokenizer(expression);
@@ -155,7 +156,7 @@ Parser::parse(const std::string & expression)
     operator_stack.pop();
   }
 
-  return NodePtr(_output_stack.top());
+  return _output_stack.top();
 }
 
 void
@@ -165,12 +166,12 @@ Parser::pushToOutput(TokenPtr token)
 
   if (token->isNumber())
   {
-    _output_stack.push(new RealNumberNode(token->asNumber()));
+    _output_stack.push(Node(token->asNumber()));
     return;
   }
   else if (token->isOperator())
   {
-    _output_stack.push(token->node(_output_stack));
+    _output_stack.push(Node(token->node(_output_stack)));
     return;
   }
 
@@ -180,7 +181,7 @@ Parser::pushToOutput(TokenPtr token)
     if (it == _value_providers.end())
       fatalError(formatError(token->pos(), "Unknown value provider name"));
 
-    _output_stack.push(new ValueProviderNode(it->second));
+    _output_stack.push(Node(std::make_shared<ValueProviderData>(it->second)));
     return;
   }
 
@@ -194,7 +195,7 @@ Parser::pushFunctionToOutput(TokenPtr token, unsigned int num_arguments)
   if (!token->isFunction())
     fatalError("invalid_token");
 
-  _output_stack.push(token->node(_output_stack));
+  _output_stack.push(Node(token->node(_output_stack)));
 }
 
 unsigned int
