@@ -127,6 +127,18 @@ BinaryFunctionToken::node(std::stack<Node> & stack)
   return Node(_type, arg0, arg1);
 }
 
+Node
+ConditionalToken::node(std::stack<Node> & stack)
+{
+  auto arg2 = stack.top();
+  stack.pop();
+  auto arg1 = stack.top();
+  stack.pop();
+  auto arg0 = stack.top();
+  stack.pop();
+  return Node(_type, arg0, arg1, arg2);
+}
+
 FunctionToken *
 FunctionToken::build(const std::string & string, std::size_t pos)
 {

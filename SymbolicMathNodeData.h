@@ -40,7 +40,7 @@ public:
   // virtual Shape shape() = 0;
   virtual Shape shape() { return {1}; };
 
-  virtual void checkIndex(const std::vector<unsigned int> & index);
+  // virtual void checkIndex(const std::vector<unsigned int> & index);
 
   virtual Node simplify() { return Node(); };
   virtual Node D(unsigned int id) = 0;
