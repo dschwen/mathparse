@@ -118,6 +118,12 @@ Node::value() const
   return _data->value();
 }
 
+jit_value_t
+Node::jit(jit_function_t func)
+{
+  return _data->jit(func);
+}
+
 std::string
 Node::format() const
 {

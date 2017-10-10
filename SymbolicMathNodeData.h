@@ -7,6 +7,8 @@
 #include <cmath>
 #include <type_traits>
 
+#include <jit/jit.h>
+
 #include "SymbolicMathNode.h"
 
 namespace SymbolicMath
@@ -21,7 +23,7 @@ class NodeData
 {
 public:
   virtual Real value() = 0;
-  // virtual Real value(const std::vector<unsigned int> & index) = 0;
+  virtual jit_value_t jit(jit_function_t func) = 0;
 
   virtual std::string format() = 0;
   virtual std::string formatTree(std::string indent) = 0;
@@ -65,12 +67,14 @@ class EmptyData : public NodeData
 public:
   bool isValid() override { return false; };
 
-  Real value() override { return NAN; };
-  std::string format() override { return "[???]"; };
-  std::string formatTree(std::string indent) override { return "[???]"; };
-  NodeDataPtr clone() override { return nullptr; };
-  Node getArg(unsigned int i) override { return 0; }
-  Node D(unsigned int id) override { return Node(); }
+  Real value() override { fatalError("invalid node"); };
+  jit_value_t jit(jit_function_t func) override { fatalError("invalid node"); };
+
+  std::string format() override { fatalError("invalid node"); };
+  std::string formatTree(std::string indent) override { fatalError("invalid node"); };
+  NodeDataPtr clone() override { fatalError("invalid node"); };
+  Node getArg(unsigned int i) override { fatalError("invalid node"); }
+  Node D(unsigned int id) override { fatalError("invalid node"); }
 };
 
 /**
@@ -122,6 +126,7 @@ class ValueProviderData : public NodeData
 public:
   ValueProviderData(unsigned int id) : _id(id) {}
   Real value() override { fatalError("Cannot evaluate node"); };
+  jit_value_t jit(jit_function_t func) override { fatalError("cannot jit compile"); };
   NodeDataPtr clone() override
   {
     return std::make_shared<ValueProviderData>(_id); /* for debugging only! */
@@ -161,7 +166,10 @@ class RealNumberData : public NumberData
 {
 public:
   RealNumberData(Real value) : NumberData(), _value(value) {}
+
   Real value() override { return _value; };
+  jit_value_t jit(jit_function_t func) override;
+
   std::string format() override { return stringify(_value); };
   std::string formatTree(std::string indent) override;
 
@@ -185,6 +193,8 @@ class UnaryOperatorData : public FixedArgumentData<UnaryOperatorType, 1>
 
 public:
   Real value() override;
+  jit_value_t jit(jit_function_t func) override;
+
   std::string format() override;
   std::string formatTree(std::string indent) override;
 
@@ -205,6 +215,8 @@ class BinaryOperatorData : public FixedArgumentData<BinaryOperatorType, 2>
 
 public:
   Real value() override;
+  jit_value_t jit(jit_function_t func) override;
+
   std::string format() override;
   std::string formatTree(std::string indent) override;
 
@@ -225,6 +237,8 @@ class MultinaryOperatorData : public MultinaryData<MultinaryOperatorType>
 
 public:
   Real value() override;
+  jit_value_t jit(jit_function_t func) override;
+
   std::string format() override;
   std::string formatTree(std::string indent) override;
 
@@ -248,6 +262,8 @@ class UnaryFunctionData : public FixedArgumentData<UnaryFunctionType, 1>
 
 public:
   Real value() override;
+  jit_value_t jit(jit_function_t func) override;
+
   std::string format() override;
   std::string formatTree(std::string indent) override;
 
@@ -268,6 +284,8 @@ class BinaryFunctionData : public FixedArgumentData<BinaryFunctionType, 2>
 
 public:
   Real value() override;
+  jit_value_t jit(jit_function_t func) override;
+
   std::string format() override;
   std::string formatTree(std::string indent) override;
 
@@ -287,6 +305,8 @@ class ConditionalData : public FixedArgumentData<ConditionalType, 3>
 
 public:
   Real value() override;
+  jit_value_t jit(jit_function_t func) override;
+
   std::string format() override;
   std::string formatTree(std::string indent) override;
 

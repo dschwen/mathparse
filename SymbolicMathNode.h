@@ -7,6 +7,8 @@
 #include <stack>
 #include <type_traits>
 
+#include <jit/jit.h>
+
 #include "SymbolicMathSymbols.h"
 
 namespace SymbolicMath
@@ -66,6 +68,7 @@ public:
 
   /// pass through functions
   Real value() const;
+  jit_value_t jit(jit_function_t func);
 
   ///@{ subtree output
   std::string format() const;
