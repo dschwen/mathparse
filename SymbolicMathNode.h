@@ -32,7 +32,7 @@ public:
   /// Construct form given data object
   Node(NodeDataPtr data) : _data(data) {}
 
-  /// Short cuts
+  ///@{ Short cut constructors
   Node(Real val);
   Node(UnaryOperatorType type, Node arg);
   Node(BinaryOperatorType type, Node arg0, Node arg1);
@@ -40,11 +40,12 @@ public:
   Node(UnaryFunctionType type, Node arg);
   Node(BinaryFunctionType type, Node arg0, Node arg1);
   Node(ConditionalType type, Node arg0, Node arg1, Node arg2);
+  ///@}
 
   /// Copy constructor (clones the data content as a deep copy)
   Node(const Node & copy);
 
-  /// Operators to construct expression trees
+  ///@{ Operators to construct expression trees
   Node operator+(Node r);
   Node operator-(Node r);
   Node operator*(Node r);
@@ -56,6 +57,7 @@ public:
   Node operator==(Node r);
   Node operator!=(Node r);
   Node operator-();
+  ///@}
 
   /// Bracket operator for child node access
   Node operator[](unsigned int i);
@@ -65,10 +67,12 @@ public:
   /// pass through functions
   Real value() const;
 
-  /// subtree output
+  ///@{ subtree output
   std::string format() const;
   std::string formatTree(std::string indent = "") const;
+  ///@}
 
+  ///@{ Query the nature of the node data
   bool is(Real) const;
   bool is(NumberType) const;
   bool is(UnaryOperatorType) const;
@@ -77,12 +81,18 @@ public:
   bool is(UnaryFunctionType) const;
   bool is(BinaryFunctionType) const;
   bool is(ConditionalType) const;
+  ///@}
 
+  /// Test if the node is valid (i.e. does not have an EmptyData data content)
   bool isValid() const;
 
+  /// Returns the derivative of the subtree at the node w.r.t. value provider id
   Node D(unsigned int id) const;
+
+  /// Simplify the subtree at the node in place
   void simplify();
 
+  /// Returns the precedence of the node for output purposes (bracket placement)
   unsigned short precedence() const;
 
 protected:

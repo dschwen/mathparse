@@ -4,6 +4,9 @@
 #include "SymbolicMathTokenizer.h"
 #include "SymbolicMathNode.h"
 
+// ttodo: remove when introducing value provider manager
+#include "SymbolicMathNodeData.h"
+
 #include <string>
 #include <stack>
 #include <map>
@@ -12,7 +15,7 @@ namespace SymbolicMath
 {
 
 /**
- * Builds the abstract syntax tree of an expression using the SymbolicMathTokenizer
+ * Builds the abstract syntax tree of an expression string using the SymbolicMathTokenizer
  */
 class Parser
 {
@@ -22,10 +25,12 @@ public:
   Node parse(const std::string & expression);
 
   unsigned int registerValueProvider(std::string name);
+  unsigned int registerValueProvider(std::string name, std::shared_ptr<ValueProviderData> vp);
 
   void registerQPIndex(const unsigned int & qp) { _qp_ptr = &qp; }
 
   /*
+
   int registerValueProvider(std::string name, const VariableValue & var);
   int registerValueProvider(std::string name, const VariableGradient & grad);
   int registerValueProvider(std::string name, const MaterialProperty<Real> & real_prop);
@@ -57,8 +62,11 @@ private:
   /// output stack where the Tree is formed
   std::stack<Node> _output_stack;
 
+  ///
+  std::vector<std::pair<std::string, NodeDataPtr>> _value_providers;
+
   /// value provider ID map
-  std::map<std::string, unsigned int> _value_providers;
+  std::map<std::string, unsigned int> _value_providers_by_name;
 
   /// pointer to the quadrature point index (_qp)
   const unsigned int * _qp_ptr;

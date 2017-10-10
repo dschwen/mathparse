@@ -177,8 +177,8 @@ Parser::pushToOutput(TokenPtr token)
 
   else if (token->isSymbol())
   {
-    auto it = _value_providers.find(token->asString());
-    if (it == _value_providers.end())
+    auto it = _value_providers_by_name.find(token->asString());
+    if (it == _value_providers_by_name.end())
       fatalError(formatError(token->pos(), "Unknown value provider name"));
 
     _output_stack.push(Node(std::make_shared<ValueProviderData>(it->second)));
@@ -201,23 +201,18 @@ Parser::pushFunctionToOutput(TokenPtr token, unsigned int num_arguments)
 unsigned int
 Parser::registerValueProvider(std::string name)
 {
-  if (_value_providers.empty())
-  {
-    _value_providers.insert(std::make_pair(name, 0));
-    return 0;
-  }
-  else
-  {
-    auto it = std::max_element(
-        _value_providers.begin(),
-        _value_providers.end(),
-        [](const std::pair<std::string, unsigned int> & p1,
-           const std::pair<std::string, unsigned int> & p2) { return p1.second < p2.second; });
+  unsigned int id = _value_providers.size();
+  return registerValueProvider(name, std::make_shared<ValueProviderData>(id));
+}
 
-    auto id = it->second + 1;
-    _value_providers.insert(std::make_pair(name, id));
-    return id;
-  }
+unsigned int
+Parser::registerValueProvider(std::string name, std::shared_ptr<ValueProviderData> vp)
+{
+  unsigned int id = _value_providers.size();
+  // _value_providers.push_back(std::make_pair(name, std::shared_ptr_cast<NodeDataPtr>(vp)));
+  _value_providers.push_back(std::make_pair(name, vp));
+  _value_providers_by_name[name] = id;
+  return id;
 }
 
 void
