@@ -542,6 +542,9 @@ UnaryFunctionData::value()
     case UnaryFunctionType::SINH:
       return std::sinh(A);
 
+    case UnaryFunctionType::SQRT:
+      return std::sqrt(A);
+
     case UnaryFunctionType::TAN:
       return std::tan(A);
 
@@ -608,6 +611,9 @@ UnaryFunctionData::D(unsigned int id)
     case UnaryFunctionType::ATAN:
       return dA / (A * A + Node(1.0));
 
+    case UnaryFunctionType::CBRT:
+      return Node(1.0 / 3.0) / (Node(_type, A) * Node(_type, A));
+
     case UnaryFunctionType::COS:
       return -dA * Node(UnaryFunctionType::SIN, A);
 
@@ -625,6 +631,9 @@ UnaryFunctionData::D(unsigned int id)
 
     case UnaryFunctionType::SINH:
       return dA * Node(UnaryFunctionType::COSH, A);
+
+    case UnaryFunctionType::SQRT:
+      return Node(0.5) / Node(_type, A);
 
     default:
       fatalError("Derivative not implemented");
