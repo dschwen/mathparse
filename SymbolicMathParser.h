@@ -24,26 +24,10 @@ public:
 
   Node parse(const std::string & expression);
 
-  unsigned int registerValueProvider(std::string name);
-  unsigned int registerValueProvider(std::string name, std::shared_ptr<ValueProviderData> vp);
+  std::shared_ptr<ValueProvider> registerValueProvider(std::string name);
+  void registerValueProvider(std::string name, std::shared_ptr<ValueProvider> vp);
 
   void registerQPIndex(const unsigned int & qp) { _qp_ptr = &qp; }
-
-  /*
-
-  int registerValueProvider(std::string name, const VariableValue & var);
-  int registerValueProvider(std::string name, const VariableGradient & grad);
-  int registerValueProvider(std::string name, const MaterialProperty<Real> & real_prop);
-  int registerValueProvider(std::string name, const MaterialProperty<RankTwoTensor> & r2t_prop);
-  int registerValueProvider(std::string name, const MaterialProperty<RankThreeTensor> & r3t_prop);
-  int registerValueProvider(std::string name, const MaterialProperty<RankFourTensor> & r4t_prop);
-
-  or
-
-  int registerValueProvider(std::string name, const ValueProvider & vp);
-  (where ValueProvider is a base class that provides a virtual clone() method to build the tree
-  nodes)
-  */
 
 protected:
   void pushToOutput(TokenPtr token);
@@ -62,11 +46,8 @@ private:
   /// output stack where the Tree is formed
   std::stack<Node> _output_stack;
 
-  ///
-  std::vector<std::pair<std::string, NodeDataPtr>> _value_providers;
-
   /// value provider ID map
-  std::map<std::string, unsigned int> _value_providers_by_name;
+  std::map<std::string, std::shared_ptr<ValueProvider>> _value_providers;
 
   /// pointer to the quadrature point index (_qp)
   const unsigned int * _qp_ptr;

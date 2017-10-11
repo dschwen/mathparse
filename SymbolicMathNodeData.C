@@ -8,24 +8,42 @@ namespace SymbolicMath
 {
 
 std::string
-ValueProviderData::formatTree(std::string indent)
+ValueProvider::formatTree(std::string indent)
 {
-  return indent + "_val" + std::to_string(_id) + '\n';
+  return indent + (_name != "" ? _name : "{V}") + '\n';
 }
 
 Node
-ValueProviderData::D(unsigned int id)
+SymbolData::D(const ValueProvider & vp)
 {
-  if (id == _id)
-    return Node(1.0);
-  else
-    return Node(0.0);
+  auto sd = dynamic_cast<const SymbolData *>(&vp);
+  if (sd->_name == "")
+    fatalError("Cannot differentiate with respect to an anonymous value node");
+
+  return _name == sd->_name ? Node(1.0) : Node(0.0);
+}
+
+/********************************************************
+ * Real Number reference value provider
+ ********************************************************/
+
+jit_value_t
+RealReferenceData::jit(jit_function_t func)
+{
+  return jit_insn_load_relative(
+      func,
+      jit_value_create_long_constant(func, jit_type_long, reinterpret_cast<jit_long>(&_ref)),
+      0,
+      jit_type_int);
 }
 
 Node
-NumberData::D(unsigned int /*id*/)
+RealReferenceData::D(const ValueProvider & vp)
 {
-  return Node(0.0);
+  auto rrd = dynamic_cast<const RealReferenceData *>(&vp);
+
+  // check if the reference refer to identical memory locations
+  return (rrd && &(rrd->_ref) == &_ref) ? Node(1.0) : Node(0.0);
 }
 
 /********************************************************
@@ -120,9 +138,9 @@ UnaryOperatorData::simplify()
 }
 
 Node
-UnaryOperatorData::D(unsigned int id)
+UnaryOperatorData::D(const ValueProvider & vp)
 {
-  auto dA = _args[0].D(id);
+  auto dA = _args[0].D(vp);
   switch (_type)
   {
     case UnaryOperatorType::PLUS:
@@ -275,12 +293,12 @@ BinaryOperatorData::simplify()
 }
 
 Node
-BinaryOperatorData::D(unsigned int id)
+BinaryOperatorData::D(const ValueProvider & vp)
 {
   auto & A = _args[0];
   auto & B = _args[1];
-  auto dA = _args[0].D(id);
-  auto dB = _args[1].D(id);
+  auto dA = _args[0].D(vp);
+  auto dB = _args[1].D(vp);
 
   switch (_type)
   {
@@ -293,7 +311,7 @@ BinaryOperatorData::D(unsigned int id)
     case BinaryOperatorType::POWER:
     {
       auto pfunc = Node(BinaryFunctionType::POW, A, B);
-      return pfunc.D(id);
+      return pfunc.D(vp);
     }
 
     case BinaryOperatorType::LESS_THAN:
@@ -490,7 +508,7 @@ MultinaryOperatorData::simplify()
 }
 
 Node
-MultinaryOperatorData::D(unsigned int id)
+MultinaryOperatorData::D(const ValueProvider & vp)
 {
   std::vector<Node> new_args;
 
@@ -498,7 +516,7 @@ MultinaryOperatorData::D(unsigned int id)
   {
     case MultinaryOperatorType::ADDITION:
       for (auto & arg : _args)
-        new_args.push_back(arg.D(id));
+        new_args.push_back(arg.D(vp));
       return Node(_type, new_args);
 
     case MultinaryOperatorType::MULTIPLICATION:
@@ -509,7 +527,7 @@ MultinaryOperatorData::D(unsigned int id)
       {
         std::vector<Node> factors;
         for (std::size_t j = 0; j < nargs; ++j)
-          factors.push_back(i == j ? _args[j].D(id) : _args[j]);
+          factors.push_back(i == j ? _args[j].D(vp) : _args[j]);
         summands.push_back(Node(MultinaryOperatorType::MULTIPLICATION, factors));
       }
 
@@ -795,10 +813,10 @@ UnaryFunctionData::simplify()
 }
 
 Node
-UnaryFunctionData::D(unsigned int id)
+UnaryFunctionData::D(const ValueProvider & vp)
 {
   auto & A = _args[0];
-  auto dA = _args[0].D(id);
+  auto dA = _args[0].D(vp);
 
   switch (_type)
   {
@@ -975,12 +993,12 @@ BinaryFunctionData::simplify()
 }
 
 Node
-BinaryFunctionData::D(unsigned int id)
+BinaryFunctionData::D(const ValueProvider & vp)
 {
   auto & A = _args[0];
   auto & B = _args[1];
-  auto dA = _args[0].D(id);
-  auto dB = _args[1].D(id);
+  auto dA = _args[0].D(vp);
+  auto dB = _args[1].D(vp);
 
   switch (_type)
   {
@@ -1100,12 +1118,12 @@ ConditionalData::simplify()
 }
 
 Node
-ConditionalData::D(unsigned int id)
+ConditionalData::D(const ValueProvider & vp)
 {
   if (_type != ConditionalType::IF)
     fatalError("Conditional not implemented");
 
-  return Node(ConditionalType::IF, _args[0], _args[1].D(id), _args[2].D(id));
+  return Node(ConditionalType::IF, _args[0], _args[1].D(vp), _args[2].D(vp));
 }
 
 // end namespace SymbolicMath

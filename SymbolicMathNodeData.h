@@ -14,6 +14,8 @@
 namespace SymbolicMath
 {
 
+class ValueProvider;
+
 /**
  * Node data base class. This class defines a common interface for all node data
  * objects. Node data holds the semantic content of a Node object. Node data
@@ -50,7 +52,7 @@ public:
   // virtual void checkIndex(const std::vector<unsigned int> & index);
 
   virtual Node simplify() { return Node(); };
-  virtual Node D(unsigned int id) = 0;
+  virtual Node D(const ValueProvider & vp) = 0;
 
   virtual unsigned short precedence() { return 0; }
 
@@ -74,7 +76,7 @@ public:
   std::string formatTree(std::string indent) override { fatalError("invalid node"); };
   NodeDataPtr clone() override { fatalError("invalid node"); };
   Node getArg(unsigned int i) override { fatalError("invalid node"); }
-  Node D(unsigned int id) override { fatalError("invalid node"); }
+  Node D(const ValueProvider & vp) override { fatalError("invalid node"); }
 };
 
 /**
@@ -121,29 +123,56 @@ protected:
 /**
  * Base class for any childless node that can be evaluated directly
  */
-class ValueProviderData : public NodeData
+class ValueProvider : public NodeData
 {
 public:
-  ValueProviderData() : _id(0) {}
-  Real value() override { fatalError("Cannot evaluate node"); };
-  jit_value_t jit(jit_function_t func) override { fatalError("cannot jit compile"); };
-  NodeDataPtr clone() override
-  {
-    return std::make_shared<ValueProviderData>(_id); /* for debugging only! */
-  };
-
+  ValueProvider(const std::string & name) : _name(name) {}
   Node getArg(unsigned int i) override { fatalError("Node has no arguments"); };
 
-  std::string format() override { return "_val" + std::to_string(_id); }
+  std::string format() override { return _name != "" ? _name : "{V}"; }
   std::string formatTree(std::string indent) override;
 
-  Node D(unsigned int id) override;
+protected:
+  std::string _name;
+};
+
+/**
+ * Purely symbolic node that cannot be evaluated or compiled by substitted and
+ * derived w.r.t.
+ */
+class SymbolData : public ValueProvider
+{
+public:
+  SymbolData(const std::string & name) : ValueProvider(name) {}
+
+  Real value() override { fatalError("Node cannot be evaluated"); }
+  jit_value_t jit(jit_function_t func) override { fatalError("Node cannot be compiled"); }
+
+  NodeDataPtr clone() override { return std::make_shared<SymbolData>(_name); };
+
+  Node D(const ValueProvider & vp) override;
+};
+
+/**
+ * Simple value provider that fetches its contents from a refernced Real value
+ */
+class RealReferenceData : public ValueProvider
+{
+public:
+  RealReferenceData(const Real & ref, const std::string & name = "")
+    : ValueProvider(name), _ref(ref)
+  {
+  }
+
+  Real value() override { return _ref; };
+  jit_value_t jit(jit_function_t func) override;
+
+  NodeDataPtr clone() override { return std::make_shared<RealReferenceData>(_ref, _name); };
+
+  Node D(const ValueProvider & vp) override;
 
 protected:
-  /// To be called from the ValueProvideManager
-  void setID(unsigned int id) { _id = id; }
-
-  unsigned int _id;
+  const Real & _ref;
 };
 
 /**
@@ -156,7 +185,7 @@ public:
 
   Node getArg(unsigned int i) override { fatalError("Node has no arguments"); };
 
-  Node D(unsigned int /*id*/) override;
+  Node D(const ValueProvider &) override { return Node(0.0); }
 
 protected:
   NumberType _type;
@@ -204,7 +233,7 @@ public:
   NodeDataPtr clone() override;
 
   Node simplify() override;
-  Node D(unsigned int _id) override;
+  Node D(const ValueProvider &) override;
 
   unsigned short precedence() override { return 3; }
 };
@@ -226,7 +255,7 @@ public:
   NodeDataPtr clone() override;
 
   Node simplify() override;
-  Node D(unsigned int _id) override;
+  Node D(const ValueProvider &) override;
 
   unsigned short precedence() override;
 };
@@ -248,7 +277,7 @@ public:
   NodeDataPtr clone() override;
 
   Node simplify() override;
-  Node D(unsigned int id) override;
+  Node D(const ValueProvider & vp) override;
 
   unsigned short precedence() override;
 
@@ -273,7 +302,7 @@ public:
   NodeDataPtr clone() override;
 
   Node simplify() override;
-  Node D(unsigned int _id) override;
+  Node D(const ValueProvider &) override;
 
   unsigned short precedence() override { return 3; }
 };
@@ -295,7 +324,7 @@ public:
   NodeDataPtr clone() override;
 
   Node simplify() override;
-  Node D(unsigned int _id) override;
+  Node D(const ValueProvider &) override;
 };
 
 /**
@@ -316,7 +345,7 @@ public:
   NodeDataPtr clone() override;
 
   Node simplify() override;
-  Node D(unsigned int _id) override;
+  Node D(const ValueProvider &) override;
 };
 
 // end namespace SymbolicMath

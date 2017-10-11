@@ -1,6 +1,9 @@
 #include "SymbolicMath.h"
+#include "SymbolicMathHelpers.h"
+
 #include <iostream>
 
+#include <jit/jit.h>
 int
 main(int argc, char * argv[])
 {
@@ -11,9 +14,14 @@ main(int argc, char * argv[])
   }
 
   SymbolicMath::Parser parser;
-  auto a_var = parser.registerValueProvider("a");
+
+  auto a_var = SymbolicMath::symbol("a");
+  parser.registerValueProvider("a", a_var);
+
   auto b_var = parser.registerValueProvider("b");
-  auto c_var = parser.registerValueProvider("c");
+
+  auto c_var = std::make_shared<SymbolicMath::SymbolData>("c");
+  parser.registerValueProvider("c", c_var);
 
   auto func = parser.parse(argv[1]);
 

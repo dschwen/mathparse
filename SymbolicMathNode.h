@@ -15,6 +15,7 @@ namespace SymbolicMath
 {
 
 class NodeData;
+class ValueProvider;
 
 using NodeDataPtr = std::shared_ptr<NodeData>;
 
@@ -90,7 +91,8 @@ public:
   bool isValid() const;
 
   /// Returns the derivative of the subtree at the node w.r.t. value provider id
-  Node D(unsigned int id) const;
+  Node D(const ValueProvider &) const;
+  Node D(std::shared_ptr<ValueProvider>) const;
 
   /// Simplify the subtree at the node in place
   void simplify();

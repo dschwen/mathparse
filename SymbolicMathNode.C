@@ -191,9 +191,15 @@ Node::isValid() const
 }
 
 Node
-Node::D(unsigned int id) const
+Node::D(const ValueProvider & vp) const
 {
-  return Node(_data->D(id));
+  return Node(_data->D(vp));
+}
+
+Node
+Node::D(std::shared_ptr<ValueProvider> vp) const
+{
+  return Node(_data->D(*vp));
 }
 
 void
