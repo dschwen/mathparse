@@ -7,10 +7,15 @@
 #include <cmath>
 #include <type_traits>
 
+#include <jit/jit.h>
+
 #include "SymbolicMathNode.h"
 
 namespace SymbolicMath
 {
+
+class Parser;
+class ValueProvider;
 
 /**
  * Node data base class. This class defines a common interface for all node data
@@ -21,7 +26,7 @@ class NodeData
 {
 public:
   virtual Real value() = 0;
-  // virtual Real value(const std::vector<unsigned int> & index) = 0;
+  virtual jit_value_t jit(jit_function_t func) = 0;
 
   virtual std::string format() = 0;
   virtual std::string formatTree(std::string indent) = 0;
@@ -48,7 +53,7 @@ public:
   // virtual void checkIndex(const std::vector<unsigned int> & index);
 
   virtual Node simplify() { return Node(); };
-  virtual Node D(unsigned int id) = 0;
+  virtual Node D(const ValueProvider & vp) = 0;
 
   virtual unsigned short precedence() { return 0; }
 
@@ -65,12 +70,14 @@ class EmptyData : public NodeData
 public:
   bool isValid() override { return false; };
 
-  Real value() override { return NAN; };
-  std::string format() override { return "[???]"; };
-  std::string formatTree(std::string indent) override { return "[???]"; };
-  NodeDataPtr clone() override { return nullptr; };
-  Node getArg(unsigned int i) override { return 0; }
-  Node D(unsigned int id) override { return Node(); }
+  Real value() override { fatalError("invalid node"); };
+  jit_value_t jit(jit_function_t func) override { fatalError("invalid node"); };
+
+  std::string format() override { fatalError("invalid node"); };
+  std::string formatTree(std::string indent) override { fatalError("invalid node"); };
+  NodeDataPtr clone() override { fatalError("invalid node"); };
+  Node getArg(unsigned int i) override { fatalError("invalid node"); }
+  Node D(const ValueProvider & vp) override { fatalError("invalid node"); }
 };
 
 /**
@@ -117,25 +124,86 @@ protected:
 /**
  * Base class for any childless node that can be evaluated directly
  */
-class ValueProviderData : public NodeData
+class ValueProvider : public NodeData
 {
 public:
-  ValueProviderData(unsigned int id) : _id(id) {}
-  Real value() override { fatalError("Cannot evaluate node"); };
-  NodeDataPtr clone() override
-  {
-    return std::make_shared<ValueProviderData>(_id); /* for debugging only! */
-  };
-
+  ValueProvider(const std::string & name) : _name(name) {}
   Node getArg(unsigned int i) override { fatalError("Node has no arguments"); };
 
-  std::string format() override { return "_val" + std::to_string(_id); }
+  std::string format() override { return _name != "" ? _name : "{V}"; }
   std::string formatTree(std::string indent) override;
 
-  Node D(unsigned int id) override;
+protected:
+  std::string _name;
+
+  /// The parser needs to be able to read the name of the object upon registration
+  friend Parser;
+};
+
+/**
+ * Purely symbolic node that cannot be evaluated or compiled by substitted and
+ * derived w.r.t.
+ */
+class SymbolData : public ValueProvider
+{
+public:
+  SymbolData(const std::string & name) : ValueProvider(name) {}
+
+  Real value() override { fatalError("Node cannot be evaluated"); }
+  jit_value_t jit(jit_function_t func) override { fatalError("Node cannot be compiled"); }
+
+  NodeDataPtr clone() override { return std::make_shared<SymbolData>(_name); };
+
+  Node D(const ValueProvider & vp) override;
+};
+
+/**
+ * Simple value provider that fetches its contents from a referenced Real value
+ */
+class RealReferenceData : public ValueProvider
+{
+public:
+  RealReferenceData(const Real & ref, const std::string & name = "")
+    : ValueProvider(name), _ref(ref)
+  {
+  }
+
+  Real value() override { return _ref; };
+  jit_value_t jit(jit_function_t func) override;
+
+  NodeDataPtr clone() override { return std::make_shared<RealReferenceData>(_ref, _name); };
+
+  Node D(const ValueProvider & vp) override;
 
 protected:
-  unsigned int _id;
+  const Real & _ref;
+};
+
+/**
+ * Simple value provider that fetches its contents from a referenced Real array value
+ * and a referenced index variable
+ */
+class RealArrayReferenceData : public ValueProvider
+{
+public:
+  RealArrayReferenceData(const Real & ref, const int & index, const std::string & name = "")
+    : ValueProvider(name), _ref(ref), _index(index)
+  {
+  }
+
+  Real value() override { return (&_ref)[_index]; };
+  jit_value_t jit(jit_function_t func) override;
+
+  NodeDataPtr clone() override
+  {
+    return std::make_shared<RealArrayReferenceData>(_ref, _index, _name);
+  };
+
+  Node D(const ValueProvider & vp) override;
+
+protected:
+  const Real & _ref;
+  const int & _index;
 };
 
 /**
@@ -148,7 +216,7 @@ public:
 
   Node getArg(unsigned int i) override { fatalError("Node has no arguments"); };
 
-  Node D(unsigned int /*id*/) override;
+  Node D(const ValueProvider &) override { return Node(0.0); }
 
 protected:
   NumberType _type;
@@ -161,7 +229,10 @@ class RealNumberData : public NumberData
 {
 public:
   RealNumberData(Real value) : NumberData(), _value(value) {}
+
   Real value() override { return _value; };
+  jit_value_t jit(jit_function_t func) override;
+
   std::string format() override { return stringify(_value); };
   std::string formatTree(std::string indent) override;
 
@@ -185,13 +256,15 @@ class UnaryOperatorData : public FixedArgumentData<UnaryOperatorType, 1>
 
 public:
   Real value() override;
+  jit_value_t jit(jit_function_t func) override;
+
   std::string format() override;
   std::string formatTree(std::string indent) override;
 
   NodeDataPtr clone() override;
 
   Node simplify() override;
-  Node D(unsigned int _id) override;
+  Node D(const ValueProvider &) override;
 
   unsigned short precedence() override { return 3; }
 };
@@ -205,13 +278,15 @@ class BinaryOperatorData : public FixedArgumentData<BinaryOperatorType, 2>
 
 public:
   Real value() override;
+  jit_value_t jit(jit_function_t func) override;
+
   std::string format() override;
   std::string formatTree(std::string indent) override;
 
   NodeDataPtr clone() override;
 
   Node simplify() override;
-  Node D(unsigned int _id) override;
+  Node D(const ValueProvider &) override;
 
   unsigned short precedence() override;
 };
@@ -225,13 +300,15 @@ class MultinaryOperatorData : public MultinaryData<MultinaryOperatorType>
 
 public:
   Real value() override;
+  jit_value_t jit(jit_function_t func) override;
+
   std::string format() override;
   std::string formatTree(std::string indent) override;
 
   NodeDataPtr clone() override;
 
   Node simplify() override;
-  Node D(unsigned int id) override;
+  Node D(const ValueProvider & vp) override;
 
   unsigned short precedence() override;
 
@@ -248,13 +325,15 @@ class UnaryFunctionData : public FixedArgumentData<UnaryFunctionType, 1>
 
 public:
   Real value() override;
+  jit_value_t jit(jit_function_t func) override;
+
   std::string format() override;
   std::string formatTree(std::string indent) override;
 
   NodeDataPtr clone() override;
 
   Node simplify() override;
-  Node D(unsigned int _id) override;
+  Node D(const ValueProvider &) override;
 
   unsigned short precedence() override { return 3; }
 };
@@ -268,13 +347,15 @@ class BinaryFunctionData : public FixedArgumentData<BinaryFunctionType, 2>
 
 public:
   Real value() override;
+  jit_value_t jit(jit_function_t func) override;
+
   std::string format() override;
   std::string formatTree(std::string indent) override;
 
   NodeDataPtr clone() override;
 
   Node simplify() override;
-  Node D(unsigned int _id) override;
+  Node D(const ValueProvider &) override;
 };
 
 /**
@@ -287,13 +368,15 @@ class ConditionalData : public FixedArgumentData<ConditionalType, 3>
 
 public:
   Real value() override;
+  jit_value_t jit(jit_function_t func) override;
+
   std::string format() override;
   std::string formatTree(std::string indent) override;
 
   NodeDataPtr clone() override;
 
   Node simplify() override;
-  Node D(unsigned int _id) override;
+  Node D(const ValueProvider &) override;
 };
 
 // end namespace SymbolicMath

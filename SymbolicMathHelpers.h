@@ -1,7 +1,7 @@
-#ifndef SYMBOLICMATHNODE_H
-#define SYMBOLICMATHNODE_H
+#ifndef SYMBOLICMATHHELPERS_H
+#define SYMBOLICMATHHELPERS_H
 
-#include <vector>
+#include <memory>
 
 #include "SymbolicMathNode.h"
 
@@ -48,5 +48,13 @@ conditional(Node a, Node b, Node c)
   return Node(ConditionalType::IF, a, b, c);
 }
 
+std::shared_ptr<ValueProvider>
+symbol(const std::string & name)
+{
+  return std::make_shared<SymbolicMath::SymbolData>(name);
+}
+
 // end namespace SymbolicMath
 }
+
+#endif // SYMBOLICMATHHELPERS_H

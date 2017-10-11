@@ -8,24 +8,72 @@ namespace SymbolicMath
 {
 
 std::string
-ValueProviderData::formatTree(std::string indent)
+ValueProvider::formatTree(std::string indent)
 {
-  return indent + "_val" + std::to_string(_id) + '\n';
+  return indent + (_name != "" ? _name : "{V}") + '\n';
 }
 
 Node
-ValueProviderData::D(unsigned int id)
+SymbolData::D(const ValueProvider & vp)
 {
-  if (id == _id)
-    return Node(1.0);
-  else
-    return Node(0.0);
+  auto sd = dynamic_cast<const SymbolData *>(&vp);
+  if (sd->_name == "")
+    fatalError("Cannot differentiate with respect to an anonymous value node");
+
+  return _name == sd->_name ? Node(1.0) : Node(0.0);
+}
+
+/********************************************************
+ * Real Number reference value provider
+ ********************************************************/
+
+jit_value_t
+RealReferenceData::jit(jit_function_t func)
+{
+  return jit_insn_load_relative(
+      func,
+      jit_value_create_nint_constant(func, jit_type_void_ptr, reinterpret_cast<jit_nint>(&_ref)),
+      0,
+      jit_type_float64);
 }
 
 Node
-NumberData::D(unsigned int /*id*/)
+RealReferenceData::D(const ValueProvider & vp)
 {
-  return Node(0.0);
+  auto rrd = dynamic_cast<const RealReferenceData *>(&vp);
+
+  // check if the reference refer to identical memory locations
+  return (rrd && &(rrd->_ref) == &_ref) ? Node(1.0) : Node(0.0);
+}
+
+/********************************************************
+ * Real Number Array reference value provider
+ ********************************************************/
+
+jit_value_t
+RealArrayReferenceData::jit(jit_function_t func)
+{
+  auto index = jit_insn_load_relative(
+      func,
+      jit_value_create_nint_constant(func, jit_type_void_ptr, reinterpret_cast<jit_nint>(&_index)),
+      0,
+      jit_type_int);
+
+  return jit_insn_load_elem_address(
+      func,
+      jit_value_create_nint_constant(func, jit_type_void_ptr, reinterpret_cast<jit_nint>(&_ref)),
+      index,
+      jit_type_float64);
+}
+
+Node
+RealArrayReferenceData::D(const ValueProvider & vp)
+{
+  auto rard = dynamic_cast<const RealArrayReferenceData *>(&vp);
+
+  // check if the reference and teh index refer to identical memory locations
+  // TODO: We could dynamically make this evaluate to "rrd->_index == _index"!
+  return (rard && &(rard->_ref) == &_ref) && &(rard->_index) == &_index ? Node(1.0) : Node(0.0);
 }
 
 /********************************************************
@@ -36,6 +84,12 @@ std::string
 RealNumberData::formatTree(std::string indent)
 {
   return indent + stringify(_value) + '\n';
+}
+
+jit_value_t
+RealNumberData::jit(jit_function_t func)
+{
+  return jit_value_create_float64_constant(func, jit_type_float64, (jit_float64)_value);
 }
 
 bool
@@ -58,6 +112,22 @@ UnaryOperatorData::value()
 
     case UnaryOperatorType::MINUS:
       return -_args[0].value();
+
+    default:
+      fatalError("Unknown operator");
+  }
+}
+
+jit_value_t
+UnaryOperatorData::jit(jit_function_t func)
+{
+  switch (_type)
+  {
+    case UnaryOperatorType::PLUS:
+      return _args[0].jit(func);
+
+    case UnaryOperatorType::MINUS:
+      return jit_insn_neg(func, _args[0].jit(func));
 
     default:
       fatalError("Unknown operator");
@@ -98,9 +168,9 @@ UnaryOperatorData::simplify()
 }
 
 Node
-UnaryOperatorData::D(unsigned int id)
+UnaryOperatorData::D(const ValueProvider & vp)
 {
-  auto dA = _args[0].D(id);
+  auto dA = _args[0].D(vp);
   switch (_type)
   {
     case UnaryOperatorType::PLUS:
@@ -137,6 +207,72 @@ BinaryOperatorData::value()
 
     case BinaryOperatorType::LOGICAL_AND:
       return (A != 0.0 && B != 0.0) ? 1.0 : 0.0;
+
+    case BinaryOperatorType::LESS_THAN:
+      return A < B ? 1.0 : 0.0;
+
+    case BinaryOperatorType::GREATER_THAN:
+      return A > B ? 1.0 : 0.0;
+
+    case BinaryOperatorType::LESS_EQUAL:
+      return A <= B ? 1.0 : 0.0;
+
+    case BinaryOperatorType::GREATER_EQUAL:
+      return A >= B ? 1.0 : 0.0;
+
+    case BinaryOperatorType::EQUAL:
+      return A == B ? 1.0 : 0.0;
+
+    case BinaryOperatorType::NOT_EQUAL:
+      return A != B ? 1.0 : 0.0;
+
+    default:
+      fatalError("Unknown operator");
+  }
+}
+
+jit_value_t
+BinaryOperatorData::jit(jit_function_t func)
+{
+  auto A = _args[0].jit(func);
+  auto B = _args[1].jit(func);
+
+  switch (_type)
+  {
+    case BinaryOperatorType::SUBTRACTION:
+      return jit_insn_sub(func, A, B);
+
+    case BinaryOperatorType::DIVISION:
+      return jit_insn_div(func, A, B);
+
+    case BinaryOperatorType::POWER:
+      return jit_insn_pow(func, A, B);
+
+    case BinaryOperatorType::LOGICAL_OR:
+      // using bitwise or
+      return jit_insn_or(func, A, B);
+
+    case BinaryOperatorType::LOGICAL_AND:
+      // using bitwise and
+      return jit_insn_and(func, A, B);
+
+    case BinaryOperatorType::LESS_THAN:
+      return jit_insn_lt(func, A, B);
+
+    case BinaryOperatorType::GREATER_THAN:
+      return jit_insn_gt(func, A, B);
+
+    case BinaryOperatorType::LESS_EQUAL:
+      return jit_insn_le(func, A, B);
+
+    case BinaryOperatorType::GREATER_EQUAL:
+      return jit_insn_ge(func, A, B);
+
+    case BinaryOperatorType::EQUAL:
+      return jit_insn_eq(func, A, B);
+
+    case BinaryOperatorType::NOT_EQUAL:
+      return jit_insn_ne(func, A, B);
 
     default:
       fatalError("Unknown operator");
@@ -226,12 +362,12 @@ BinaryOperatorData::simplify()
 }
 
 Node
-BinaryOperatorData::D(unsigned int id)
+BinaryOperatorData::D(const ValueProvider & vp)
 {
   auto & A = _args[0];
   auto & B = _args[1];
-  auto dA = _args[0].D(id);
-  auto dB = _args[1].D(id);
+  auto dA = _args[0].D(vp);
+  auto dB = _args[1].D(vp);
 
   switch (_type)
   {
@@ -244,7 +380,7 @@ BinaryOperatorData::D(unsigned int id)
     case BinaryOperatorType::POWER:
     {
       auto pfunc = Node(BinaryFunctionType::POW, A, B);
-      return pfunc.D(id);
+      return pfunc.D(vp);
     }
 
     case BinaryOperatorType::LESS_THAN:
@@ -297,6 +433,34 @@ MultinaryOperatorData::value()
 
     default:
       fatalError("Unknown operator");
+  }
+}
+
+jit_value_t
+MultinaryOperatorData::jit(jit_function_t func)
+{
+  if (_args.size() == 0)
+    fatalError("No child nodes in multinary operator");
+  else if (_args.size() == 1)
+    return _args[0].jit(func);
+  else
+  {
+    jit_value_t temp = _args[0].jit(func);
+    for (std::size_t i = 1; i < _args.size(); ++i)
+      switch (_type)
+      {
+        case MultinaryOperatorType::ADDITION:
+          temp = jit_insn_add(func, temp, _args[i].jit(func));
+          break;
+
+        case MultinaryOperatorType::MULTIPLICATION:
+          temp = jit_insn_mul(func, temp, _args[i].jit(func));
+          break;
+
+        default:
+          fatalError("Unknown operator");
+      }
+    return temp;
   }
 }
 
@@ -415,7 +579,7 @@ MultinaryOperatorData::simplify()
 }
 
 Node
-MultinaryOperatorData::D(unsigned int id)
+MultinaryOperatorData::D(const ValueProvider & vp)
 {
   std::vector<Node> new_args;
 
@@ -423,7 +587,7 @@ MultinaryOperatorData::D(unsigned int id)
   {
     case MultinaryOperatorType::ADDITION:
       for (auto & arg : _args)
-        new_args.push_back(arg.D(id));
+        new_args.push_back(arg.D(vp));
       return Node(_type, new_args);
 
     case MultinaryOperatorType::MULTIPLICATION:
@@ -434,7 +598,7 @@ MultinaryOperatorData::D(unsigned int id)
       {
         std::vector<Node> factors;
         for (std::size_t j = 0; j < nargs; ++j)
-          factors.push_back(i == j ? _args[j].D(id) : _args[j]);
+          factors.push_back(i == j ? _args[j].D(vp) : _args[j]);
         summands.push_back(Node(MultinaryOperatorType::MULTIPLICATION, factors));
       }
 
@@ -512,6 +676,9 @@ UnaryFunctionData::value()
     case UnaryFunctionType::CSC:
       return 1.0 / std::sin(A);
 
+    case UnaryFunctionType::ERF:
+      return std::erf(A);
+
     case UnaryFunctionType::EXP:
       return std::exp(A);
 
@@ -559,6 +726,131 @@ UnaryFunctionData::value()
   }
 }
 
+jit_value_t
+UnaryFunctionData::jit(jit_function_t func)
+{
+  const auto A = _args[0].jit(func);
+
+  switch (_type)
+  {
+    case UnaryFunctionType::ABS:
+      return jit_insn_abs(func, A);
+
+    case UnaryFunctionType::ACOS:
+      return jit_insn_acos(func, A);
+
+    case UnaryFunctionType::ACOSH:
+      fatalError("Function not implemented");
+
+    case UnaryFunctionType::ARG:
+      fatalError("Function not implemented");
+
+    case UnaryFunctionType::ASIN:
+      return jit_insn_asin(func, A);
+
+    case UnaryFunctionType::ASINH:
+      fatalError("Function not implemented");
+
+    case UnaryFunctionType::ATAN:
+      return jit_insn_atan(func, A);
+
+    case UnaryFunctionType::ATANH:
+      fatalError("Function not implemented");
+
+    case UnaryFunctionType::CBRT:
+      return jit_insn_pow(
+          func,
+          A,
+          jit_value_create_float64_constant(func, jit_type_float64, (jit_float64)(1.0 / 3.0)));
+
+    case UnaryFunctionType::CEIL:
+      return jit_insn_ceil(func, A);
+
+    case UnaryFunctionType::CONJ:
+      fatalError("Function not implemented");
+
+    case UnaryFunctionType::COS:
+      return jit_insn_cos(func, A);
+
+    case UnaryFunctionType::COSH:
+      return jit_insn_cosh(func, A);
+
+    case UnaryFunctionType::COT:
+      return jit_insn_div(
+          func,
+          jit_value_create_float64_constant(func, jit_type_float64, (jit_float64)1.0),
+          jit_insn_tan(func, A));
+
+    case UnaryFunctionType::CSC:
+      return jit_insn_div(
+          func,
+          jit_value_create_float64_constant(func, jit_type_float64, (jit_float64)1.0),
+          jit_insn_sin(func, A));
+
+    case UnaryFunctionType::ERF:
+      // use jit_insn_call_native here!
+      fatalError("Function not implemented");
+
+    case UnaryFunctionType::EXP:
+      return jit_insn_exp(func, A);
+
+    case UnaryFunctionType::EXP2:
+      return jit_insn_pow(
+          func, jit_value_create_float64_constant(func, jit_type_float64, (jit_float64)2.0), A);
+
+    case UnaryFunctionType::FLOOR:
+      return jit_insn_floor(func, A);
+
+    case UnaryFunctionType::IMAG:
+      fatalError("Function not implemented");
+
+    case UnaryFunctionType::INT:
+      return jit_insn_round(func, A);
+
+    case UnaryFunctionType::LOG:
+      return jit_insn_log(func, A);
+
+    case UnaryFunctionType::LOG10:
+      return jit_insn_log10(func, A);
+
+    case UnaryFunctionType::LOG2:
+      fatalError("Function not implemented");
+
+    case UnaryFunctionType::REAL:
+      fatalError("Function not implemented");
+
+    case UnaryFunctionType::SEC:
+      return jit_insn_div(
+          func,
+          jit_value_create_float64_constant(func, jit_type_float64, (jit_float64)1.0),
+          jit_insn_cos(func, A));
+
+    case UnaryFunctionType::SIN:
+      return jit_insn_sin(func, A);
+
+    case UnaryFunctionType::SINH:
+      return jit_insn_sinh(func, A);
+
+    case UnaryFunctionType::SQRT:
+      return jit_insn_sqrt(func, A);
+
+    case UnaryFunctionType::T:
+      fatalError("Function not implemented");
+
+    case UnaryFunctionType::TAN:
+      return jit_insn_tan(func, A);
+
+    case UnaryFunctionType::TANH:
+      return jit_insn_tan(func, A);
+
+    case UnaryFunctionType::TRUNC:
+      return jit_insn_rint(func, A);
+
+    default:
+      fatalError("Function not implemented");
+  }
+}
+
 std::string
 UnaryFunctionData::format()
 {
@@ -592,10 +884,10 @@ UnaryFunctionData::simplify()
 }
 
 Node
-UnaryFunctionData::D(unsigned int id)
+UnaryFunctionData::D(const ValueProvider & vp)
 {
   auto & A = _args[0];
-  auto dA = _args[0].D(id);
+  auto dA = _args[0].D(vp);
 
   switch (_type)
   {
@@ -679,6 +971,43 @@ BinaryFunctionData::value()
   }
 }
 
+jit_value_t
+BinaryFunctionData::jit(jit_function_t func)
+{
+  const auto A = _args[0].jit(func);
+  const auto B = _args[1].jit(func);
+
+  switch (_type)
+  {
+    case BinaryFunctionType::ATAN2:
+      return jit_insn_atan2(func, A, B);
+
+    case BinaryFunctionType::HYPOT:
+      return jit_insn_sqrt(func,
+                           jit_insn_add(func, jit_insn_mul(func, A, A), jit_insn_mul(func, B, B)));
+
+    case BinaryFunctionType::MIN:
+      return jit_insn_min(func, A, B);
+
+    case BinaryFunctionType::MAX:
+      return jit_insn_max(func, A, B);
+
+    case BinaryFunctionType::PLOG:
+      fatalError("Function not implemented");
+    // return A < B
+    //            ? std::log(B) + (A - B) / B - (A - B) * (A - B) / (2.0 * B * B) +
+    //                  (A - B) * (A - B) * (A - B) / (3.0 * B * B * B)
+    //            : std::log(A);
+
+    case BinaryFunctionType::POW:
+      return jit_insn_pow(func, A, B);
+
+    case BinaryFunctionType::POLAR:
+    default:
+      fatalError("Function not implemented");
+  }
+}
+
 std::string
 BinaryFunctionData::format()
 {
@@ -735,12 +1064,12 @@ BinaryFunctionData::simplify()
 }
 
 Node
-BinaryFunctionData::D(unsigned int id)
+BinaryFunctionData::D(const ValueProvider & vp)
 {
   auto & A = _args[0];
   auto & B = _args[1];
-  auto dA = _args[0].D(id);
-  auto dB = _args[1].D(id);
+  auto dA = _args[0].D(vp);
+  auto dB = _args[1].D(vp);
 
   switch (_type)
   {
@@ -795,6 +1124,27 @@ ConditionalData::value()
     return _args[2].value();
 }
 
+jit_value_t
+ConditionalData::jit(jit_function_t func)
+{
+  if (_type != ConditionalType::IF)
+    fatalError("Conditional not implemented");
+
+  jit_label_t label1 = jit_label_undefined;
+  jit_label_t label2 = jit_label_undefined;
+  jit_value_t result = jit_value_create(func, jit_type_float64);
+
+  jit_insn_branch_if_not(func, _args[0].jit(func), &label1);
+  // true branch
+  jit_insn_store(func, result, _args[1].jit(func));
+  jit_insn_branch(func, &label2);
+  jit_insn_label(func, &label1);
+  // false branch
+  jit_insn_store(func, result, _args[2].jit(func));
+  jit_insn_label(func, &label2);
+  return jit_insn_load(func, result);
+}
+
 std::string
 ConditionalData::format()
 {
@@ -839,12 +1189,12 @@ ConditionalData::simplify()
 }
 
 Node
-ConditionalData::D(unsigned int id)
+ConditionalData::D(const ValueProvider & vp)
 {
   if (_type != ConditionalType::IF)
     fatalError("Conditional not implemented");
 
-  return Node(ConditionalType::IF, _args[0], _args[1].D(id), _args[2].D(id));
+  return Node(ConditionalType::IF, _args[0], _args[1].D(vp), _args[2].D(vp));
 }
 
 // end namespace SymbolicMath

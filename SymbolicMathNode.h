@@ -7,12 +7,15 @@
 #include <stack>
 #include <type_traits>
 
+#include <jit/jit.h>
+
 #include "SymbolicMathSymbols.h"
 
 namespace SymbolicMath
 {
 
 class NodeData;
+class ValueProvider;
 
 using NodeDataPtr = std::shared_ptr<NodeData>;
 
@@ -66,6 +69,7 @@ public:
 
   /// pass through functions
   Real value() const;
+  jit_value_t jit(jit_function_t func);
 
   ///@{ subtree output
   std::string format() const;
@@ -87,7 +91,7 @@ public:
   bool isValid() const;
 
   /// Returns the derivative of the subtree at the node w.r.t. value provider id
-  Node D(unsigned int id) const;
+  Node D(const ValueProvider &) const;
 
   /// Simplify the subtree at the node in place
   void simplify();

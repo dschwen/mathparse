@@ -118,6 +118,12 @@ Node::value() const
   return _data->value();
 }
 
+jit_value_t
+Node::jit(jit_function_t func)
+{
+  return _data->jit(func);
+}
+
 std::string
 Node::format() const
 {
@@ -185,9 +191,9 @@ Node::isValid() const
 }
 
 Node
-Node::D(unsigned int id) const
+Node::D(const ValueProvider & vp) const
 {
-  return Node(_data->D(id));
+  return Node(_data->D(vp));
 }
 
 void
