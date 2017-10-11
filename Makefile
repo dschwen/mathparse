@@ -3,7 +3,7 @@ CXX ?= clang++
 OBJS := SymbolicMathToken.o SymbolicMathTokenizer.o \
 			  SymbolicMathParser.o SymbolicMathSymbols.o \
 				SymbolicMathNode.o SymbolicMathNodeData.o \
-				SymbolicMathUtils.o
+				SymbolicMathUtils.o SymbolicMathFunction.o
 
 mathparse: main.C $(OBJS)
 	$(CXX) -std=c++11 -ljit $(LDFLAGS) -o mathparse main.C $(OBJS)

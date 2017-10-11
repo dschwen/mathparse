@@ -202,17 +202,21 @@ std::shared_ptr<ValueProvider>
 Parser::registerValueProvider(std::string name)
 {
   auto vp = std::make_shared<SymbolData>(name);
-  registerValueProvider(name, vp);
+  registerValueProvider(vp);
   return vp;
 }
 
 void
-Parser::registerValueProvider(std::string name, std::shared_ptr<ValueProvider> vp)
+Parser::registerValueProvider(std::shared_ptr<ValueProvider> vp)
 {
-  auto it = _value_providers.find(name);
+  if (vp->_name == "")
+    fatalError("Value provider has an empty name.");
+
+  auto it = _value_providers.find(vp->_name);
   if (it != _value_providers.end())
-    fatalError("Value provider '" + name + "' is already registered.");
-  _value_providers[name] = vp;
+    fatalError("Value provider '" + vp->_name + "' is already registered.");
+
+  _value_providers[vp->_name] = vp;
 }
 
 void

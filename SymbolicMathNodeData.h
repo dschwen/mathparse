@@ -14,6 +14,7 @@
 namespace SymbolicMath
 {
 
+class Parser;
 class ValueProvider;
 
 /**
@@ -134,6 +135,9 @@ public:
 
 protected:
   std::string _name;
+
+  /// The parser needs to be able to read the name of the object upon registration
+  friend Parser;
 };
 
 /**

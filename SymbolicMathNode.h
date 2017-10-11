@@ -92,7 +92,6 @@ public:
 
   /// Returns the derivative of the subtree at the node w.r.t. value provider id
   Node D(const ValueProvider &) const;
-  Node D(std::shared_ptr<ValueProvider>) const;
 
   /// Simplify the subtree at the node in place
   void simplify();

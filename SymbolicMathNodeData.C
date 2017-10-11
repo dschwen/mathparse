@@ -208,6 +208,24 @@ BinaryOperatorData::value()
     case BinaryOperatorType::LOGICAL_AND:
       return (A != 0.0 && B != 0.0) ? 1.0 : 0.0;
 
+    case BinaryOperatorType::LESS_THAN:
+      return A < B ? 1.0 : 0.0;
+
+    case BinaryOperatorType::GREATER_THAN:
+      return A > B ? 1.0 : 0.0;
+
+    case BinaryOperatorType::LESS_EQUAL:
+      return A <= B ? 1.0 : 0.0;
+
+    case BinaryOperatorType::GREATER_EQUAL:
+      return A >= B ? 1.0 : 0.0;
+
+    case BinaryOperatorType::EQUAL:
+      return A == B ? 1.0 : 0.0;
+
+    case BinaryOperatorType::NOT_EQUAL:
+      return A != B ? 1.0 : 0.0;
+
     default:
       fatalError("Unknown operator");
   }
@@ -227,6 +245,9 @@ BinaryOperatorData::jit(jit_function_t func)
     case BinaryOperatorType::DIVISION:
       return jit_insn_div(func, A, B);
 
+    case BinaryOperatorType::POWER:
+      return jit_insn_pow(func, A, B);
+
     case BinaryOperatorType::LOGICAL_OR:
       // using bitwise or
       return jit_insn_or(func, A, B);
@@ -234,6 +255,24 @@ BinaryOperatorData::jit(jit_function_t func)
     case BinaryOperatorType::LOGICAL_AND:
       // using bitwise and
       return jit_insn_and(func, A, B);
+
+    case BinaryOperatorType::LESS_THAN:
+      return jit_insn_lt(func, A, B);
+
+    case BinaryOperatorType::GREATER_THAN:
+      return jit_insn_gt(func, A, B);
+
+    case BinaryOperatorType::LESS_EQUAL:
+      return jit_insn_le(func, A, B);
+
+    case BinaryOperatorType::GREATER_EQUAL:
+      return jit_insn_ge(func, A, B);
+
+    case BinaryOperatorType::EQUAL:
+      return jit_insn_eq(func, A, B);
+
+    case BinaryOperatorType::NOT_EQUAL:
+      return jit_insn_ne(func, A, B);
 
     default:
       fatalError("Unknown operator");
@@ -416,6 +455,8 @@ MultinaryOperatorData::jit(jit_function_t func)
 
         case MultinaryOperatorType::MULTIPLICATION:
           temp = jit_insn_mul(func, temp, _args[i].jit(func));
+          break;
+
         default:
           fatalError("Unknown operator");
       }
@@ -1091,7 +1132,7 @@ ConditionalData::jit(jit_function_t func)
 
   jit_label_t label1 = jit_label_undefined;
   jit_label_t label2 = jit_label_undefined;
-  jit_value_t result;
+  jit_value_t result = jit_value_create(func, jit_type_float64);
 
   jit_insn_branch_if_not(func, _args[0].jit(func), &label1);
   // true branch

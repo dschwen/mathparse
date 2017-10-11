@@ -25,7 +25,7 @@ public:
   Node parse(const std::string & expression);
 
   std::shared_ptr<ValueProvider> registerValueProvider(std::string name);
-  void registerValueProvider(std::string name, std::shared_ptr<ValueProvider> vp);
+  void registerValueProvider(std::shared_ptr<ValueProvider> vp);
 
   void registerQPIndex(const unsigned int & qp) { _qp_ptr = &qp; }
 
