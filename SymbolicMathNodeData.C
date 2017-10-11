@@ -32,9 +32,9 @@ RealReferenceData::jit(jit_function_t func)
 {
   return jit_insn_load_relative(
       func,
-      jit_value_create_long_constant(func, jit_type_long, reinterpret_cast<jit_long>(&_ref)),
+      jit_value_create_nint_constant(func, jit_type_void_ptr, reinterpret_cast<jit_nint>(&_ref)),
       0,
-      jit_type_int);
+      jit_type_float64);
 }
 
 Node
@@ -44,6 +44,36 @@ RealReferenceData::D(const ValueProvider & vp)
 
   // check if the reference refer to identical memory locations
   return (rrd && &(rrd->_ref) == &_ref) ? Node(1.0) : Node(0.0);
+}
+
+/********************************************************
+ * Real Number Array reference value provider
+ ********************************************************/
+
+jit_value_t
+RealArrayReferenceData::jit(jit_function_t func)
+{
+  auto index = jit_insn_load_relative(
+      func,
+      jit_value_create_nint_constant(func, jit_type_void_ptr, reinterpret_cast<jit_nint>(&_index)),
+      0,
+      jit_type_int);
+
+  return jit_insn_load_elem_address(
+      func,
+      jit_value_create_nint_constant(func, jit_type_void_ptr, reinterpret_cast<jit_nint>(&_ref)),
+      index,
+      jit_type_float64);
+}
+
+Node
+RealArrayReferenceData::D(const ValueProvider & vp)
+{
+  auto rard = dynamic_cast<const RealArrayReferenceData *>(&vp);
+
+  // check if the reference and teh index refer to identical memory locations
+  // TODO: We could dynamically make this evaluate to "rrd->_index == _index"!
+  return (rard && &(rard->_ref) == &_ref) && &(rard->_index) == &_index ? Node(1.0) : Node(0.0);
 }
 
 /********************************************************

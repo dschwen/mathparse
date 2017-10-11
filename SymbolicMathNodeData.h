@@ -154,7 +154,7 @@ public:
 };
 
 /**
- * Simple value provider that fetches its contents from a refernced Real value
+ * Simple value provider that fetches its contents from a referenced Real value
  */
 class RealReferenceData : public ValueProvider
 {
@@ -173,6 +173,33 @@ public:
 
 protected:
   const Real & _ref;
+};
+
+/**
+ * Simple value provider that fetches its contents from a referenced Real array value
+ * and a referenced index variable
+ */
+class RealArrayReferenceData : public ValueProvider
+{
+public:
+  RealArrayReferenceData(const Real & ref, const int & index, const std::string & name = "")
+    : ValueProvider(name), _ref(ref), _index(index)
+  {
+  }
+
+  Real value() override { return (&_ref)[_index]; };
+  jit_value_t jit(jit_function_t func) override;
+
+  NodeDataPtr clone() override
+  {
+    return std::make_shared<RealArrayReferenceData>(_ref, _index, _name);
+  };
+
+  Node D(const ValueProvider & vp) override;
+
+protected:
+  const Real & _ref;
+  const int & _index;
 };
 
 /**
