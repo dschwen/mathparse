@@ -975,7 +975,7 @@ jit_value_t
 BinaryFunctionData::jit(jit_function_t func)
 {
   const auto A = _args[0].jit(func);
-  const auto B = _args[0].jit(func);
+  const auto B = _args[1].jit(func);
 
   switch (_type)
   {
