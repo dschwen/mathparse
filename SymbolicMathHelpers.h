@@ -1,5 +1,5 @@
-#ifndef SYMBOLICMATHNODE_H
-#define SYMBOLICMATHNODE_H
+#ifndef SYMBOLICMATHHELPERS_H
+#define SYMBOLICMATHHELPERS_H
 
 #include <vector>
 
@@ -50,3 +50,5 @@ conditional(Node a, Node b, Node c)
 
 // end namespace SymbolicMath
 }
+
+#endif // SYMBOLICMATHHELPERS_H

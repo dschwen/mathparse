@@ -124,7 +124,7 @@ protected:
 class ValueProviderData : public NodeData
 {
 public:
-  ValueProviderData(unsigned int id) : _id(id) {}
+  ValueProviderData() : _id(0) {}
   Real value() override { fatalError("Cannot evaluate node"); };
   jit_value_t jit(jit_function_t func) override { fatalError("cannot jit compile"); };
   NodeDataPtr clone() override
@@ -140,6 +140,9 @@ public:
   Node D(unsigned int id) override;
 
 protected:
+  /// To be called from the ValueProvideManager
+  void setID(unsigned int id) { _id = id; }
+
   unsigned int _id;
 };
 
