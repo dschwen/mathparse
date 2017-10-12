@@ -21,3 +21,11 @@ mathparse: main.C $(OBJS)
 
 clean:
 	rm -rf $(OBJS) *.o *.d
+
+tests: test2 test3
+
+test2: test2.C
+	clang++ -std=c++11 -DSLJIT_CONFIG_AUTO=1 -o test2 test2.C contrib/sljit_src/sljitLir.c
+
+test3: test3.C
+	clang++ -std=c++11 -DSLJIT_CONFIG_AUTO=1 -o test3 test3.C contrib/sljit_src/sljitLir.c
