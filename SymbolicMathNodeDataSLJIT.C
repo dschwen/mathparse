@@ -112,13 +112,21 @@ RealArrayReferenceData::jit(JITStateValue & func)
 JITReturnValue
 UnaryOperatorData::jit(JITStateValue & func)
 {
+  _args[0].jit(func);
+
   switch (_type)
   {
     case UnaryOperatorType::PLUS:
-      return _args[0].jit(func);
+      return;
 
     case UnaryOperatorType::MINUS:
-      return jit_insn_neg(func, _args[0].jit(func));
+      sljit_emit_op1(C,
+                     SLJIT_NEG_F64,
+                     SLJIT_MEM,
+                     (sljit_sw) & (state.stack),
+                     SLJIT_MEM,
+                     (sljit_sw) & (state.stack));
+      return;
 
     default:
       fatalError("Unknown operator");
@@ -138,7 +146,15 @@ BinaryOperatorData::jit(JITStateValue & func)
   switch (_type)
   {
     case BinaryOperatorType::SUBTRACTION:
-      return jit_insn_sub(func, A, B);
+      sljit_emit_op2(C,
+                     SLJIT_SUB_F64,
+                     SLJIT_MEM,
+                     (sljit_sw) & (state.stack),
+                     SLJIT_MEM,
+                     (sljit_sw) & (state.stack),
+                     SLJIT_MEM,
+                     (sljit_sw)(&(state.stack) + 1));
+      return;
 
     case BinaryOperatorType::DIVISION:
       return jit_insn_div(func, A, B);
@@ -416,7 +432,7 @@ ConditionalData::jit(JITStateValue & func)
   struct sljit_jump * false_case;
   struct sljit_jump * end_if;
 
-  sljit_emit_op1(C, SLJIT_MOV, SLJIT_R0, 0, SLJIT_MEM, (sljit_sw) & (state.stack));
+  sljit_emit_op1(C, SLJIT_MOV, SLJIT_FR0, 0, SLJIT_MEM, (sljit_sw) & (state.stack));
   state.stack--; //?
   false_case = sljit_emit_cmp(C, SLJIT_EQUAL, SLJIT_R0, 0, SLJIT_IMM, 0);
 
