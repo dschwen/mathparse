@@ -57,6 +57,10 @@ public:
 
   virtual unsigned short precedence() { return 0; }
 
+  /// amount of net stack pointer movement of this operator
+  virtual int stackChange() { return 0; }
+  virtual std::size_t stackDepth() { return 0; }
+
   friend Node;
 };
 
@@ -96,6 +100,15 @@ public:
   std::size_t size() override { return N; }
 
   bool is(Enum type) override { return _type == type || type == Enum::_ANY; }
+  int stackChange() overwrite { return N - 1; }
+  std::size_t stackDepth() override
+  {
+    auto depth = 0;
+    for (auto & arg : _args)
+      depth += arg.stackDepth();
+    // depth better not be 0!
+    return depth - 1;
+  }
 
 protected:
   std::array<Node, N> _args;
@@ -115,6 +128,14 @@ public:
   std::size_t size() override { return _args.size(); }
 
   bool is(Enum type) override { return _type == type || type == Enum::_ANY; }
+  std::size_t stackDepth() override
+  {
+    auto depth = 0;
+    for (auto & arg : _args)
+      depth += arg.stackDepth();
+    // depth better not be 0!
+    return depth - 1;
+  }
 
 protected:
   std::vector<Node> _args;
@@ -132,6 +153,9 @@ public:
 
   std::string format() override { return _name != "" ? _name : "{V}"; }
   std::string formatTree(std::string indent) override;
+
+  int stackChange() overwrite { return 1; }
+  std::size_t stackDepth() override { return 1; }
 
 protected:
   std::string _name;
@@ -377,6 +401,15 @@ public:
 
   Node simplify() override;
   Node D(const ValueProvider &) override;
+
+  int stackChange() overwrite { return 0; }
+  std::size_t stackDepth() override
+  {
+    auto depth = 0;
+    for (auto & arg : _args)
+      depth = std::max(depth, arg.stackDepth());
+    return depth - 1;
+  }
 };
 
 // end namespace SymbolicMath

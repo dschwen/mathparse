@@ -9,6 +9,68 @@
 namespace SymbolicMath
 {
 
+#define GLUE_HELPER(x, y) x##y
+#define GLUE(x, y) GLUE_HELPER(x, y)
+
+#define SLJIT_MATH_WRAPPER1(FUNC)                                                                  \
+  static long SLJIT_CALL GLUE(sljit_wrap_, FUNC)(long a)                                           \
+  {                                                                                                \
+    auto & A = *reinterpret_cast<double *>(a);                                                     \
+    A = std::FUNC(A);                                                                              \
+    return 0;                                                                                      \
+  }
+
+#define SLJIT_MATH_WRAPPER1X(FUNC, EXPR)                                                           \
+  static long SLJIT_CALL GLUE(sljit_wrap_, FUNC)(long a)                                           \
+  {                                                                                                \
+    auto & A = *reinterpret_cast<double *>(a);                                                     \
+    A = EXPR;                                                                                      \
+    return 0;                                                                                      \
+  }
+
+#define SLJIT_MATH_WRAPPER2(FUNC)                                                                  \
+  static long SLJIT_CALL GLUE(sljit_wrap_, FUNC)(long a, long b)                                   \
+  {                                                                                                \
+    auto & B = *reinterpret_cast<double *>(b);                                                     \
+    auto & A = *reinterpret_cast<double *>(a);                                                     \
+    A = std::FUNC(A, B);                                                                           \
+    return 0;                                                                                      \
+  }
+
+SLJIT_MATH_WRAPPER1(abs)
+SLJIT_MATH_WRAPPER1(acos)
+SLJIT_MATH_WRAPPER1(acosh)
+SLJIT_MATH_WRAPPER1(asin)
+SLJIT_MATH_WRAPPER1(asinh)
+SLJIT_MATH_WRAPPER1(atan)
+SLJIT_MATH_WRAPPER1(atanh)
+SLJIT_MATH_WRAPPER1(cbrt)
+SLJIT_MATH_WRAPPER1(ceil)
+SLJIT_MATH_WRAPPER1(cos)
+SLJIT_MATH_WRAPPER1(cosh)
+SLJIT_MATH_WRAPPER1(erf)
+SLJIT_MATH_WRAPPER1(exp)
+SLJIT_MATH_WRAPPER1(exp2)
+SLJIT_MATH_WRAPPER1(floor)
+SLJIT_MATH_WRAPPER1(log)
+SLJIT_MATH_WRAPPER1(log10)
+SLJIT_MATH_WRAPPER1(log2)
+SLJIT_MATH_WRAPPER1(sin)
+SLJIT_MATH_WRAPPER1(sinh)
+SLJIT_MATH_WRAPPER1(sqrt)
+SLJIT_MATH_WRAPPER1(tan)
+SLJIT_MATH_WRAPPER1(tanh)
+SLJIT_MATH_WRAPPER1X(sec, 1.0 / std::cos(A))
+SLJIT_MATH_WRAPPER1X(csc, 1.0 / std::sin(A))
+SLJIT_MATH_WRAPPER1X(cot, 1.0 / std::tan(A))
+SLJIT_MATH_WRAPPER1X(int, A < 0 ? std::ceil(A - 0.5) : std::floor(A + 0.5))
+SLJIT_MATH_WRAPPER1X(trunc, static_cast<int>(A))
+
+SLJIT_MATH_WRAPPER2(atan2)
+SLJIT_MATH_WRAPPER2(max)
+SLJIT_MATH_WRAPPER2(min)
+SLJIT_MATH_WRAPPER2(pow)
+
 /********************************************************
  * Real Number reference value provider
  ********************************************************/
@@ -152,17 +214,20 @@ MultinaryOperatorData::jit(JITStateValue & func)
  ********************************************************/
 
 JITReturnValue
-UnaryFunctionData::jit(JITStateValue & func)
+UnaryFunctionData::jit(JITStateValue & state)
 {
-  const auto A = _args[0].jit(func);
+  _args[0].jit(state);
+  sljit_emit_op1(C, SLJIT_MOV, SLJIT_R0, 0, SLJIT_IMM, (sljit_sw) & (state.stack));
 
   switch (_type)
   {
     case UnaryFunctionType::ABS:
-      return jit_insn_abs(func, A);
+      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_abs));
+      return;
 
     case UnaryFunctionType::ACOS:
-      return jit_insn_acos(func, A);
+      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_acos));
+      return;
 
     case UnaryFunctionType::ACOSH:
       fatalError("Function not implemented");
@@ -171,34 +236,37 @@ UnaryFunctionData::jit(JITStateValue & func)
       fatalError("Function not implemented");
 
     case UnaryFunctionType::ASIN:
-      return jit_insn_asin(func, A);
+      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_asin));
+      return;
 
     case UnaryFunctionType::ASINH:
       fatalError("Function not implemented");
 
     case UnaryFunctionType::ATAN:
-      return jit_insn_atan(func, A);
+      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_atan));
+      return;
 
     case UnaryFunctionType::ATANH:
       fatalError("Function not implemented");
 
     case UnaryFunctionType::CBRT:
-      return jit_insn_pow(
-          func,
-          A,
-          jit_value_create_float64_constant(func, jit_type_float64, (jit_float64)(1.0 / 3.0)));
+      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_cbrt));
+      return;
 
     case UnaryFunctionType::CEIL:
-      return jit_insn_ceil(func, A);
+      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_ceil));
+      return;
 
     case UnaryFunctionType::CONJ:
       fatalError("Function not implemented");
 
     case UnaryFunctionType::COS:
-      return jit_insn_cos(func, A);
+      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_cos));
+      return;
 
     case UnaryFunctionType::COSH:
-      return jit_insn_cosh(func, A);
+      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_cosh));
+      return;
 
     case UnaryFunctionType::COT:
       return jit_insn_div(
@@ -217,26 +285,31 @@ UnaryFunctionData::jit(JITStateValue & func)
       fatalError("Function not implemented");
 
     case UnaryFunctionType::EXP:
-      return jit_insn_exp(func, A);
+      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_exp));
+      return;
 
     case UnaryFunctionType::EXP2:
       return jit_insn_pow(
           func, jit_value_create_float64_constant(func, jit_type_float64, (jit_float64)2.0), A);
 
     case UnaryFunctionType::FLOOR:
-      return jit_insn_floor(func, A);
+      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_floor));
+      return;
 
     case UnaryFunctionType::IMAG:
       fatalError("Function not implemented");
 
     case UnaryFunctionType::INT:
-      return jit_insn_round(func, A);
+      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_round));
+      return;
 
     case UnaryFunctionType::LOG:
-      return jit_insn_log(func, A);
+      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_log));
+      return;
 
     case UnaryFunctionType::LOG10:
-      return jit_insn_log10(func, A);
+      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_log10));
+      return;
 
     case UnaryFunctionType::LOG2:
       fatalError("Function not implemented");
@@ -251,25 +324,30 @@ UnaryFunctionData::jit(JITStateValue & func)
           jit_insn_cos(func, A));
 
     case UnaryFunctionType::SIN:
-      return jit_insn_sin(func, A);
+      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_sin));
+      return;
 
     case UnaryFunctionType::SINH:
-      return jit_insn_sinh(func, A);
+      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_sinh));
+      return;
 
     case UnaryFunctionType::SQRT:
-      return jit_insn_sqrt(func, A);
+      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_sqrt));
+      return;
 
     case UnaryFunctionType::T:
       fatalError("Function not implemented");
 
     case UnaryFunctionType::TAN:
-      return jit_insn_tan(func, A);
+      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_tan));
+      return;
 
     case UnaryFunctionType::TANH:
-      return jit_insn_tan(func, A);
+      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_tanh));
+      return;
 
     case UnaryFunctionType::TRUNC:
-      return jit_insn_rint(func, A);
+      fatalError("Function not implemented");
 
     default:
       fatalError("Function not implemented");
@@ -283,23 +361,30 @@ UnaryFunctionData::jit(JITStateValue & func)
 JITReturnValue
 BinaryFunctionData::jit(JITStateValue & func)
 {
-  const auto A = _args[0].jit(func);
-  const auto B = _args[1].jit(func);
+  _args[0].jit(state);
+  _args[1].jit(state);
+
+  sljit_emit_op1(C, SLJIT_MOV, SLJIT_R0, 0, SLJIT_IMM, (sljit_sw) & (state.stack));
+  state.stack--;
+  sljit_emit_op1(C, SLJIT_MOV, SLJIT_R1, 0, SLJIT_IMM, (sljit_sw) & (state.stack));
 
   switch (_type)
   {
     case BinaryFunctionType::ATAN2:
-      return jit_insn_atan2(func, A, B);
+      sljit_emit_ijump(state.C, SLJIT_CALL2, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_atan2));
+      return;
 
     case BinaryFunctionType::HYPOT:
       return jit_insn_sqrt(func,
                            jit_insn_add(func, jit_insn_mul(func, A, A), jit_insn_mul(func, B, B)));
 
     case BinaryFunctionType::MIN:
-      return jit_insn_min(func, A, B);
+      sljit_emit_ijump(state.C, SLJIT_CALL2, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_min));
+      return;
 
     case BinaryFunctionType::MAX:
-      return jit_insn_max(func, A, B);
+      sljit_emit_ijump(state.C, SLJIT_CALL2, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_max));
+      return;
 
     case BinaryFunctionType::PLOG:
       fatalError("Function not implemented");
@@ -309,7 +394,8 @@ BinaryFunctionData::jit(JITStateValue & func)
     //            : std::log(A);
 
     case BinaryFunctionType::POW:
-      return jit_insn_pow(func, A, B);
+      sljit_emit_ijump(state.C, SLJIT_CALL2, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_pow));
+      return;
 
     case BinaryFunctionType::POLAR:
     default:
@@ -327,19 +413,23 @@ ConditionalData::jit(JITStateValue & func)
   if (_type != ConditionalType::IF)
     fatalError("Conditional not implemented");
 
-  jit_label_t label1 = jit_label_undefined;
-  jit_label_t label2 = jit_label_undefined;
-  JITReturnValue result = jit_value_create(func, jit_type_float64);
+  struct sljit_jump * false_case;
+  struct sljit_jump * end_if;
 
-  jit_insn_branch_if_not(func, _args[0].jit(func), &label1);
-  // true branch
-  jit_insn_store(func, result, _args[1].jit(func));
-  jit_insn_branch(func, &label2);
-  jit_insn_label(func, &label1);
-  // false branch
-  jit_insn_store(func, result, _args[2].jit(func));
-  jit_insn_label(func, &label2);
-  return jit_insn_load(func, result);
+  sljit_emit_op1(C, SLJIT_MOV, SLJIT_R0, 0, SLJIT_MEM, (sljit_sw) & (state.stack));
+  state.stack--; //?
+  false_case = sljit_emit_cmp(C, SLJIT_EQUAL, SLJIT_R0, 0, SLJIT_IMM, 0);
+
+  // true case`
+  _args[0].jit(func);
+  end_if = sljit_emit_jump(C, SLJIT_JUMP);
+
+  // false case
+  sljit_set_label(false_case, sljit_emit_label(C));
+  _args[1].jit(func);
+
+  // end if
+  sljit_set_label(end_if, sljit_emit_label(C));
 }
 
 // end namespace SymbolicMath

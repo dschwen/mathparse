@@ -210,6 +210,13 @@ Node::precedence() const
   return _data->precedence();
 }
 
+std::size_t
+Node::stackDepth(std::size_t & result_pos)
+{
+  auto parent_pos = result_pos;
+  return _data->stackChange();
+}
+
 // void
 // Node::checkIndex(const std::vector<unsigned int> & index)
 // {

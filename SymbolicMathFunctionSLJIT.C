@@ -24,7 +24,7 @@ Function::compile()
   state.C = sljit_create_compiler(NULL);
 
   // build function
-  sljit_emit_enter(C, 0, 3, 1, 3, 0, 0, 0); // TODO: zero params!
+  sljit_emit_enter(C, 0, 0, 0, 0, 0, 0, 0);
 
   // determine max stack depth and allocate
   _stack.resize(_root.stackDepth(_final_stack_ptr));

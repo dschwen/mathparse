@@ -99,6 +99,9 @@ public:
   /// Returns the precedence of the node for output purposes (bracket placement)
   unsigned short precedence() const;
 
+  // returns the maximum stack depth of the current subtree
+  std::size_t stackDepth();
+
 protected:
   /// shared pointer to the actual guts of the node
   NodeDataPtr _data;

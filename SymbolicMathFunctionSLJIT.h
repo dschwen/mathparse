@@ -10,7 +10,6 @@ namespace SymbolicMath
 {
 
 using ValueProviderPtr = std::shared_ptr<ValueProvider>;
-typedef Real (*JITFunctionPtr)();
 
 /**
  * The Function class is the top level wrapper for a Node based expression tree.
