@@ -41,6 +41,7 @@ main()
 
   double (*sinptr)(double) = std::sin;
   double abuf = 1.0;
+  double bbuf = 1.3;
 
   /* Create a SLJIT compiler */
   struct sljit_compiler * C = sljit_create_compiler(NULL);
@@ -48,8 +49,18 @@ main()
   sljit_emit_enter(C, 0, 3, 1, 3, 0, 0, 0);
 
   /* R0 = &buf; compute(R0) */
-  sljit_emit_op1(C, SLJIT_MOV, SLJIT_R0, 0, SLJIT_IMM, (sljit_sw)&abuf);
-  sljit_emit_ijump(C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(compute));
+  // sljit_emit_op1(C, SLJIT_MOV, SLJIT_R0, 0, SLJIT_IMM, (sljit_sw)&abuf);
+  // sljit_emit_ijump(C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(compute));
+
+  sljit_emit_fop2(C,
+                  SLJIT_SUB_F64,
+                  SLJIT_MEM,
+                  (sljit_sw)&abuf,
+                  SLJIT_MEM,
+                  (sljit_sw)&abuf,
+                  SLJIT_MEM,
+                  (sljit_sw)&bbuf);
+
   sljit_emit_return(C, SLJIT_MOV, SLJIT_R0, 0);
 
   /* Generate machine code */

@@ -71,12 +71,25 @@ SLJIT_MATH_WRAPPER2(max)
 SLJIT_MATH_WRAPPER2(min)
 SLJIT_MATH_WRAPPER2(pow)
 
+void
+emit_sljit_fop2(JITStateValue & state, sljit_s32 op)
+{
+  sljit_emit_fop2(C,
+                  op,
+                  SLJIT_MEM,
+                  (sljit_sw) & (state.stack),
+                  SLJIT_MEM,
+                  (sljit_sw) & (state.stack),
+                  SLJIT_MEM,
+                  (sljit_sw)(&(state.stack) + 1));
+}
+
 /********************************************************
  * Real Number reference value provider
  ********************************************************/
 
 JITReturnValue
-RealReferenceData::jit(JITStateValue & func)
+RealReferenceData::jit(JITStateValue & state)
 {
   return jit_insn_load_relative(
       func,
@@ -90,7 +103,7 @@ RealReferenceData::jit(JITStateValue & func)
  ********************************************************/
 
 JITReturnValue
-RealArrayReferenceData::jit(JITStateValue & func)
+RealArrayReferenceData::jit(JITStateValue & state)
 {
   auto index = jit_insn_load_relative(
       func,
@@ -110,7 +123,7 @@ RealArrayReferenceData::jit(JITStateValue & func)
  ********************************************************/
 
 JITReturnValue
-UnaryOperatorData::jit(JITStateValue & func)
+UnaryOperatorData::jit(JITStateValue & state)
 {
   _args[0].jit(func);
 
@@ -120,12 +133,12 @@ UnaryOperatorData::jit(JITStateValue & func)
       return;
 
     case UnaryOperatorType::MINUS:
-      sljit_emit_op1(C,
-                     SLJIT_NEG_F64,
-                     SLJIT_MEM,
-                     (sljit_sw) & (state.stack),
-                     SLJIT_MEM,
-                     (sljit_sw) & (state.stack));
+      sljit_emit_fop1(C,
+                      SLJIT_NEG_F64,
+                      SLJIT_MEM,
+                      (sljit_sw) & (state.stack),
+                      SLJIT_MEM,
+                      (sljit_sw) & (state.stack));
       return;
 
     default:
@@ -138,29 +151,26 @@ UnaryOperatorData::jit(JITStateValue & func)
  ********************************************************/
 
 JITReturnValue
-BinaryOperatorData::jit(JITStateValue & func)
+BinaryOperatorData::jit(JITStateValue & state)
 {
-  auto A = _args[0].jit(func);
-  auto B = _args[1].jit(func);
+  auto A = _args[0].jit(state);
+  auto B = _args[1].jit(state);
 
   switch (_type)
   {
     case BinaryOperatorType::SUBTRACTION:
-      sljit_emit_op2(C,
-                     SLJIT_SUB_F64,
-                     SLJIT_MEM,
-                     (sljit_sw) & (state.stack),
-                     SLJIT_MEM,
-                     (sljit_sw) & (state.stack),
-                     SLJIT_MEM,
-                     (sljit_sw)(&(state.stack) + 1));
+      emit_sljit_fop2(state, SLJIT_SUB_F64);
       return;
 
     case BinaryOperatorType::DIVISION:
-      return jit_insn_div(func, A, B);
+      emit_sljit_fop2(state, SLJIT_DIV_F64);
+      return;
 
     case BinaryOperatorType::POWER:
-      return jit_insn_pow(func, A, B);
+      sljit_emit_op1(C, SLJIT_MOV, SLJIT_R0, 0, SLJIT_IMM, (sljit_sw) & (state.stack));
+      state.stack--;
+      sljit_emit_op1(C, SLJIT_MOV, SLJIT_R1, 0, SLJIT_IMM, (sljit_sw) & (state.stack));
+      return;
 
     case BinaryOperatorType::LOGICAL_OR:
       // using bitwise or
@@ -171,22 +181,28 @@ BinaryOperatorData::jit(JITStateValue & func)
       return jit_insn_and(func, A, B);
 
     case BinaryOperatorType::LESS_THAN:
-      return jit_insn_lt(func, A, B);
+      emit_sljit_fop2(state, SLJIT_LESS_F64);
+      return;
 
     case BinaryOperatorType::GREATER_THAN:
-      return jit_insn_gt(func, A, B);
+      emit_sljit_fop2(state, SLJIT_GREATER_F64);
+      return;
 
     case BinaryOperatorType::LESS_EQUAL:
-      return jit_insn_le(func, A, B);
+      emit_sljit_fop2(state, SLJIT_LESS_EQUAL_F64);
+      return;
 
     case BinaryOperatorType::GREATER_EQUAL:
-      return jit_insn_ge(func, A, B);
+      emit_sljit_fop2(state, SLJIT_GREATER_EQUAL_F64);
+      return;
 
     case BinaryOperatorType::EQUAL:
-      return jit_insn_eq(func, A, B);
+      emit_sljit_fop2(state, SLJIT_EQUAL_F64);
+      return;
 
     case BinaryOperatorType::NOT_EQUAL:
-      return jit_insn_ne(func, A, B);
+      emit_sljit_fop2(state, SLJIT_NOT_EQUAL_F64);
+      return;
 
     default:
       fatalError("Unknown operator");
@@ -198,7 +214,7 @@ BinaryOperatorData::jit(JITStateValue & func)
  ********************************************************/
 
 JITReturnValue
-MultinaryOperatorData::jit(JITStateValue & func)
+MultinaryOperatorData::jit(JITStateValue & state)
 {
   if (_args.size() == 0)
     fatalError("No child nodes in multinary operator");
@@ -375,7 +391,7 @@ UnaryFunctionData::jit(JITStateValue & state)
  ********************************************************/
 
 JITReturnValue
-BinaryFunctionData::jit(JITStateValue & func)
+BinaryFunctionData::jit(JITStateValue & state)
 {
   _args[0].jit(state);
   _args[1].jit(state);
@@ -424,7 +440,7 @@ BinaryFunctionData::jit(JITStateValue & func)
  ********************************************************/
 
 JITReturnValue
-ConditionalData::jit(JITStateValue & func)
+ConditionalData::jit(JITStateValue & state)
 {
   if (_type != ConditionalType::IF)
     fatalError("Conditional not implemented");
