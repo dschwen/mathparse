@@ -1,4 +1,4 @@
-#include "SymbolicMathFunction.h"
+#include "SymbolicMathFunctionLibJIT.h"
 #include <stdio.h>
 
 #include <jit/jit-dump.h>

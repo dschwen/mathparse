@@ -118,10 +118,10 @@ Node::value() const
   return _data->value();
 }
 
-jit_value_t
-Node::jit(jit_function_t func)
+JITReturnValue
+Node::jit(JITStateValue & state)
 {
-  return _data->jit(func);
+  return _data->jit(state);
 }
 
 std::string
@@ -208,6 +208,16 @@ unsigned short
 Node::precedence() const
 {
   return _data->precedence();
+}
+
+void
+Node::stackDepth(std::pair<int, int> & current_max)
+{
+  _data->stackDepth(current_max);
+
+  // update maximum encountered stack depth
+  if (current_max.second < current_max.first)
+    current_max.second = current_max.first;
 }
 
 // void

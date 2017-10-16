@@ -8,7 +8,17 @@ It consists of
 
 ## Features
 
-Detailed error messages:
+### Just-in-time compilation
+
+SymbolicMath features just-in-time (JIT) compilation of expression trees.
+Available JIT backends are
+
+* [GNU LibJIT](https://www.gnu.org/software/libjit/)
+* [SLJIT](http://sljit.sourceforge.net/) - Broad architecture support, no external dependencies
+
+Research is ongoing as to which backend is best used. (GNU Lightning support in progress)
+
+### Detailed error messages:
 
 ```
 > ./mathparse 'a + b * (c - d'

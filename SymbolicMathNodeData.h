@@ -10,6 +10,7 @@
 #include <jit/jit.h>
 
 #include "SymbolicMathNode.h"
+#include "SymbolicMathJITTypes.h"
 
 namespace SymbolicMath
 {
@@ -26,7 +27,7 @@ class NodeData
 {
 public:
   virtual Real value() = 0;
-  virtual jit_value_t jit(jit_function_t func) = 0;
+  virtual JITReturnValue jit(JITStateValue & state) = 0;
 
   virtual std::string format() = 0;
   virtual std::string formatTree(std::string indent) = 0;
@@ -57,6 +58,9 @@ public:
 
   virtual unsigned short precedence() { return 0; }
 
+  /// amount of net stack pointer movement of this operator
+  virtual void stackDepth(std::pair<int, int> & current_max);
+
   friend Node;
 };
 
@@ -71,7 +75,7 @@ public:
   bool isValid() override { return false; };
 
   Real value() override { fatalError("invalid node"); };
-  jit_value_t jit(jit_function_t func) override { fatalError("invalid node"); };
+  JITReturnValue jit(JITStateValue & state) override { fatalError("invalid node"); };
 
   std::string format() override { fatalError("invalid node"); };
   std::string formatTree(std::string indent) override { fatalError("invalid node"); };
@@ -96,6 +100,12 @@ public:
   std::size_t size() override { return N; }
 
   bool is(Enum type) override { return _type == type || type == Enum::_ANY; }
+  void stackDepth(std::pair<int, int> & current_max) override
+  {
+    for (auto & arg : _args)
+      arg.stackDepth(current_max);
+    current_max.first -= N - 1;
+  }
 
 protected:
   std::array<Node, N> _args;
@@ -115,6 +125,12 @@ public:
   std::size_t size() override { return _args.size(); }
 
   bool is(Enum type) override { return _type == type || type == Enum::_ANY; }
+  void stackDepth(std::pair<int, int> & current_max) override
+  {
+    for (auto & arg : _args)
+      arg.stackDepth(current_max);
+    current_max.first -= _args.size() - 1;
+  }
 
 protected:
   std::vector<Node> _args;
@@ -133,6 +149,8 @@ public:
   std::string format() override { return _name != "" ? _name : "{V}"; }
   std::string formatTree(std::string indent) override;
 
+  void stackDepth(std::pair<int, int> & current_max) override { current_max.first++; }
+
 protected:
   std::string _name;
 
@@ -150,7 +168,7 @@ public:
   SymbolData(const std::string & name) : ValueProvider(name) {}
 
   Real value() override { fatalError("Node cannot be evaluated"); }
-  jit_value_t jit(jit_function_t func) override { fatalError("Node cannot be compiled"); }
+  JITReturnValue jit(JITStateValue & state) override { fatalError("Node cannot be compiled"); }
 
   NodeDataPtr clone() override { return std::make_shared<SymbolData>(_name); };
 
@@ -169,7 +187,7 @@ public:
   }
 
   Real value() override { return _ref; };
-  jit_value_t jit(jit_function_t func) override;
+  JITReturnValue jit(JITStateValue & state) override;
 
   NodeDataPtr clone() override { return std::make_shared<RealReferenceData>(_ref, _name); };
 
@@ -192,7 +210,7 @@ public:
   }
 
   Real value() override { return (&_ref)[_index]; };
-  jit_value_t jit(jit_function_t func) override;
+  JITReturnValue jit(JITStateValue & state) override;
 
   NodeDataPtr clone() override
   {
@@ -218,6 +236,8 @@ public:
 
   Node D(const ValueProvider &) override { return Node(0.0); }
 
+  void stackDepth(std::pair<int, int> & current_max) override { current_max.first++; }
+
 protected:
   NumberType _type;
 };
@@ -231,7 +251,7 @@ public:
   RealNumberData(Real value) : NumberData(), _value(value) {}
 
   Real value() override { return _value; };
-  jit_value_t jit(jit_function_t func) override;
+  JITReturnValue jit(JITStateValue & state) override;
 
   std::string format() override { return stringify(_value); };
   std::string formatTree(std::string indent) override;
@@ -256,7 +276,7 @@ class UnaryOperatorData : public FixedArgumentData<UnaryOperatorType, 1>
 
 public:
   Real value() override;
-  jit_value_t jit(jit_function_t func) override;
+  JITReturnValue jit(JITStateValue & state) override;
 
   std::string format() override;
   std::string formatTree(std::string indent) override;
@@ -278,7 +298,7 @@ class BinaryOperatorData : public FixedArgumentData<BinaryOperatorType, 2>
 
 public:
   Real value() override;
-  jit_value_t jit(jit_function_t func) override;
+  JITReturnValue jit(JITStateValue & state) override;
 
   std::string format() override;
   std::string formatTree(std::string indent) override;
@@ -300,7 +320,7 @@ class MultinaryOperatorData : public MultinaryData<MultinaryOperatorType>
 
 public:
   Real value() override;
-  jit_value_t jit(jit_function_t func) override;
+  JITReturnValue jit(JITStateValue & state) override;
 
   std::string format() override;
   std::string formatTree(std::string indent) override;
@@ -325,7 +345,7 @@ class UnaryFunctionData : public FixedArgumentData<UnaryFunctionType, 1>
 
 public:
   Real value() override;
-  jit_value_t jit(jit_function_t func) override;
+  JITReturnValue jit(JITStateValue & state) override;
 
   std::string format() override;
   std::string formatTree(std::string indent) override;
@@ -347,7 +367,7 @@ class BinaryFunctionData : public FixedArgumentData<BinaryFunctionType, 2>
 
 public:
   Real value() override;
-  jit_value_t jit(jit_function_t func) override;
+  JITReturnValue jit(JITStateValue & state) override;
 
   std::string format() override;
   std::string formatTree(std::string indent) override;
@@ -368,7 +388,7 @@ class ConditionalData : public FixedArgumentData<ConditionalType, 3>
 
 public:
   Real value() override;
-  jit_value_t jit(jit_function_t func) override;
+  JITReturnValue jit(JITStateValue & state) override;
 
   std::string format() override;
   std::string formatTree(std::string indent) override;
@@ -377,6 +397,24 @@ public:
 
   Node simplify() override;
   Node D(const ValueProvider &) override;
+
+  void stackDepth(std::pair<int, int> & current_max) override
+  {
+    current_max.first--;
+    auto true_branch = current_max;
+    _args[1].stackDepth(true_branch);
+    auto false_branch = current_max;
+    _args[2].stackDepth(false_branch);
+
+    // stack pointer needs to be at the same position after each branch
+    if (true_branch.first != false_branch.first)
+      fatalError("Malformed conditional subtrees");
+
+    // find maximum stack depth the two branches
+    current_max = true_branch;
+    if (false_branch.second > true_branch.second)
+      current_max.second = false_branch.second;
+  }
 };
 
 // end namespace SymbolicMath

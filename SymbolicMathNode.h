@@ -10,6 +10,7 @@
 #include <jit/jit.h>
 
 #include "SymbolicMathSymbols.h"
+#include "SymbolicMathJITTypes.h"
 
 namespace SymbolicMath
 {
@@ -69,7 +70,7 @@ public:
 
   /// pass through functions
   Real value() const;
-  jit_value_t jit(jit_function_t func);
+  JITReturnValue jit(JITStateValue & state);
 
   ///@{ subtree output
   std::string format() const;
@@ -98,6 +99,9 @@ public:
 
   /// Returns the precedence of the node for output purposes (bracket placement)
   unsigned short precedence() const;
+
+  // returns the maximum stack depth of the current subtree
+  void stackDepth(std::pair<int, int> & current_max);
 
 protected:
   /// shared pointer to the actual guts of the node
