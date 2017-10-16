@@ -104,7 +104,7 @@ public:
   {
     for (auto & arg : _args)
       arg.stackDepth(current_max);
-    current_max.first--;
+    current_max.first -= N - 1;
   }
 
 protected:
@@ -129,7 +129,7 @@ public:
   {
     for (auto & arg : _args)
       arg.stackDepth(current_max);
-    current_max.first--;
+    current_max.first -= _args.size() - 1;
   }
 
 protected:

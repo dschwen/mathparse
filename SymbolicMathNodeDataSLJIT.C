@@ -78,11 +78,11 @@ emit_sljit_fop2(JITStateValue & state, sljit_s32 op)
   sljit_emit_fop2(state.C,
                   op,
                   SLJIT_MEM,
-                  (sljit_sw)(&(state.stack) - 1),
+                  (sljit_sw)(state.stack - 1),
                   SLJIT_MEM,
-                  (sljit_sw)(&(state.stack) - 1),
+                  (sljit_sw)(state.stack - 1),
                   SLJIT_MEM,
-                  (sljit_sw) & (state.stack));
+                  (sljit_sw)state.stack);
 }
 
 /********************************************************
@@ -97,7 +97,7 @@ RealNumberData::jit(JITStateValue & state)
   // gets simplified the node holding this data may be freed. We therefore need to
   // invalidate the JIT code upon simplification!
   sljit_emit_fop1(
-      state.C, SLJIT_MOV_F64, SLJIT_MEM, (sljit_sw) & (state.stack), SLJIT_MEM, (sljit_sw)&_value);
+      state.C, SLJIT_MOV_F64, SLJIT_MEM, (sljit_sw)state.stack, SLJIT_MEM, (sljit_sw)&_value);
   state.stack++;
 }
 
@@ -109,7 +109,7 @@ JITReturnValue
 RealReferenceData::jit(JITStateValue & state)
 {
   sljit_emit_fop1(
-      state.C, SLJIT_MOV_F64, SLJIT_MEM, (sljit_sw) & (state.stack), SLJIT_MEM, (sljit_sw)&_ref);
+      state.C, SLJIT_MOV_F64, SLJIT_MEM, (sljit_sw)state.stack, SLJIT_MEM, (sljit_sw)&_ref);
   state.stack++;
 }
 
@@ -152,9 +152,9 @@ UnaryOperatorData::jit(JITStateValue & state)
       sljit_emit_fop1(state.C,
                       SLJIT_NEG_F64,
                       SLJIT_MEM,
-                      (sljit_sw)(&(state.stack) - 1),
+                      (sljit_sw)(state.stack - 1),
                       SLJIT_MEM,
-                      (sljit_sw)(&(state.stack) - 1));
+                      (sljit_sw)(state.stack - 1));
       return;
 
     default:
@@ -184,8 +184,8 @@ BinaryOperatorData::jit(JITStateValue & state)
       return;
 
     case BinaryOperatorType::POWER:
-      sljit_emit_op1(state.C, SLJIT_MOV, SLJIT_R0, 0, SLJIT_IMM, (sljit_sw)(&(state.stack) - 1));
-      sljit_emit_op1(state.C, SLJIT_MOV, SLJIT_R1, 0, SLJIT_IMM, (sljit_sw) & (state.stack));
+      sljit_emit_op1(state.C, SLJIT_MOV, SLJIT_R0, 0, SLJIT_IMM, (sljit_sw)(state.stack - 1));
+      sljit_emit_op1(state.C, SLJIT_MOV, SLJIT_R1, 0, SLJIT_IMM, (sljit_sw)state.stack);
       sljit_emit_ijump(state.C, SLJIT_CALL2, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_pow));
       return;
 
@@ -194,11 +194,11 @@ BinaryOperatorData::jit(JITStateValue & state)
       sljit_emit_op2(state.C,
                      SLJIT_OR,
                      SLJIT_MEM,
-                     (sljit_sw)(&(state.stack) - 1),
+                     (sljit_sw)(state.stack - 1),
                      SLJIT_MEM,
-                     (sljit_sw)(&(state.stack) - 1),
+                     (sljit_sw)(state.stack - 1),
                      SLJIT_MEM,
-                     (sljit_sw) & (state.stack));
+                     (sljit_sw)state.stack);
       return;
 
     case BinaryOperatorType::LOGICAL_AND:
@@ -206,11 +206,11 @@ BinaryOperatorData::jit(JITStateValue & state)
       sljit_emit_op2(state.C,
                      SLJIT_AND,
                      SLJIT_MEM,
-                     (sljit_sw)(&(state.stack) - 1),
+                     (sljit_sw)(state.stack - 1),
                      SLJIT_MEM,
-                     (sljit_sw)(&(state.stack) - 1),
+                     (sljit_sw)(state.stack - 1),
                      SLJIT_MEM,
-                     (sljit_sw) & (state.stack));
+                     (sljit_sw)state.stack);
       return;
 
     case BinaryOperatorType::LESS_THAN:
@@ -283,7 +283,7 @@ JITReturnValue
 UnaryFunctionData::jit(JITStateValue & state)
 {
   _args[0].jit(state);
-  sljit_emit_op1(state.C, SLJIT_MOV, SLJIT_R0, 0, SLJIT_IMM, (sljit_sw) & (state.stack));
+  sljit_emit_op1(state.C, SLJIT_MOV, SLJIT_R0, 0, SLJIT_IMM, (sljit_sw)(state.stack - 1));
 
   switch (_type)
   {
@@ -339,11 +339,11 @@ UnaryFunctionData::jit(JITStateValue & state)
       sljit_emit_fop2(state.C,
                       SLJIT_DIV_F64,
                       SLJIT_MEM,
-                      (sljit_sw)(&(state.stack) - 1),
+                      (sljit_sw)(state.stack - 1),
                       SLJIT_IMM,
                       (sljit_f64)1.0, // OOPS!
                       SLJIT_MEM,
-                      (sljit_sw)(&(state.stack) - 1));
+                      (sljit_sw)(state.stack - 1));
       return;
 
     case UnaryFunctionType::CSC:
@@ -440,8 +440,8 @@ BinaryFunctionData::jit(JITStateValue & state)
   _args[1].jit(state);
   state.stack--;
 
-  sljit_emit_op1(state.C, SLJIT_MOV, SLJIT_R0, 0, SLJIT_IMM, (sljit_sw)(&(state.stack) - 1));
-  sljit_emit_op1(state.C, SLJIT_MOV, SLJIT_R1, 0, SLJIT_IMM, (sljit_sw) & (state.stack));
+  sljit_emit_op1(state.C, SLJIT_MOV, SLJIT_R0, 0, SLJIT_IMM, (sljit_sw)(state.stack - 1));
+  sljit_emit_op1(state.C, SLJIT_MOV, SLJIT_R1, 0, SLJIT_IMM, (sljit_sw)state.stack);
 
   switch (_type)
   {
@@ -493,7 +493,7 @@ ConditionalData::jit(JITStateValue & state)
   struct sljit_jump * false_case;
   struct sljit_jump * end_if;
 
-  sljit_emit_op1(state.C, SLJIT_MOV, SLJIT_FR0, 0, SLJIT_MEM, (sljit_sw) & (state.stack));
+  sljit_emit_op1(state.C, SLJIT_MOV, SLJIT_FR0, 0, SLJIT_MEM, (sljit_sw)state.stack);
   state.stack--; //?
   false_case = sljit_emit_cmp(state.C, SLJIT_EQUAL, SLJIT_R0, 0, SLJIT_IMM, 0);
 
