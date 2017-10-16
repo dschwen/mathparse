@@ -31,8 +31,8 @@ namespace SymbolicMath
 #define SLJIT_MATH_WRAPPER2(FUNC)                                                                  \
   static long SLJIT_CALL GLUE(sljit_wrap_, FUNC)(long a, long b)                                   \
   {                                                                                                \
-    auto & B = *reinterpret_cast<double *>(b);                                                     \
     auto & A = *reinterpret_cast<double *>(a);                                                     \
+    auto & B = *reinterpret_cast<double *>(b);                                                     \
     A = std::FUNC(A, B);                                                                           \
     return 0;                                                                                      \
   }
@@ -77,11 +77,11 @@ emit_sljit_fop2(JITStateValue & state, sljit_s32 op)
   sljit_emit_fop2(C,
                   op,
                   SLJIT_MEM,
-                  (sljit_sw) & (state.stack),
+                  (sljit_sw)(&(state.stack) - 1),
                   SLJIT_MEM,
-                  (sljit_sw) & (state.stack),
+                  (sljit_sw)(&(state.stack) - 1),
                   SLJIT_MEM,
-                  (sljit_sw)(&(state.stack) + 1));
+                  (sljit_sw) & (state.stack));
 }
 
 /********************************************************
@@ -125,7 +125,7 @@ RealArrayReferenceData::jit(JITStateValue & state)
 JITReturnValue
 UnaryOperatorData::jit(JITStateValue & state)
 {
-  _args[0].jit(func);
+  _args[0].jit(state);
 
   switch (_type)
   {
@@ -136,9 +136,9 @@ UnaryOperatorData::jit(JITStateValue & state)
       sljit_emit_fop1(C,
                       SLJIT_NEG_F64,
                       SLJIT_MEM,
-                      (sljit_sw) & (state.stack),
+                      (sljit_sw)(&(state.stack) - 1),
                       SLJIT_MEM,
-                      (sljit_sw) & (state.stack));
+                      (sljit_sw)(&(state.stack) - 1));
       return;
 
     default:
@@ -155,6 +155,7 @@ BinaryOperatorData::jit(JITStateValue & state)
 {
   auto A = _args[0].jit(state);
   auto B = _args[1].jit(state);
+  state.stack--;
 
   switch (_type)
   {
@@ -167,18 +168,34 @@ BinaryOperatorData::jit(JITStateValue & state)
       return;
 
     case BinaryOperatorType::POWER:
-      sljit_emit_op1(C, SLJIT_MOV, SLJIT_R0, 0, SLJIT_IMM, (sljit_sw) & (state.stack));
-      state.stack--;
+      sljit_emit_op1(C, SLJIT_MOV, SLJIT_R0, 0, SLJIT_IMM, (sljit_sw)(&(state.stack) - 1));
       sljit_emit_op1(C, SLJIT_MOV, SLJIT_R1, 0, SLJIT_IMM, (sljit_sw) & (state.stack));
+      sljit_emit_ijump(state.C, SLJIT_CALL2, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_pow));
       return;
 
     case BinaryOperatorType::LOGICAL_OR:
-      // using bitwise or
-      return jit_insn_or(func, A, B);
+      // bitwise (integer) or
+      sljit_emit_op2(C,
+                     SLJIT_OR,
+                     SLJIT_MEM,
+                     (sljit_sw)(&(state.stack) - 1),
+                     SLJIT_MEM,
+                     (sljit_sw)(&(state.stack) - 1),
+                     SLJIT_MEM,
+                     (sljit_sw) & (state.stack));
+      return;
 
     case BinaryOperatorType::LOGICAL_AND:
-      // using bitwise and
-      return jit_insn_and(func, A, B);
+      // bitwise (integer) and
+      sljit_emit_op2(C,
+                     SLJIT_AND,
+                     SLJIT_MEM,
+                     (sljit_sw)(&(state.stack) - 1),
+                     SLJIT_MEM,
+                     (sljit_sw)(&(state.stack) - 1),
+                     SLJIT_MEM,
+                     (sljit_sw) & (state.stack));
+      return;
 
     case BinaryOperatorType::LESS_THAN:
       emit_sljit_fop2(state, SLJIT_LESS_F64);
@@ -218,27 +235,28 @@ MultinaryOperatorData::jit(JITStateValue & state)
 {
   if (_args.size() == 0)
     fatalError("No child nodes in multinary operator");
-  else if (_args.size() == 1)
-    return _args[0].jit(func);
-  else
-  {
-    JITReturnValue temp = _args[0].jit(func);
+
+  _args[0].jit(state);
+
+  if (_args.size() > 1)
     for (std::size_t i = 1; i < _args.size(); ++i)
+    {
+      _args[i].jit(func);
+      state.stack--;
       switch (_type)
       {
         case MultinaryOperatorType::ADDITION:
-          temp = jit_insn_add(func, temp, _args[i].jit(func));
+          emit_sljit_fop2(state, SLJIT_ADD_F64);
           break;
 
         case MultinaryOperatorType::MULTIPLICATION:
-          temp = jit_insn_mul(func, temp, _args[i].jit(func));
+          emit_sljit_fop2(state, SLJIT_MUL_F64);
           break;
 
         default:
           fatalError("Unknown operator");
       }
-    return temp;
-  }
+    }
 }
 
 /********************************************************
@@ -301,10 +319,16 @@ UnaryFunctionData::jit(JITStateValue & state)
       return;
 
     case UnaryFunctionType::COT:
-      return jit_insn_div(
-          func,
-          jit_value_create_float64_constant(func, jit_type_float64, (jit_float64)1.0),
-          jit_insn_tan(func, A));
+      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_cosh));
+      sljit_emit_fop2(C,
+                      SLJIT_DIV_F64,
+                      SLJIT_MEM,
+                      (sljit_sw)(&(state.stack) - 1),
+                      SLJIT_IMM,
+                      (sljit_f64)1.0, // OOPS!
+                      SLJIT_MEM,
+                      (sljit_sw)(&(state.stack) - 1));
+      return;
 
     case UnaryFunctionType::CSC:
       return jit_insn_div(
@@ -395,9 +419,9 @@ BinaryFunctionData::jit(JITStateValue & state)
 {
   _args[0].jit(state);
   _args[1].jit(state);
-
-  sljit_emit_op1(C, SLJIT_MOV, SLJIT_R0, 0, SLJIT_IMM, (sljit_sw) & (state.stack));
   state.stack--;
+
+  sljit_emit_op1(C, SLJIT_MOV, SLJIT_R0, 0, SLJIT_IMM, (sljit_sw)(&(state.stack) - 1));
   sljit_emit_op1(C, SLJIT_MOV, SLJIT_R1, 0, SLJIT_IMM, (sljit_sw) & (state.stack));
 
   switch (_type)
@@ -453,12 +477,12 @@ ConditionalData::jit(JITStateValue & state)
   false_case = sljit_emit_cmp(C, SLJIT_EQUAL, SLJIT_R0, 0, SLJIT_IMM, 0);
 
   // true case`
-  _args[0].jit(func);
+  _args[0].jit(state);
   end_if = sljit_emit_jump(C, SLJIT_JUMP);
 
   // false case
   sljit_set_label(false_case, sljit_emit_label(C));
-  _args[1].jit(func);
+  _args[1].jit(state);
 
   // end if
   sljit_set_label(end_if, sljit_emit_label(C));
