@@ -9,4 +9,8 @@
 #include "SymbolicMathJITTypesLibJIT.h"
 #endif
 
+#ifdef SYMBOLICMATH_USE_LIGHTNING
+#include "SymbolicMathJITTypesLightning.h"
+#endif
+
 #endif // SYMBOLICMATHJITTYPES_H

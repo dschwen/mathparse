@@ -9,4 +9,8 @@
 #include "SymbolicMathFunctionLibJIT.h"
 #endif
 
+#ifdef SYMBOLICMATH_USE_LIGHTNING
+#include "SymbolicMathFunctionLightning.h"
+#endif
+
 #endif // SYMBOLICMATHFUNCTION_H

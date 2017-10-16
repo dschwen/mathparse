@@ -7,16 +7,22 @@ OBJS := SymbolicMathToken.o SymbolicMathTokenizer.o \
 
 # LibJIT
 # OBJS += SymbolicMathFunctionLibJIT.o
+# CONFIG := -DSLJIT_CONFIG_AUTO=1 -DSYMBOLICMATH_USE_LIBJIT
+# LDFLAGS += -ljit
 
 # SLJIT
-OBJS += contrib/sljit_src/sljitLir.o \
-				SymbolicMathFunctionSLJIT.o SymbolicMathNodeDataSLJIT.o
+# OBJS += contrib/sljit_src/sljitLir.o \
+# 				SymbolicMathFunctionSLJIT.o SymbolicMathNodeDataSLJIT.o
+# CONFIG := -DSLJIT_CONFIG_AUTO=1 -DSYMBOLICMATH_USE_SLJIT
+# LDFLAGS += contrib/sljit_src/sljitLir.c
 
-
-CONFIG := -DSLJIT_CONFIG_AUTO=1 -DSYMBOLICMATH_USE_SLJIT
+# Lightning
+OBJS += SymbolicMathFunctionLightning.o SymbolicMathNodeDataLightning.o
+CONFIG := -DSYMBOLICMATH_USE_LIGHTNING
+LDFLAGS += -llightning
 
 mathparse: main.C $(OBJS)
-	$(CXX) -std=c++11 $(CONFIG) $(LDFLAGS) -ljit -o mathparse main.C $(OBJS) contrib/sljit_src/sljitLir.c
+	$(CXX) -std=c++11 $(CONFIG) $(LDFLAGS) -o mathparse main.C $(OBJS)
 
 -include $(OBJS:.o=.d)
 

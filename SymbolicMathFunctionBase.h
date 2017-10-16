@@ -41,4 +41,4 @@ protected:
 // end namespace SymbolicMath
 }
 
-#endif // SYMBOLICMATHFUNCTION_H
+#endif // SYMBOLICMATHFUNCTIONBASE_H

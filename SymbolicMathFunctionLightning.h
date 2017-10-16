@@ -1,8 +1,8 @@
-#ifndef SYMBOLICMATHFUNCTIONSLJIT_H
-#define SYMBOLICMATHFUNCTIONSLJIT_H
+#ifndef SYMBOLICMATHFUNCTIONLIGHTNING_H
+#define SYMBOLICMATHFUNCTIONLIGHTNING_H
 
 #include "SymbolicMathFunctionBase.h"
-#include "SymbolicMathJITTypesSLJIT.h"
+#include "SymbolicMathJITTypesLightning.h"
 
 namespace SymbolicMath
 {
@@ -44,4 +44,4 @@ protected:
 // end namespace SymbolicMath
 }
 
-#endif // SYMBOLICMATHFUNCTIONSLJIT_H
+#endif // SYMBOLICMATHFUNCTIONLIGHTNING_H

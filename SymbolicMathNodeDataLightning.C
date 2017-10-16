@@ -1,4 +1,4 @@
-#ifdef SYMBOLICMATH_USE_SLJIT
+#ifdef SYMBOLICMATH_USE_LIGHTNING
 
 #include "SymbolicMathNodeData.h"
 #include "SymbolicMathUtils.h"
@@ -434,28 +434,28 @@ JITReturnValue
 ConditionalData::jit(JITStateValue & state)
 {
   // if (_type != ConditionalType::IF)
-    fatalError("Conditional not implemented");
+  fatalError("Conditional not implemented");
 
-    // struct sljit_jump * false_case;
-    // struct sljit_jump * end_if;
-    //
-    // sljit_emit_op1(state.C, SLJIT_MOV, SLJIT_FR0, 0, SLJIT_MEM, (sljit_sw)state.stack);
-    // state.stack--; //?
-    // false_case = sljit_emit_cmp(state.C, SLJIT_EQUAL, SLJIT_R0, 0, SLJIT_IMM, 0);
-    //
-    // // true case`
-    // _args[0].jit(state);
-    // end_if = sljit_emit_jump(state.C, SLJIT_JUMP);
-    //
-    // // false case
-    // sljit_set_label(false_case, sljit_emit_label(state.C));
-    // _args[1].jit(state);
-    //
-    // // end if
-    // sljit_set_label(end_if, sljit_emit_label(state.C));
+  // struct sljit_jump * false_case;
+  // struct sljit_jump * end_if;
+  //
+  // sljit_emit_op1(state.C, SLJIT_MOV, SLJIT_FR0, 0, SLJIT_MEM, (sljit_sw)state.stack);
+  // state.stack--; //?
+  // false_case = sljit_emit_cmp(state.C, SLJIT_EQUAL, SLJIT_R0, 0, SLJIT_IMM, 0);
+  //
+  // // true case`
+  // _args[0].jit(state);
+  // end_if = sljit_emit_jump(state.C, SLJIT_JUMP);
+  //
+  // // false case
+  // sljit_set_label(false_case, sljit_emit_label(state.C));
+  // _args[1].jit(state);
+  //
+  // // end if
+  // sljit_set_label(end_if, sljit_emit_label(state.C));
 }
 
 // end namespace SymbolicMath
 }
 
-#endif // SYMBOLICMATH_USE_SLJIT
+#endif // SYMBOLICMATH_USE_LIGHTNING

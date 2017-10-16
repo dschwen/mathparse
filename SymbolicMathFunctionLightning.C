@@ -1,7 +1,5 @@
-#include "SymbolicMathFunctionSLJIT.h"
+#include "SymbolicMathFunctionLightning.h"
 #include <stdio.h>
-
-#include <jit/jit-dump.h>
 
 namespace SymbolicMath
 {
@@ -13,7 +11,7 @@ Function::~Function()
 {
   // destroy context only at function end of life
   if (_jit_code)
-    sljit_free_code(reinterpret_cast<void *>(_jit_code));
+    jit_destroy_state();
 }
 
 void
