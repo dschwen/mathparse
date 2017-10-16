@@ -1,10 +1,8 @@
 #ifndef SYMBOLICMATHFUNCTIONLIBJIT_H
 #define SYMBOLICMATHFUNCTIONLIBJIT_H
 
-#ifdef SYMBOLICMATH_USE_LIBJIT
-
 #include "SymbolicMathFunctionBase.h"
-#include "SymbolicMathLibJITTypes.h"
+#include "SymbolicMathJITTypesLibJIT.h"
 
 namespace SymbolicMath
 {
@@ -25,6 +23,9 @@ public:
   /// tear down function (release JIT context)
   ~Function();
 
+  /// Returns the derivative of the subtree at the node w.r.t. value provider id
+  Function D(ValueProviderPtr vp) const { return Function(_root.D(*vp)); }
+
   /// Compile the expression tree for faster evaluation
   void compile();
 
@@ -42,6 +43,4 @@ protected:
 // end namespace SymbolicMath
 }
 
-#endif // SYMBOLICMATH_USE_LIBJIT
-
-#endif // SYMBOLICMATHFUNCTION_H
+#endif // SYMBOLICMATHFUNCTIONLIBJIT_H

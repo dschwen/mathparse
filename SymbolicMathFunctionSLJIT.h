@@ -1,10 +1,8 @@
 #ifndef SYMBOLICMATHFUNCTIONSLJIT_H
 #define SYMBOLICMATHFUNCTIONSLJIT_H
 
-#ifdef SYMBOLICMATH_USE_SLJIT
-
 #include "SymbolicMathFunctionBase.h"
-#include "SymbolicMathSLJITTypes.h"
+#include "SymbolicMathJITTypesSLJIT.h"
 
 namespace SymbolicMath
 {
@@ -19,10 +17,13 @@ class Function : public FunctionBase
 {
 public:
   /// Construct form given node
-  Function(const Node & root) : FunctionBase(root), _sljit_compiler(nullptr), _jit_code(nullptr) {}
+  Function(const Node & root) : FunctionBase(root), _jit_code(nullptr) {}
 
   /// tear down function (release JIT context)
   ~Function();
+
+  /// Returns the derivative of the subtree at the node w.r.t. value provider id
+  Function D(ValueProviderPtr vp) const { return Function(_root.D(*vp)); }
 
   /// Compile the expression tree for faster evaluation
   void compile();
@@ -31,11 +32,10 @@ public:
   Real value();
 
 protected:
-  /// JIT compiler
-  struct _sljit_compiler * C; // = sljit_create_compiler(NULL);
+  using JITFunction = long SLJIT_CALL (*)();
 
   /// executable JIT code
-  long SLJIT_CALL (*_jit_code)();
+  JITFunction _jit_code;
 
   /// floating point stack
   std::vector<double> _stack;
@@ -47,6 +47,4 @@ protected:
 // end namespace SymbolicMath
 }
 
-#endif // SYMBOLICMATH_USE_SLJIT
-
-#endif // SYMBOLICMATHFUNCTION_H
+#endif // SYMBOLICMATHFUNCTIONSLJIT_H

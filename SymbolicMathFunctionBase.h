@@ -16,10 +16,7 @@ class FunctionBase
 {
 public:
   /// Construct form given node
-  Function(const Node & root) : _root(root) {}
-
-  /// Returns the derivative of the subtree at the node w.r.t. value provider id
-  Function D(ValueProviderPtr vp) const { return Function(_root.D(*vp)); }
+  FunctionBase(const Node & root) : _root(root) {}
 
   /// Simplify the subtree at the node in place
   void simplify() { _root.simplify(); }

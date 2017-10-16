@@ -10,6 +10,7 @@
 #include <jit/jit.h>
 
 #include "SymbolicMathNode.h"
+#include "SymbolicMathJITTypes.h"
 
 namespace SymbolicMath
 {
@@ -26,7 +27,7 @@ class NodeData
 {
 public:
   virtual Real value() = 0;
-  virtual jit_value_t jit(jit_function_t func) = 0;
+  virtual JITReturnValue jit(JITStateValue & state) = 0;
 
   virtual std::string format() = 0;
   virtual std::string formatTree(std::string indent) = 0;
@@ -75,7 +76,7 @@ public:
   bool isValid() override { return false; };
 
   Real value() override { fatalError("invalid node"); };
-  jit_value_t jit(jit_function_t func) override { fatalError("invalid node"); };
+  JITReturnValue jit(JITStateValue & state) override { fatalError("invalid node"); };
 
   std::string format() override { fatalError("invalid node"); };
   std::string formatTree(std::string indent) override { fatalError("invalid node"); };
@@ -100,7 +101,7 @@ public:
   std::size_t size() override { return N; }
 
   bool is(Enum type) override { return _type == type || type == Enum::_ANY; }
-  int stackChange() overwrite { return N - 1; }
+  int stackChange() override { return N - 1; }
   std::size_t stackDepth() override
   {
     auto depth = 0;
@@ -154,7 +155,7 @@ public:
   std::string format() override { return _name != "" ? _name : "{V}"; }
   std::string formatTree(std::string indent) override;
 
-  int stackChange() overwrite { return 1; }
+  int stackChange() override { return 1; }
   std::size_t stackDepth() override { return 1; }
 
 protected:
@@ -174,7 +175,7 @@ public:
   SymbolData(const std::string & name) : ValueProvider(name) {}
 
   Real value() override { fatalError("Node cannot be evaluated"); }
-  jit_value_t jit(jit_function_t func) override { fatalError("Node cannot be compiled"); }
+  JITReturnValue jit(JITStateValue & state) override { fatalError("Node cannot be compiled"); }
 
   NodeDataPtr clone() override { return std::make_shared<SymbolData>(_name); };
 
@@ -193,7 +194,7 @@ public:
   }
 
   Real value() override { return _ref; };
-  jit_value_t jit(jit_function_t func) override;
+  JITReturnValue jit(JITStateValue & state) override;
 
   NodeDataPtr clone() override { return std::make_shared<RealReferenceData>(_ref, _name); };
 
@@ -216,7 +217,7 @@ public:
   }
 
   Real value() override { return (&_ref)[_index]; };
-  jit_value_t jit(jit_function_t func) override;
+  JITReturnValue jit(JITStateValue & state) override;
 
   NodeDataPtr clone() override
   {
@@ -255,7 +256,7 @@ public:
   RealNumberData(Real value) : NumberData(), _value(value) {}
 
   Real value() override { return _value; };
-  jit_value_t jit(jit_function_t func) override;
+  JITReturnValue jit(JITStateValue & state) override;
 
   std::string format() override { return stringify(_value); };
   std::string formatTree(std::string indent) override;
@@ -280,7 +281,7 @@ class UnaryOperatorData : public FixedArgumentData<UnaryOperatorType, 1>
 
 public:
   Real value() override;
-  jit_value_t jit(jit_function_t func) override;
+  JITReturnValue jit(JITStateValue & state) override;
 
   std::string format() override;
   std::string formatTree(std::string indent) override;
@@ -302,7 +303,7 @@ class BinaryOperatorData : public FixedArgumentData<BinaryOperatorType, 2>
 
 public:
   Real value() override;
-  jit_value_t jit(jit_function_t func) override;
+  JITReturnValue jit(JITStateValue & state) override;
 
   std::string format() override;
   std::string formatTree(std::string indent) override;
@@ -324,7 +325,7 @@ class MultinaryOperatorData : public MultinaryData<MultinaryOperatorType>
 
 public:
   Real value() override;
-  jit_value_t jit(jit_function_t func) override;
+  JITReturnValue jit(JITStateValue & state) override;
 
   std::string format() override;
   std::string formatTree(std::string indent) override;
@@ -349,7 +350,7 @@ class UnaryFunctionData : public FixedArgumentData<UnaryFunctionType, 1>
 
 public:
   Real value() override;
-  jit_value_t jit(jit_function_t func) override;
+  JITReturnValue jit(JITStateValue & state) override;
 
   std::string format() override;
   std::string formatTree(std::string indent) override;
@@ -371,7 +372,7 @@ class BinaryFunctionData : public FixedArgumentData<BinaryFunctionType, 2>
 
 public:
   Real value() override;
-  jit_value_t jit(jit_function_t func) override;
+  JITReturnValue jit(JITStateValue & state) override;
 
   std::string format() override;
   std::string formatTree(std::string indent) override;
@@ -392,7 +393,7 @@ class ConditionalData : public FixedArgumentData<ConditionalType, 3>
 
 public:
   Real value() override;
-  jit_value_t jit(jit_function_t func) override;
+  JITReturnValue jit(JITStateValue & state) override;
 
   std::string format() override;
   std::string formatTree(std::string indent) override;
@@ -402,7 +403,7 @@ public:
   Node simplify() override;
   Node D(const ValueProvider &) override;
 
-  int stackChange() overwrite { return 0; }
+  int stackChange() override { return 0; }
   std::size_t stackDepth() override
   {
     auto depth = 0;
