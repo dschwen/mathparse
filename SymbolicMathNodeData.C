@@ -7,6 +7,12 @@
 namespace SymbolicMath
 {
 
+void
+NodeData::stackDepth(std::pair<int, int> & current_max)
+{
+  fatalError("stackDepth not implemented");
+}
+
 std::string
 ValueProvider::formatTree(std::string indent)
 {

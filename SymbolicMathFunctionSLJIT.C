@@ -24,7 +24,7 @@ Function::compile()
   state.C = sljit_create_compiler(NULL);
 
   // build function
-  sljit_emit_enter(state.C, 0, 0, 0, 0, 0, 0, 0);
+  sljit_emit_enter(state.C, 0, 0, 4, 0, 4, 0, 0);
 
   // determine max stack depth and allocate
   auto current_max = std::make_pair(0, 0);
@@ -67,8 +67,11 @@ Function::value()
 void
 Function::invalidateJIT()
 {
-  sljit_free_code(reinterpret_cast<void *>(_jit_code));
-  _jit_code = nullptr;
+  if (_jit_code)
+  {
+    sljit_free_code(reinterpret_cast<void *>(_jit_code));
+    _jit_code = nullptr;
+  }
 };
 
 // end namespace SymbolicMath

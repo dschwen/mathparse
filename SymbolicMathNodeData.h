@@ -59,7 +59,7 @@ public:
   virtual unsigned short precedence() { return 0; }
 
   /// amount of net stack pointer movement of this operator
-  virtual void stackDepth(std::pair<int, int> & current_max) {}
+  virtual void stackDepth(std::pair<int, int> & current_max);
 
   friend Node;
 };
@@ -149,10 +149,7 @@ public:
   std::string format() override { return _name != "" ? _name : "{V}"; }
   std::string formatTree(std::string indent) override;
 
-  void stackDepth(std::pair<int, int> & current_max) override
-  {
-    current_max.first++;
-  }
+  void stackDepth(std::pair<int, int> & current_max) override { current_max.first++; }
 
 protected:
   std::string _name;
@@ -238,6 +235,8 @@ public:
   Node getArg(unsigned int i) override { fatalError("Node has no arguments"); };
 
   Node D(const ValueProvider &) override { return Node(0.0); }
+
+  void stackDepth(std::pair<int, int> & current_max) override { current_max.first++; }
 
 protected:
   NumberType _type;
