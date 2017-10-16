@@ -3,15 +3,20 @@ CXX ?= clang++
 OBJS := SymbolicMathToken.o SymbolicMathTokenizer.o \
 			  SymbolicMathParser.o SymbolicMathSymbols.o \
 				SymbolicMathNode.o SymbolicMathNodeData.o \
-				SymbolicMathUtils.o contrib/sljit_src/sljitLir.o
+				SymbolicMathUtils.o
 
+# LibJIT
 # OBJS += SymbolicMathFunctionLibJIT.o
-OBJS += SymbolicMathFunctionSLJIT.o
+
+# SLJIT
+OBJS += contrib/sljit_src/sljitLir.o \
+				SymbolicMathFunctionSLJIT.o SymbolicMathNodeDataSLJIT.o
+
 
 CONFIG := -DSLJIT_CONFIG_AUTO=1 -DSYMBOLICMATH_USE_SLJIT
 
 mathparse: main.C $(OBJS)
-	$(CXX) -std=c++11 $(LDFLAGS) -ljit -o mathparse main.C $(OBJS)
+	$(CXX) -std=c++11 $(CONFIG) $(LDFLAGS) -ljit -o mathparse main.C $(OBJS) contrib/sljit_src/sljitLir.c
 
 -include $(OBJS:.o=.d)
 

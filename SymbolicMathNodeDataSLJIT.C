@@ -55,6 +55,7 @@ SLJIT_MATH_WRAPPER1(floor)
 SLJIT_MATH_WRAPPER1(log)
 SLJIT_MATH_WRAPPER1(log10)
 SLJIT_MATH_WRAPPER1(log2)
+SLJIT_MATH_WRAPPER1(round)
 SLJIT_MATH_WRAPPER1(sin)
 SLJIT_MATH_WRAPPER1(sinh)
 SLJIT_MATH_WRAPPER1(sqrt)
@@ -74,7 +75,7 @@ SLJIT_MATH_WRAPPER2(pow)
 void
 emit_sljit_fop2(JITStateValue & state, sljit_s32 op)
 {
-  sljit_emit_fop2(C,
+  sljit_emit_fop2(state.C,
                   op,
                   SLJIT_MEM,
                   (sljit_sw)(&(state.stack) - 1),
@@ -85,17 +86,31 @@ emit_sljit_fop2(JITStateValue & state, sljit_s32 op)
 }
 
 /********************************************************
+ * Real Number immediate
+ ********************************************************/
+
+JITReturnValue
+RealNumberData::jit(JITStateValue & state)
+{
+  // sljit does not have any 64bit floating point immediates, so we need to make a mem->mem transfer
+  // this makes teh JIT code point to data in the expression tree! When the tree
+  // gets simplified the node holding this data may be freed. We therefore need to
+  // invalidate the JIT code upon simplification!
+  sljit_emit_fop1(
+      state.C, SLJIT_MOV_F64, SLJIT_MEM, (sljit_sw) & (state.stack), SLJIT_MEM, (sljit_sw)&_value);
+  state.stack++;
+}
+
+/********************************************************
  * Real Number reference value provider
  ********************************************************/
 
 JITReturnValue
 RealReferenceData::jit(JITStateValue & state)
 {
-  return jit_insn_load_relative(
-      func,
-      jit_value_create_nint_constant(func, jit_type_void_ptr, reinterpret_cast<jit_nint>(&_ref)),
-      0,
-      jit_type_float64);
+  sljit_emit_fop1(
+      state.C, SLJIT_MOV_F64, SLJIT_MEM, (sljit_sw) & (state.stack), SLJIT_MEM, (sljit_sw)&_ref);
+  state.stack++;
 }
 
 /********************************************************
@@ -105,17 +120,18 @@ RealReferenceData::jit(JITStateValue & state)
 JITReturnValue
 RealArrayReferenceData::jit(JITStateValue & state)
 {
-  auto index = jit_insn_load_relative(
-      func,
-      jit_value_create_nint_constant(func, jit_type_void_ptr, reinterpret_cast<jit_nint>(&_index)),
-      0,
-      jit_type_int);
-
-  return jit_insn_load_elem_address(
-      func,
-      jit_value_create_nint_constant(func, jit_type_void_ptr, reinterpret_cast<jit_nint>(&_ref)),
-      index,
-      jit_type_float64);
+  // auto index = jit_insn_load_relative(
+  //     state.C,
+  //     jit_value_create_nint_constant(func, jit_type_void_ptr,
+  //     reinterpret_cast<jit_nint>(&_index)),
+  //     0,
+  //     jit_type_int);
+  //
+  // return jit_insn_load_elem_address(
+  //     func,
+  //     jit_value_create_nint_constant(func, jit_type_void_ptr, reinterpret_cast<jit_nint>(&_ref)),
+  //     index,
+  //     jit_type_float64);
 }
 
 /********************************************************
@@ -133,7 +149,7 @@ UnaryOperatorData::jit(JITStateValue & state)
       return;
 
     case UnaryOperatorType::MINUS:
-      sljit_emit_fop1(C,
+      sljit_emit_fop1(state.C,
                       SLJIT_NEG_F64,
                       SLJIT_MEM,
                       (sljit_sw)(&(state.stack) - 1),
@@ -153,8 +169,8 @@ UnaryOperatorData::jit(JITStateValue & state)
 JITReturnValue
 BinaryOperatorData::jit(JITStateValue & state)
 {
-  auto A = _args[0].jit(state);
-  auto B = _args[1].jit(state);
+  _args[0].jit(state);
+  _args[1].jit(state);
   state.stack--;
 
   switch (_type)
@@ -168,14 +184,14 @@ BinaryOperatorData::jit(JITStateValue & state)
       return;
 
     case BinaryOperatorType::POWER:
-      sljit_emit_op1(C, SLJIT_MOV, SLJIT_R0, 0, SLJIT_IMM, (sljit_sw)(&(state.stack) - 1));
-      sljit_emit_op1(C, SLJIT_MOV, SLJIT_R1, 0, SLJIT_IMM, (sljit_sw) & (state.stack));
+      sljit_emit_op1(state.C, SLJIT_MOV, SLJIT_R0, 0, SLJIT_IMM, (sljit_sw)(&(state.stack) - 1));
+      sljit_emit_op1(state.C, SLJIT_MOV, SLJIT_R1, 0, SLJIT_IMM, (sljit_sw) & (state.stack));
       sljit_emit_ijump(state.C, SLJIT_CALL2, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_pow));
       return;
 
     case BinaryOperatorType::LOGICAL_OR:
       // bitwise (integer) or
-      sljit_emit_op2(C,
+      sljit_emit_op2(state.C,
                      SLJIT_OR,
                      SLJIT_MEM,
                      (sljit_sw)(&(state.stack) - 1),
@@ -187,7 +203,7 @@ BinaryOperatorData::jit(JITStateValue & state)
 
     case BinaryOperatorType::LOGICAL_AND:
       // bitwise (integer) and
-      sljit_emit_op2(C,
+      sljit_emit_op2(state.C,
                      SLJIT_AND,
                      SLJIT_MEM,
                      (sljit_sw)(&(state.stack) - 1),
@@ -241,7 +257,7 @@ MultinaryOperatorData::jit(JITStateValue & state)
   if (_args.size() > 1)
     for (std::size_t i = 1; i < _args.size(); ++i)
     {
-      _args[i].jit(func);
+      _args[i].jit(state);
       state.stack--;
       switch (_type)
       {
@@ -267,7 +283,7 @@ JITReturnValue
 UnaryFunctionData::jit(JITStateValue & state)
 {
   _args[0].jit(state);
-  sljit_emit_op1(C, SLJIT_MOV, SLJIT_R0, 0, SLJIT_IMM, (sljit_sw) & (state.stack));
+  sljit_emit_op1(state.C, SLJIT_MOV, SLJIT_R0, 0, SLJIT_IMM, (sljit_sw) & (state.stack));
 
   switch (_type)
   {
@@ -320,7 +336,7 @@ UnaryFunctionData::jit(JITStateValue & state)
 
     case UnaryFunctionType::COT:
       sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_cosh));
-      sljit_emit_fop2(C,
+      sljit_emit_fop2(state.C,
                       SLJIT_DIV_F64,
                       SLJIT_MEM,
                       (sljit_sw)(&(state.stack) - 1),
@@ -331,10 +347,11 @@ UnaryFunctionData::jit(JITStateValue & state)
       return;
 
     case UnaryFunctionType::CSC:
-      return jit_insn_div(
-          func,
-          jit_value_create_float64_constant(func, jit_type_float64, (jit_float64)1.0),
-          jit_insn_sin(func, A));
+      // return jit_insn_div(
+      //     func,
+      //     jit_value_create_float64_constant(func, jit_type_float64, (jit_float64)1.0),
+      //     jit_insn_sin(func, A));
+      fatalError("Function not implemented");
 
     case UnaryFunctionType::ERF:
       // use jit_insn_call_native here!
@@ -345,8 +362,9 @@ UnaryFunctionData::jit(JITStateValue & state)
       return;
 
     case UnaryFunctionType::EXP2:
-      return jit_insn_pow(
-          func, jit_value_create_float64_constant(func, jit_type_float64, (jit_float64)2.0), A);
+      // return jit_insn_pow(
+      //     func, jit_value_create_float64_constant(func, jit_type_float64, (jit_float64)2.0), A);
+      fatalError("Function not implemented");
 
     case UnaryFunctionType::FLOOR:
       sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_floor));
@@ -374,10 +392,11 @@ UnaryFunctionData::jit(JITStateValue & state)
       fatalError("Function not implemented");
 
     case UnaryFunctionType::SEC:
-      return jit_insn_div(
-          func,
-          jit_value_create_float64_constant(func, jit_type_float64, (jit_float64)1.0),
-          jit_insn_cos(func, A));
+      // return jit_insn_div(
+      //     func,
+      //     jit_value_create_float64_constant(func, jit_type_float64, (jit_float64)1.0),
+      //     jit_insn_cos(func, A));
+      fatalError("Function not implemented");
 
     case UnaryFunctionType::SIN:
       sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_sin));
@@ -421,8 +440,8 @@ BinaryFunctionData::jit(JITStateValue & state)
   _args[1].jit(state);
   state.stack--;
 
-  sljit_emit_op1(C, SLJIT_MOV, SLJIT_R0, 0, SLJIT_IMM, (sljit_sw)(&(state.stack) - 1));
-  sljit_emit_op1(C, SLJIT_MOV, SLJIT_R1, 0, SLJIT_IMM, (sljit_sw) & (state.stack));
+  sljit_emit_op1(state.C, SLJIT_MOV, SLJIT_R0, 0, SLJIT_IMM, (sljit_sw)(&(state.stack) - 1));
+  sljit_emit_op1(state.C, SLJIT_MOV, SLJIT_R1, 0, SLJIT_IMM, (sljit_sw) & (state.stack));
 
   switch (_type)
   {
@@ -431,8 +450,10 @@ BinaryFunctionData::jit(JITStateValue & state)
       return;
 
     case BinaryFunctionType::HYPOT:
-      return jit_insn_sqrt(func,
-                           jit_insn_add(func, jit_insn_mul(func, A, A), jit_insn_mul(func, B, B)));
+      // return jit_insn_sqrt(func,
+      //                      jit_insn_add(func, jit_insn_mul(func, A, A), jit_insn_mul(func, B,
+      //                      B)));
+      fatalError("Function not implemented");
 
     case BinaryFunctionType::MIN:
       sljit_emit_ijump(state.C, SLJIT_CALL2, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_min));
@@ -472,20 +493,20 @@ ConditionalData::jit(JITStateValue & state)
   struct sljit_jump * false_case;
   struct sljit_jump * end_if;
 
-  sljit_emit_op1(C, SLJIT_MOV, SLJIT_FR0, 0, SLJIT_MEM, (sljit_sw) & (state.stack));
+  sljit_emit_op1(state.C, SLJIT_MOV, SLJIT_FR0, 0, SLJIT_MEM, (sljit_sw) & (state.stack));
   state.stack--; //?
-  false_case = sljit_emit_cmp(C, SLJIT_EQUAL, SLJIT_R0, 0, SLJIT_IMM, 0);
+  false_case = sljit_emit_cmp(state.C, SLJIT_EQUAL, SLJIT_R0, 0, SLJIT_IMM, 0);
 
   // true case`
   _args[0].jit(state);
-  end_if = sljit_emit_jump(C, SLJIT_JUMP);
+  end_if = sljit_emit_jump(state.C, SLJIT_JUMP);
 
   // false case
-  sljit_set_label(false_case, sljit_emit_label(C));
+  sljit_set_label(false_case, sljit_emit_label(state.C));
   _args[1].jit(state);
 
   // end if
-  sljit_set_label(end_if, sljit_emit_label(C));
+  sljit_set_label(end_if, sljit_emit_label(state.C));
 }
 
 // end namespace SymbolicMath

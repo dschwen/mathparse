@@ -101,7 +101,7 @@ public:
   unsigned short precedence() const;
 
   // returns the maximum stack depth of the current subtree
-  std::size_t stackDepth();
+  void stackDepth(std::pair<int, int> & current_max);
 
 protected:
   /// shared pointer to the actual guts of the node

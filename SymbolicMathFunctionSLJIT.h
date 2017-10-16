@@ -32,6 +32,9 @@ public:
   Real value();
 
 protected:
+  /// invalidate the JIT compiled function
+  void invalidateJIT() override;
+
   using JITFunction = long SLJIT_CALL (*)();
 
   /// executable JIT code
@@ -41,7 +44,7 @@ protected:
   std::vector<double> _stack;
 
   /// stack entry to return (this is not necessarily _stack[0] if local variables get defined)
-  std::size_t _final_stack_ptr;
+  std::size_t _final_stack_pos;
 };
 
 // end namespace SymbolicMath

@@ -19,7 +19,11 @@ public:
   FunctionBase(const Node & root) : _root(root) {}
 
   /// Simplify the subtree at the node in place
-  void simplify() { _root.simplify(); }
+  void simplify()
+  {
+    _root.simplify();
+    invalidateJIT();
+  }
 
   ///@{ subtree output
   std::string format() const { return _root.format(); }
@@ -27,6 +31,9 @@ public:
   ///@}
 
 protected:
+  /// invalidate the JIT compiled function
+  virtual void invalidateJIT() = 0;
+
   /// root node of the exprssion tree managed by this function
   Node _root;
 };

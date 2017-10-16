@@ -27,8 +27,15 @@ Function::compile()
   sljit_emit_enter(state.C, 0, 0, 0, 0, 0, 0, 0);
 
   // determine max stack depth and allocate
-  _stack.resize(_root.stackDepth(_final_stack_ptr));
+  auto current_max = std::make_pair(0, 0);
+  _root.stackDepth(current_max);
+  _stack.resize(current_max.second);
   state.stack = _stack.data();
+
+  if (current_max.first <= 0)
+    fatalError("Stack depleted at function end");
+
+  _final_stack_pos = current_max.first - 1;
 
   // build function from expression tree
   _root.jit(state);
@@ -50,12 +57,19 @@ Function::value()
   {
     // if a JIT compiled version exists evaluate it
     _jit_code();
-    return _stack[_final_stack_ptr];
+    return _stack[_final_stack_pos];
   }
   else
     // otherwise recursively walk the expression tree (slow)
     return _root.value();
 }
+
+void
+Function::invalidateJIT()
+{
+  sljit_free_code(reinterpret_cast<void *>(_jit_code));
+  _jit_code = nullptr;
+};
 
 // end namespace SymbolicMath
 }

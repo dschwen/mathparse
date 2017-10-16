@@ -59,8 +59,7 @@ public:
   virtual unsigned short precedence() { return 0; }
 
   /// amount of net stack pointer movement of this operator
-  virtual int stackChange() { return 0; }
-  virtual std::size_t stackDepth() { return 0; }
+  virtual void stackDepth(std::pair<int, int> & current_max) {}
 
   friend Node;
 };
@@ -101,14 +100,11 @@ public:
   std::size_t size() override { return N; }
 
   bool is(Enum type) override { return _type == type || type == Enum::_ANY; }
-  int stackChange() override { return N - 1; }
-  std::size_t stackDepth() override
+  void stackDepth(std::pair<int, int> & current_max) override
   {
-    auto depth = 0;
     for (auto & arg : _args)
-      depth += arg.stackDepth();
-    // depth better not be 0!
-    return depth - 1;
+      arg.stackDepth(current_max);
+    current_max.first--;
   }
 
 protected:
@@ -129,13 +125,11 @@ public:
   std::size_t size() override { return _args.size(); }
 
   bool is(Enum type) override { return _type == type || type == Enum::_ANY; }
-  std::size_t stackDepth() override
+  void stackDepth(std::pair<int, int> & current_max) override
   {
-    auto depth = 0;
     for (auto & arg : _args)
-      depth += arg.stackDepth();
-    // depth better not be 0!
-    return depth - 1;
+      arg.stackDepth(current_max);
+    current_max.first--;
   }
 
 protected:
@@ -155,8 +149,10 @@ public:
   std::string format() override { return _name != "" ? _name : "{V}"; }
   std::string formatTree(std::string indent) override;
 
-  int stackChange() override { return 1; }
-  std::size_t stackDepth() override { return 1; }
+  void stackDepth(std::pair<int, int> & current_max) override
+  {
+    current_max.first++;
+  }
 
 protected:
   std::string _name;
@@ -403,13 +399,22 @@ public:
   Node simplify() override;
   Node D(const ValueProvider &) override;
 
-  int stackChange() override { return 0; }
-  std::size_t stackDepth() override
+  void stackDepth(std::pair<int, int> & current_max) override
   {
-    auto depth = 0;
-    for (auto & arg : _args)
-      depth = std::max(depth, arg.stackDepth());
-    return depth - 1;
+    current_max.first--;
+    auto true_branch = current_max;
+    _args[1].stackDepth(true_branch);
+    auto false_branch = current_max;
+    _args[2].stackDepth(false_branch);
+
+    // stack pointer needs to be at the same position after each branch
+    if (true_branch.first != false_branch.first)
+      fatalError("Malformed conditional subtrees");
+
+    // find maximum stack depth the two branches
+    current_max = true_branch;
+    if (false_branch.second > true_branch.second)
+      current_max.second = false_branch.second;
   }
 };
 

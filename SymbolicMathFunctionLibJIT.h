@@ -33,6 +33,9 @@ public:
   Real value();
 
 protected:
+  /// invalidate the JIT compiled function
+  void invalidateJIT() override {}
+
   /// JIT compilation context
   jit_context_t _jit_context;
 
