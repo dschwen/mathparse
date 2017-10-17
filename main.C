@@ -4,7 +4,6 @@
 
 #include <iostream>
 
-#include <jit/jit.h>
 int
 main(int argc, char * argv[])
 {
