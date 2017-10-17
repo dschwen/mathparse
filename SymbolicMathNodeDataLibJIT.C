@@ -374,9 +374,30 @@ ConditionalData::jit(JITStateValue & func)
  ********************************************************/
 
 JITReturnValue
-IntegerPowerData::jit(JITStateValue & state)
+IntegerPowerData::jit(JITStateValue & func)
 {
-  fatalError("Function not implemented");
+  auto result = jit_value_create_float64_constant(func, jit_type_float64, (jit_float64)1.0);
+
+  auto A = _arg.jit(func);
+  int e = _exponent > 0 ? _exponent : -_exponent;
+  while (e)
+  {
+    // if bit 0 is set multiply the current power of two factor of the exponent
+    if (e & 1)
+      result = jit_insn_mul(func, result, A);
+
+    // x is incrementally set to consecutive powers of powers of two
+    A = jit_insn_mul(func, A, A);
+
+    // bit shift the exponent down
+    e >>= 1;
+  }
+
+  if (_exponent >= 0)
+    return result;
+  else
+    return jit_insn_div(
+        func, jit_value_create_float64_constant(func, jit_type_float64, (jit_float64)1.0), result);
 }
 
 // end namespace SymbolicMath
