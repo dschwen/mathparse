@@ -7,8 +7,6 @@
 #include <stack>
 #include <type_traits>
 
-#include <jit/jit.h>
-
 #include "SymbolicMathSymbols.h"
 #include "SymbolicMathJITTypes.h"
 

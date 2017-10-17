@@ -1,14 +1,17 @@
-#include "SymbolicMathFunctionSLJIT.h"
+#include "SymbolicMathFunctionLightning.h"
 #include <stdio.h>
 
 namespace SymbolicMath
 {
 
+// lightning uses cascading macros to reduce the number of passed in arguments
+#define _jit _state.C
+
 Function::~Function()
 {
   // destroy context only at function end of life
   if (_jit_code)
-    sljit_free_code(reinterpret_cast<void *>(_jit_code));
+    jit_destroy_state();
 }
 
 void
@@ -17,46 +20,47 @@ Function::compile()
   if (_jit_code)
     return;
 
+  // global shit (TODO: move into singleton)
+  init_jit(nullptr);
+
   // build and lock context
-  JITStateValue state;
-  state.C = sljit_create_compiler(NULL);
+  _state.C = jit_new_state();
 
   // build function
-  sljit_emit_enter(state.C, 0, 0, 4, 0, 4, 0, 0);
+  jit_prolog();
 
   // determine max stack depth and allocate
   auto current_max = std::make_pair(0, 0);
   _root.stackDepth(current_max);
-  _stack.resize(current_max.second);
-  state.stack = _stack.data();
+  _state.stack_base = jit_allocai(current_max.second * sizeof(double));
+
+  // start of stack in the empty. Actual top of stack is register F0 and at program start
+  // that register does not contain anything to be pushed into the stack.
+  _state.sp = -1;
 
   if (current_max.first <= 0)
     fatalError("Stack depleted at function end");
 
-  _final_stack_pos = current_max.first - 1;
-
   // build function from expression tree
-  _root.jit(state);
+  _root.jit(_state);
 
-  // return nothing (result is on the stack at position _final_stack_ptr)
-  sljit_emit_return(state.C, SLJIT_MOV, SLJIT_R0, 0);
+  // return top of stack (register F0)
+  jit_retr_d(JIT_F0);
+  jit_epilog();
 
   // generate machine code
-  _jit_code = reinterpret_cast<JITFunction>(sljit_generate_code(state.C));
+  _jit_code = reinterpret_cast<JITFunction>(jit_emit());
 
   // free the compiler data
-  sljit_free_compiler(state.C);
+  jit_clear_state();
 }
 
 Real
 Function::value()
 {
   if (_jit_code)
-  {
     // if a JIT compiled version exists evaluate it
-    _jit_code();
-    return _stack[_final_stack_pos];
-  }
+    return _jit_code();
   else
     // otherwise recursively walk the expression tree (slow)
     return _root.value();
@@ -67,10 +71,13 @@ Function::invalidateJIT()
 {
   if (_jit_code)
   {
-    sljit_free_code(reinterpret_cast<void *>(_jit_code));
+    // sljit_free_code(reinterpret_cast<void *>(_jit_code));
     _jit_code = nullptr;
   }
 };
+
+// undefine the lightning helper macro
+#undef _jit
 
 // end namespace SymbolicMath
 }

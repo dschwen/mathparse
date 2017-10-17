@@ -7,8 +7,6 @@
 #include <cmath>
 #include <type_traits>
 
-#include <jit/jit.h>
-
 #include "SymbolicMathNode.h"
 #include "SymbolicMathJITTypes.h"
 

@@ -15,8 +15,9 @@ Available JIT backends are
 
 * [GNU LibJIT](https://www.gnu.org/software/libjit/)
 * [SLJIT](http://sljit.sourceforge.net/) - Broad architecture support, no external dependencies
+* [GNU Lightning](https://www.gnu.org/software/lightning/) - Good architecture support
 
-Research is ongoing as to which backend is best used. (GNU Lightning support in progress)
+Research is ongoing as to which backend is best used.
 
 ### Detailed error messages:
 
