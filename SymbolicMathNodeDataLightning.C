@@ -462,6 +462,42 @@ ConditionalData::jit(JITStateValue & state)
   jit_patch(jump_end);
 }
 
+/********************************************************
+ * Integer power Node
+ ********************************************************/
+
+JITReturnValue
+IntegerPowerData::jit(JITStateValue & state)
+{
+  if (_exponent == 0)
+    jit_movi_d(JIT_F0, 1.0);
+  else
+  {
+    _arg.jit(state);
+    int e = _exponent > 0 ? _exponent : -_exponent;
+    jit_movi_d(JIT_F1, 1.0);
+    while (e)
+    {
+      // if bit 0 is set multiply the current power of two factor of the exponent
+      if (e & 1)
+        jit_mulr_d(JIT_F1, JIT_F0, JIT_F1);
+
+      // x is incrementally set to consecutive powers of powers of two
+      jit_mulr_d(JIT_F0, JIT_F0, JIT_F0);
+
+      // bit shift the exponent down
+      e >>= 1;
+    }
+    if (_exponent > 0)
+      jit_movr_d(JIT_F0, JIT_F1);
+    else
+    {
+      jit_movi_d(JIT_F0, 1.0);
+      jit_divr_d(JIT_F0, JIT_F0, JIT_F1);
+    }
+  }
+}
+
 // end namespace SymbolicMath
 }
 

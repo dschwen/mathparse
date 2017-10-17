@@ -175,6 +175,11 @@ enum class ConditionalType
   _INVALID
 };
 
+enum class IntegerPowerType
+{
+  _ANY
+};
+
 enum class BracketType
 {
   ROUND,

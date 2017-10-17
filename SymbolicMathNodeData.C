@@ -771,14 +771,23 @@ BinaryFunctionData::simplify()
         return p;
       }
 
-      // a^0 = 1
-      if (_args[1].is(0.0))
-        return Node(1.0);
+      if (_args[1].is(NumberType::_ANY))
+      { // a^0 = 1
+        if (_args[1].is(0.0))
+          return Node(1.0);
 
-      // a^1 = a
-      else if (_args[1].is(1.0))
-        return _args[0];
+        // a^1 = a
+        else if (_args[1].is(1.0))
+          return _args[0];
 
+        // the exponent is an integer number
+        else
+        {
+          auto e = _args[1].value();
+          if (e == std::round(e))
+            return Node(IntegerPowerType::_ANY, _args[0], static_cast<int>(e));
+        }
+      }
       return Node();
 
     default:
@@ -919,6 +928,31 @@ ConditionalData::stackDepth(std::pair<int, int> & current_max)
   current_max = true_branch;
   if (false_branch.second > true_branch.second)
     current_max.second = false_branch.second;
+}
+
+/********************************************************
+ * Integer power Node
+ ********************************************************/
+
+std::string
+IntegerPowerData::format()
+{
+  return "ipow(" + _arg.format() + ", " + std::to_string(_exponent) + ")";
+}
+
+std::string
+IntegerPowerData::formatTree(std::string indent)
+{
+  return indent + "ipow" + _arg.formatTree(indent + "  ") + indent + std::to_string(_exponent) +
+         '\n';
+}
+
+Node
+IntegerPowerData::D(const ValueProvider & vp)
+{
+  auto & A = _arg;
+  auto dA = _arg.D(vp);
+  return dA * Node(_exponent) * Node(IntegerPowerType::_ANY, A, _exponent - 1);
 }
 
 // end namespace SymbolicMath

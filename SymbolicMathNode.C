@@ -42,6 +42,11 @@ Node::Node(ConditionalType type, Node arg0, Node arg1, Node arg2)
 {
 }
 
+Node::Node(IntegerPowerType, Node arg, int exponent)
+  : _data(std::make_shared<IntegerPowerData>(arg, exponent))
+{
+}
+
 Node
 Node::operator+(Node r)
 {

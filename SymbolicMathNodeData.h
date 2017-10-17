@@ -399,6 +399,34 @@ public:
   void stackDepth(std::pair<int, int> & current_max) override;
 };
 
+/**
+ * Integer power class for faster JIT code generation
+ */
+class IntegerPowerData : public NodeData
+{
+public:
+  IntegerPowerData(Node arg, int exponent) : NodeData(), _arg(arg), _exponent(exponent) {}
+
+  Real value() override { return std::pow(_arg.value(), Real(_exponent)); };
+  JITReturnValue jit(JITStateValue & state) override;
+
+  std::string format() override;
+  std::string formatTree(std::string indent) override;
+
+  NodeDataPtr clone() override { return std::make_shared<IntegerPowerData>(_arg, _exponent); };
+
+  Node getArg(unsigned int i) override { return _arg; }
+  std::size_t size() override { return 1; }
+
+  Node D(const ValueProvider &) override;
+
+  void stackDepth(std::pair<int, int> & current_max) override { _arg.stackDepth(current_max); }
+
+protected:
+  Node _arg;
+  int _exponent;
+};
+
 // end namespace SymbolicMath
 }
 

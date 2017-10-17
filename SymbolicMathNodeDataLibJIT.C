@@ -369,6 +369,16 @@ ConditionalData::jit(JITStateValue & func)
   return jit_insn_load(func, result);
 }
 
+/********************************************************
+ * Integer power Node
+ ********************************************************/
+
+JITReturnValue
+IntegerPowerData::jit(JITStateValue & state)
+{
+  fatalError("Function not implemented");
+}
+
 // end namespace SymbolicMath
 }
 

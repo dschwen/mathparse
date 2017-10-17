@@ -42,6 +42,7 @@ public:
   Node(UnaryFunctionType type, Node arg);
   Node(BinaryFunctionType type, Node arg0, Node arg1);
   Node(ConditionalType type, Node arg0, Node arg1, Node arg2);
+  Node(IntegerPowerType, Node arg, int exponent);
   ///@}
 
   /// Copy constructor (clones the data content as a deep copy)
