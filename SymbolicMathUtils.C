@@ -6,7 +6,7 @@ namespace SymbolicMath
 {
 
 // replace this with mooseError in the future
-_Noreturn void
+[[noreturn]] void
 fatalError(const std::string & error)
 {
   std::cerr << error << '\n';
