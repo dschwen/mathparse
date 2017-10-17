@@ -396,23 +396,7 @@ public:
   Node simplify() override;
   Node D(const ValueProvider &) override;
 
-  void stackDepth(std::pair<int, int> & current_max) override
-  {
-    current_max.first--;
-    auto true_branch = current_max;
-    _args[1].stackDepth(true_branch);
-    auto false_branch = current_max;
-    _args[2].stackDepth(false_branch);
-
-    // stack pointer needs to be at the same position after each branch
-    if (true_branch.first != false_branch.first)
-      fatalError("Malformed conditional subtrees");
-
-    // find maximum stack depth the two branches
-    current_max = true_branch;
-    if (false_branch.second > true_branch.second)
-      current_max.second = false_branch.second;
-  }
+  void stackDepth(std::pair<int, int> & current_max) override;
 };
 
 // end namespace SymbolicMath

@@ -28,7 +28,7 @@ main(int argc, char * argv[])
   parser.registerValueProvider(c_var);
 
   auto func = SymbolicMath::Function(parser.parse(argv[1]));
-  std::cout << func.format() << '\n'; // << func->formatTree("\t") << '\n';
+  std::cout << func.format() << '\n' << func.formatTree("\t") << '\n';
 
   func.simplify();
   std::cout << " = " << func.format() << '\n'; // << func->formatTree("\t") << '\n';

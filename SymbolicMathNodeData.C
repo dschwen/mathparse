@@ -896,5 +896,27 @@ ConditionalData::D(const ValueProvider & vp)
   return Node(ConditionalType::IF, _args[0], _args[1].D(vp), _args[2].D(vp));
 }
 
+void
+ConditionalData::stackDepth(std::pair<int, int> & current_max)
+{
+  // condition
+  _args[0].stackDepth(current_max);
+
+  current_max.first--;
+  auto true_branch = current_max;
+  _args[1].stackDepth(true_branch);
+  auto false_branch = current_max;
+  _args[2].stackDepth(false_branch);
+
+  // stack pointer needs to be at the same position after each branch
+  if (true_branch.first != false_branch.first)
+    fatalError("Malformed conditional subtrees");
+
+  // find maximum stack depth the two branches
+  current_max = true_branch;
+  if (false_branch.second > true_branch.second)
+    current_max.second = false_branch.second;
+}
+
 // end namespace SymbolicMath
 }
