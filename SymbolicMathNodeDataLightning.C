@@ -443,26 +443,23 @@ BinaryFunctionData::jit(JITStateValue & state)
 JITReturnValue
 ConditionalData::jit(JITStateValue & state)
 {
-  // if (_type != ConditionalType::IF)
-  fatalError("Conditional not implemented");
+  if (_type != ConditionalType::IF)
+    fatalError("Conditional not implemented");
 
-  // struct sljit_jump * false_case;
-  // struct sljit_jump * end_if;
-  //
-  // sljit_emit_op1(state.C, SLJIT_MOV, SLJIT_FR0, 0, SLJIT_MEM, (sljit_sw)state.stack);
-  // state.stack--; //?
-  // false_case = sljit_emit_cmp(state.C, SLJIT_EQUAL, SLJIT_R0, 0, SLJIT_IMM, 0);
-  //
-  // // true case`
-  // _args[0].jit(state);
-  // end_if = sljit_emit_jump(state.C, SLJIT_JUMP);
-  //
-  // // false case
-  // sljit_set_label(false_case, sljit_emit_label(state.C));
-  // _args[1].jit(state);
-  //
-  // // end if
-  // sljit_set_label(end_if, sljit_emit_label(state.C));
+  // we could inspect the condition node here and do a jmp/cmp combo instruction
+  _args[0].jit(state);
+  jit_node_t * jump_false = jit_beqi_d(JIT_F0, 0.0);
+
+  // true case
+  _args[1].jit(state);
+  jit_node_t * jump_end = jit_jmpi();
+
+  // false case
+  jit_patch(jump_false);
+  _args[2].jit(state);
+
+  // end if
+  jit_patch(jump_end);
 }
 
 // end namespace SymbolicMath
