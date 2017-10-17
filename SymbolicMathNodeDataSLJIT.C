@@ -296,7 +296,8 @@ UnaryFunctionData::jit(JITStateValue & state)
       return;
 
     case UnaryFunctionType::ACOSH:
-      fatalError("Function not implemented");
+      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_acosh));
+      return;
 
     case UnaryFunctionType::ARG:
       fatalError("Function not implemented");
@@ -306,14 +307,16 @@ UnaryFunctionData::jit(JITStateValue & state)
       return;
 
     case UnaryFunctionType::ASINH:
-      fatalError("Function not implemented");
+      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_asinh));
+      return;
 
     case UnaryFunctionType::ATAN:
       sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_atan));
       return;
 
     case UnaryFunctionType::ATANH:
-      fatalError("Function not implemented");
+      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_atanh));
+      return;
 
     case UnaryFunctionType::CBRT:
       sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_cbrt));
@@ -354,17 +357,16 @@ UnaryFunctionData::jit(JITStateValue & state)
       fatalError("Function not implemented");
 
     case UnaryFunctionType::ERF:
-      // use jit_insn_call_native here!
-      fatalError("Function not implemented");
+      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_erf));
+      return;
 
     case UnaryFunctionType::EXP:
       sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_exp));
       return;
 
     case UnaryFunctionType::EXP2:
-      // return jit_insn_pow(
-      //     func, jit_value_create_float64_constant(func, jit_type_float64, (jit_float64)2.0), A);
-      fatalError("Function not implemented");
+      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_exp2));
+      return;
 
     case UnaryFunctionType::FLOOR:
       sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_floor));
@@ -386,7 +388,8 @@ UnaryFunctionData::jit(JITStateValue & state)
       return;
 
     case UnaryFunctionType::LOG2:
-      fatalError("Function not implemented");
+      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_log2));
+      return;
 
     case UnaryFunctionType::REAL:
       fatalError("Function not implemented");

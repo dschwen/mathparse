@@ -669,6 +669,9 @@ UnaryFunctionData::D(const ValueProvider & vp)
     case UnaryFunctionType::COSH:
       return dA * Node(UnaryFunctionType::SINH, A);
 
+    case UnaryFunctionType::ERF: // d exp(A) = dA*exp(A)
+      return dA * Node(2.0 / std::sqrt(Constant::pi)) * Node(UnaryFunctionType::EXP, -A * A);
+
     case UnaryFunctionType::EXP: // d exp(A) = dA*exp(A)
       return dA * Node(_type, A);
 

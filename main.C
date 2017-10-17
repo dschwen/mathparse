@@ -63,5 +63,17 @@ main(int argc, char * argv[])
     std::cout << deriv.value() << ' ';
   std::cout << '\n';
 
+  // finite differencing
+  auto dc = 0.00001;
+  for (c = -1.0; c <= 1.0; c += 0.3)
+  {
+    auto a = func.value();
+    c += dc;
+    auto b = func.value();
+    c -= dc;
+    std::cout << (b - a) / dc << ' ';
+  }
+  std::cout << '\n';
+
   return 0;
 }

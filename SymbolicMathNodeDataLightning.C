@@ -258,7 +258,8 @@ UnaryFunctionData::jit(JITStateValue & state)
       return;
 
     case UnaryFunctionType::ACOSH:
-      fatalError("Function not implemented");
+      LIGHTNING_MATH_CALL1(std::acosh);
+      return;
 
     case UnaryFunctionType::ARG:
       fatalError("Function not implemented");
@@ -268,14 +269,16 @@ UnaryFunctionData::jit(JITStateValue & state)
       return;
 
     case UnaryFunctionType::ASINH:
-      fatalError("Function not implemented");
+      LIGHTNING_MATH_CALL1(std::asinh);
+      return;
 
     case UnaryFunctionType::ATAN:
       LIGHTNING_MATH_CALL1(std::atan);
       return;
 
     case UnaryFunctionType::ATANH:
-      fatalError("Function not implemented");
+      LIGHTNING_MATH_CALL1(std::atanh);
+      return;
 
     case UnaryFunctionType::CBRT:
       LIGHTNING_MATH_CALL1(std::cbrt);
@@ -317,7 +320,8 @@ UnaryFunctionData::jit(JITStateValue & state)
       return;
 
     case UnaryFunctionType::EXP2:
-      fatalError("Function not implemented");
+      LIGHTNING_MATH_CALL1(std::exp2);
+      return;
 
     case UnaryFunctionType::FLOOR:
       LIGHTNING_MATH_CALL1(std::floor);
@@ -338,7 +342,8 @@ UnaryFunctionData::jit(JITStateValue & state)
       return;
 
     case UnaryFunctionType::LOG2:
-      fatalError("Function not implemented");
+      LIGHTNING_MATH_CALL1(std::log10);
+      return;
 
     case UnaryFunctionType::REAL:
       fatalError("Function not implemented");

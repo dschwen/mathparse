@@ -135,7 +135,7 @@ const std::map<UnaryFunctionType, std::string> _unary_functions = {
     {UnaryFunctionType::CBRT, "cbrt"},   {UnaryFunctionType::CEIL, "ceil"},
     {UnaryFunctionType::CONJ, "conj"},   {UnaryFunctionType::COS, "cos"},
     {UnaryFunctionType::COSH, "cosh"},   {UnaryFunctionType::COT, "cot"},
-    {UnaryFunctionType::CSC, "csc"},     {UnaryFunctionType::ERF, "exp"},
+    {UnaryFunctionType::CSC, "csc"},     {UnaryFunctionType::ERF, "erf"},
     {UnaryFunctionType::EXP, "exp"},     {UnaryFunctionType::EXP2, "exp2"},
     {UnaryFunctionType::FLOOR, "floor"}, {UnaryFunctionType::IMAG, "imag"},
     {UnaryFunctionType::INT, "int"},     {UnaryFunctionType::LOG, "log"},
