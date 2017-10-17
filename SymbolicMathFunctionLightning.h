@@ -37,6 +37,9 @@ protected:
 
   using JITFunction = double (*)(void);
 
+  /// Lightning compiler state
+  JITStateValue _state;
+
   /// executable JIT code
   JITFunction _jit_code;
 };

@@ -14,7 +14,7 @@ namespace SymbolicMath
 void
 stack_push(JITStateValue & state)
 {
-  if (sp >= 0)
+  if (state.sp >= 0)
     jit_stxi_d(state.sp * sizeof(double) + state.stack_base, JIT_FP, JIT_F0);
   state.sp++;
 }
@@ -47,7 +47,7 @@ JITReturnValue
 RealReferenceData::jit(JITStateValue & state)
 {
   stack_push(state);
-  jit_ldi_d(JIT_F0, &_ref);
+  jit_ldi_d(JIT_F0, const_cast<void *>(reinterpret_cast<const void *>(&_ref)));
 }
 
 /********************************************************
@@ -118,10 +118,15 @@ BinaryOperatorData::jit(JITStateValue & state)
       return;
 
     case BinaryOperatorType::POWER:
-      sljit_emit_op1(state.C, SLJIT_MOV, SLJIT_R0, 0, SLJIT_IMM, (sljit_sw)(state.stack - 1));
-      sljit_emit_op1(state.C, SLJIT_MOV, SLJIT_R1, 0, SLJIT_IMM, (sljit_sw)state.stack);
-      sljit_emit_ijump(state.C, SLJIT_CALL2, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_pow));
+    {
+      jit_prepare();
+      jit_pushargr_d(JIT_F1);
+      jit_pushargr_d(JIT_F0);
+      double (*fptr)(double, double) = std::pow;
+      jit_finishi(reinterpret_cast<void *>(fptr));
+      jit_retval_d(JIT_F0);
       return;
+    }
 
     case BinaryOperatorType::LOGICAL_OR:
       // logical or
