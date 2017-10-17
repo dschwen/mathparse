@@ -1,7 +1,9 @@
 #ifndef SYMBOLICMATHTYPESLIGHTNING_H
 #define SYMBOLICMATHTYPESLIGHTNING_H
 
+extern "C" {
 #include <lightning.h>
+}
 
 namespace SymbolicMath
 {
