@@ -1,25 +1,15 @@
 CXX ?= clang++
 
+# (lightning,sljit,libjit)
+JIT ?= lightning
+
 OBJS := SymbolicMathToken.o SymbolicMathTokenizer.o \
 			  SymbolicMathParser.o SymbolicMathSymbols.o \
 				SymbolicMathNode.o SymbolicMathNodeData.o \
 				SymbolicMathUtils.o
 
-# LibJIT
-# OBJS += SymbolicMathFunctionLibJIT.o SymbolicMathNodeDataLibJIT.o
-# CONFIG := -DSLJIT_CONFIG_AUTO=1 -DSYMBOLICMATH_USE_LIBJIT
-# LDFLAGS += -ljit
-
-# SLJIT
-OBJS += contrib/sljit_src/sljitLir.o \
-				SymbolicMathFunctionSLJIT.o SymbolicMathNodeDataSLJIT.o
-CONFIG := -DSLJIT_CONFIG_AUTO=1 -DSYMBOLICMATH_USE_SLJIT
-LDFLAGS += contrib/sljit_src/sljitLir.c
-
-# Lightning
-# OBJS += SymbolicMathFunctionLightning.o SymbolicMathNodeDataLightning.o
-# CONFIG := -DSYMBOLICMATH_USE_LIGHTNING
-# LDFLAGS += -llightning
+# include configuration for the selected JIT backend
+include jit_$(JIT).mk
 
 mathparse: main.C $(OBJS)
 	$(CXX) -std=c++11 $(CONFIG) $(LDFLAGS) -o mathparse main.C $(OBJS)
