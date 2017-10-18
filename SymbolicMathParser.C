@@ -177,12 +177,23 @@ Parser::pushToOutput(TokenPtr token)
 
   else if (token->isSymbol())
   {
-    auto it = _value_providers.find(token->asString());
-    if (it == _value_providers.end())
-      fatalError(formatError(token->pos(), "Unknown value provider name"));
+    // value provider (variable etc.)
+    auto vp = _value_providers.find(token->asString());
+    if (vp != _value_providers.end())
+    {
+      _output_stack.push(Node(vp->second->clone()));
+      return;
+    }
 
-    _output_stack.push(Node(it->second->clone()));
-    return;
+    // constant
+    auto co = _constants.find(token->asString());
+    if (co != _constants.end())
+    {
+      _output_stack.push(Node(co->second));
+      return;
+    }
+
+    fatalError(formatError(token->pos(), "Unknown value provider or constant name"));
   }
 
   else
@@ -217,6 +228,19 @@ Parser::registerValueProvider(std::shared_ptr<ValueProvider> vp)
     fatalError("Value provider '" + vp->_name + "' is already registered.");
 
   _value_providers[vp->_name] = vp;
+}
+
+void
+Parser::registerConstant(const std::string & name, Real value)
+{
+  if (name == "")
+    fatalError("Constant has an empty name.");
+
+  auto it = _constants.find(name);
+  if (it != _constants.end())
+    fatalError("Constant '" + name + "' is already registered.");
+
+  _constants[name] = value;
 }
 
 void
