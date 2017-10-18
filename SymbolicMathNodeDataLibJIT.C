@@ -25,6 +25,19 @@ namespace SymbolicMath
                                 JIT_CALL_NOTHROW);                                                 \
   }
 
+#define LIBJIT_MATH_WRAPPER2(FUNC)                                                                 \
+  {                                                                                                \
+    double (*GLUE(FUNC, _ptr))(double, double) = std::FUNC;                                        \
+    jit_value_t GLUE(FUNC, _args)[] = {A, B};                                                      \
+    return jit_insn_call_native(func,                                                              \
+                                "std::" #FUNC,                                                     \
+                                reinterpret_cast<void *>(GLUE(FUNC, _ptr)),                        \
+                                signature,                                                         \
+                                GLUE(FUNC, _args),                                                 \
+                                2,                                                                 \
+                                JIT_CALL_NOTHROW);                                                 \
+  }
+
 /********************************************************
  * Real Number immediate
  ********************************************************/
@@ -106,6 +119,14 @@ BinaryOperatorData::jit(JITStateValue & func)
 
     case BinaryOperatorType::DIVISION:
       return jit_insn_div(func, A, B);
+
+    case BinaryOperatorType::MODULO:
+    {
+      jit_type_t params[] = {jit_type_float64, jit_type_float64};
+      jit_type_t signature =
+          jit_type_create_signature(jit_abi_cdecl, jit_type_float64, params, 2, 1);
+      LIBJIT_MATH_WRAPPER2(fmod)
+    }
 
     case BinaryOperatorType::POWER:
       return jit_insn_pow(func, A, B);
