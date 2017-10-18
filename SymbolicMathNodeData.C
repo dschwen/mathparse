@@ -160,6 +160,9 @@ BinaryOperatorData::value()
     case BinaryOperatorType::DIVISION:
       return A / B;
 
+    case BinaryOperatorType::POWER:
+      return std::pow(A, B);
+
     case BinaryOperatorType::LOGICAL_OR:
       return (A != 0.0 || B != 0.0) ? 1.0 : 0.0;
 

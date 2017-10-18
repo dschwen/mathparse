@@ -34,6 +34,12 @@ public:
   /// Construct form given data object
   Node(NodeDataPtr data) : _data(data) {}
 
+  /// Copy constructor (shallow copy!)
+  Node(const Node & copy);
+
+  /// Deep copy
+  Node clone(const Node & move);
+
   ///@{ Short cut constructors
   Node(Real val);
   Node(UnaryOperatorType type, Node arg);
@@ -44,9 +50,6 @@ public:
   Node(ConditionalType type, Node arg0, Node arg1, Node arg2);
   Node(IntegerPowerType, Node arg, int exponent);
   ///@}
-
-  /// Copy constructor (clones the data content as a deep copy)
-  Node(const Node & copy);
 
   ///@{ Operators to construct expression trees
   Node operator+(Node r);
