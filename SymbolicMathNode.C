@@ -190,6 +190,12 @@ Node::is(ConditionalType t) const
 }
 
 bool
+Node::is(IntegerPowerType t) const
+{
+  return _data->is(t);
+}
+
+bool
 Node::isValid() const
 {
   return _data->isValid();

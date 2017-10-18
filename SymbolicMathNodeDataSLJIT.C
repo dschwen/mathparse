@@ -68,6 +68,7 @@ SLJIT_MATH_WRAPPER1X(int, A < 0 ? std::ceil(A - 0.5) : std::floor(A + 0.5))
 SLJIT_MATH_WRAPPER1X(trunc, static_cast<int>(A))
 
 SLJIT_MATH_WRAPPER2(atan2)
+SLJIT_MATH_WRAPPER2(fmod)
 SLJIT_MATH_WRAPPER2(max)
 SLJIT_MATH_WRAPPER2(min)
 SLJIT_MATH_WRAPPER2(pow)
@@ -184,6 +185,12 @@ BinaryOperatorData::jit(JITStateValue & state)
 
     case BinaryOperatorType::DIVISION:
       emit_sljit_fop2(state, SLJIT_DIV_F64);
+      return;
+
+    case BinaryOperatorType::MODULO:
+      sljit_emit_op1(state.C, SLJIT_MOV, SLJIT_R0, 0, SLJIT_IMM, (sljit_sw)(state.stack - 1));
+      sljit_emit_op1(state.C, SLJIT_MOV, SLJIT_R1, 0, SLJIT_IMM, (sljit_sw)state.stack);
+      sljit_emit_ijump(state.C, SLJIT_CALL2, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_fmod));
       return;
 
     case BinaryOperatorType::POWER:

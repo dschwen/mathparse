@@ -85,6 +85,7 @@ public:
   bool is(UnaryFunctionType) const;
   bool is(BinaryFunctionType) const;
   bool is(ConditionalType) const;
+  bool is(IntegerPowerType) const;
   ///@}
 
   /// Test if the node is valid (i.e. does not have an EmptyData data content)

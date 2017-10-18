@@ -143,6 +143,15 @@ BinaryOperatorData::jit(JITStateValue & state)
       jit_divr_d(JIT_F0, JIT_F1, JIT_F0);
       return;
 
+    case BinaryOperatorType::MODULO:
+    {
+      jit_prepare();
+      jit_pushargr_d(JIT_F1);
+      jit_pushargr_d(JIT_F0);
+      LIGHTNING_MATH_CALL2(std::fmod);
+      return;
+    }
+
     case BinaryOperatorType::POWER:
     {
       jit_prepare();
