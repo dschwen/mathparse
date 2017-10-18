@@ -6,6 +6,8 @@
 namespace SymbolicMath
 {
 
+const std::string jit_backend_name = "SLJIT";
+
 using JITReturnValue = void;
 
 struct JITStateValue

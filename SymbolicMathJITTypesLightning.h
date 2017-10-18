@@ -8,6 +8,8 @@ extern "C" {
 namespace SymbolicMath
 {
 
+const std::string jit_backend_name = "GNU Lightning";
+
 using JITReturnValue = void;
 
 struct JITStateValue

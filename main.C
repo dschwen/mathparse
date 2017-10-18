@@ -1,6 +1,7 @@
 #include "SymbolicMath.h"
 #include "SymbolicMathFunction.h"
 #include "SymbolicMathHelpers.h"
+#include "SymbolicMathJITTypes.h"
 
 #include <iostream>
 
@@ -13,6 +14,7 @@ main(int argc, char * argv[])
     return 100;
   }
 
+  std::cout << "SymbolicMath with backend " << SymbolicMath::jit_backend_name << '\n';
   SymbolicMath::Parser parser;
 
   auto a_var = SymbolicMath::symbol("a");

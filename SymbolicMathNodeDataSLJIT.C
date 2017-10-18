@@ -85,6 +85,9 @@ emit_sljit_fop2(JITStateValue & state, sljit_s32 op)
                   (sljit_sw)state.stack);
 }
 
+const double sljit_one = 1.0;
+const double sljit_zero = 0.0;
+
 /********************************************************
  * Real Number immediate
  ********************************************************/
@@ -338,23 +341,34 @@ UnaryFunctionData::jit(JITStateValue & state)
       return;
 
     case UnaryFunctionType::COT:
-      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_cosh));
+    {
+      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_tan));
+      sljit_emit_fop1(state.C, SLJIT_MOV_F64, SLJIT_FR0, 0, SLJIT_MEM, (sljit_sw)&sljit_one);
       sljit_emit_fop2(state.C,
                       SLJIT_DIV_F64,
                       SLJIT_MEM,
                       (sljit_sw)(state.stack - 1),
-                      SLJIT_IMM,
-                      (sljit_f64)1.0, // OOPS!
+                      SLJIT_FR0,
+                      0,
                       SLJIT_MEM,
                       (sljit_sw)(state.stack - 1));
       return;
+    }
 
     case UnaryFunctionType::CSC:
-      // return jit_insn_div(
-      //     func,
-      //     jit_value_create_float64_constant(func, jit_type_float64, (jit_float64)1.0),
-      //     jit_insn_sin(func, A));
-      fatalError("Function not implemented");
+    {
+      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_sin));
+      sljit_emit_fop1(state.C, SLJIT_MOV_F64, SLJIT_FR0, 0, SLJIT_MEM, (sljit_sw)&sljit_one);
+      sljit_emit_fop2(state.C,
+                      SLJIT_DIV_F64,
+                      SLJIT_MEM,
+                      (sljit_sw)(state.stack - 1),
+                      SLJIT_FR0,
+                      0,
+                      SLJIT_MEM,
+                      (sljit_sw)(state.stack - 1));
+      return;
+    }
 
     case UnaryFunctionType::ERF:
       sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_erf));
@@ -395,11 +409,19 @@ UnaryFunctionData::jit(JITStateValue & state)
       fatalError("Function not implemented");
 
     case UnaryFunctionType::SEC:
-      // return jit_insn_div(
-      //     func,
-      //     jit_value_create_float64_constant(func, jit_type_float64, (jit_float64)1.0),
-      //     jit_insn_cos(func, A));
-      fatalError("Function not implemented");
+    {
+      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_cos));
+      sljit_emit_fop1(state.C, SLJIT_MOV_F64, SLJIT_FR0, 0, SLJIT_MEM, (sljit_sw)&sljit_one);
+      sljit_emit_fop2(state.C,
+                      SLJIT_DIV_F64,
+                      SLJIT_MEM,
+                      (sljit_sw)(state.stack - 1),
+                      SLJIT_FR0,
+                      0,
+                      SLJIT_MEM,
+                      (sljit_sw)(state.stack - 1));
+      return;
+    }
 
     case UnaryFunctionType::SIN:
       sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_sin));
@@ -496,17 +518,19 @@ ConditionalData::jit(JITStateValue & state)
   struct sljit_jump * false_case;
   struct sljit_jump * end_if;
 
+  _args[0].jit(state);
+
   sljit_emit_op1(state.C, SLJIT_MOV, SLJIT_FR0, 0, SLJIT_MEM, (sljit_sw)state.stack);
   state.stack--; //?
   false_case = sljit_emit_cmp(state.C, SLJIT_EQUAL, SLJIT_R0, 0, SLJIT_IMM, 0);
 
   // true case`
-  _args[0].jit(state);
+  _args[1].jit(state);
   end_if = sljit_emit_jump(state.C, SLJIT_JUMP);
 
   // false case
   sljit_set_label(false_case, sljit_emit_label(state.C));
-  _args[1].jit(state);
+  _args[2].jit(state);
 
   // end if
   sljit_set_label(end_if, sljit_emit_label(state.C));
@@ -519,7 +543,48 @@ ConditionalData::jit(JITStateValue & state)
 JITReturnValue
 IntegerPowerData::jit(JITStateValue & state)
 {
-  fatalError("Function not implemented");
+  if (_exponent == 0)
+  {
+    // this case should be simplified away and never reached
+    sljit_emit_fop1(state.C,
+                    SLJIT_MOV_F64,
+                    SLJIT_MEM,
+                    (sljit_sw)(state.stack - 1),
+                    SLJIT_MEM,
+                    (sljit_sw)&sljit_one);
+    return;
+  }
+
+  // FR0 = A
+  _arg.jit(state);
+  sljit_emit_fop1(state.C, SLJIT_MOV_F64, SLJIT_FR0, 0, SLJIT_MEM, (sljit_sw)(state.stack - 1));
+
+  // FR1 = FR2 = 1.0
+  sljit_emit_fop1(state.C, SLJIT_MOV_F64, SLJIT_FR2, 0, SLJIT_MEM, (sljit_sw)&sljit_one);
+  sljit_emit_fop1(state.C, SLJIT_MOV_F64, SLJIT_FR1, 0, SLJIT_FR2, 0);
+
+  int e = _exponent > 0 ? _exponent : -_exponent;
+  while (e)
+  {
+    // if bit 0 is set multiply the current power of two factor of the exponent
+    if (e & 1)
+      sljit_emit_fop2(state.C, SLJIT_MUL_F64, SLJIT_FR1, 0, SLJIT_FR0, 0, SLJIT_FR1, 0);
+
+    // x is incrementally set to consecutive powers of powers of two
+    sljit_emit_fop2(state.C, SLJIT_MUL_F64, SLJIT_FR0, 0, SLJIT_FR0, 0, SLJIT_FR0, 0);
+
+    // bit shift the exponent down
+    e >>= 1;
+  }
+
+  if (_exponent >= 0)
+    sljit_emit_fop1(state.C, SLJIT_MOV_F64, SLJIT_MEM, (sljit_sw)(state.stack - 1), SLJIT_FR1, 0);
+  else
+  {
+    sljit_emit_fop1(state.C, SLJIT_MOV_F64, SLJIT_FR0, 0, SLJIT_FR2, 0); // FR0 = 1.0
+    sljit_emit_fop2(
+        state.C, SLJIT_DIV_F64, SLJIT_MEM, (sljit_sw)(state.stack - 1), SLJIT_FR0, 0, SLJIT_FR1, 0);
+  }
 }
 
 // end namespace SymbolicMath

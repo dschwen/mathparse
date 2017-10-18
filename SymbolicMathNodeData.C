@@ -687,6 +687,17 @@ UnaryFunctionData::D(const ValueProvider & vp)
     case UnaryFunctionType::SQRT:
       return Node(0.5) / Node(_type, A);
 
+    case UnaryFunctionType::CSC:
+      // 1 / sin
+      return -dA * Node(UnaryFunctionType::COT, A) / Node(UnaryFunctionType::SIN, A);
+    case UnaryFunctionType::SEC:
+      // 1 / cos
+      return dA * Node(UnaryFunctionType::TAN, A) / Node(UnaryFunctionType::COS, A);
+    case UnaryFunctionType::COT:
+      // 1 / tan
+      return -dA * (Node(IntegerPowerType::_ANY, Node(UnaryFunctionType::TAN, A), 2) + Node(1.0)) /
+             Node(IntegerPowerType::_ANY, Node(UnaryFunctionType::TAN, A), 2);
+
     default:
       fatalError("Derivative not implemented");
   }
