@@ -14,6 +14,9 @@ include jit_$(JIT).mk
 mathparse: main.C $(OBJS)
 	$(CXX) -std=c++11 $(CONFIG) $(LDFLAGS) -o mathparse main.C $(OBJS)
 
+performance: performance.C $(OBJS)
+	$(CXX) -std=c++11 $(CONFIG) $(LDFLAGS) -o performance performance.C $(OBJS)
+
 -include $(OBJS:.o=.d)
 
 %.o : %.C
@@ -25,7 +28,7 @@ mathparse: main.C $(OBJS)
 	$(CC) $(CONFIG) -MM $(CXXFLAGS) $*.c > $*.d
 
 clean:
-	rm -rf $(OBJS) *.o *.d
+	rm -rf $(OBJS) *.o *.d mathparse performance
 
 tests: test2 test3
 

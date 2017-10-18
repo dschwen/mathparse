@@ -10,7 +10,7 @@ namespace SymbolicMath
 
 Parser::Parser() : _qp_ptr(nullptr) {}
 
-Node
+Function
 Parser::parse(const std::string & expression)
 {
   Tokenizer tokenizer(expression);
@@ -156,7 +156,7 @@ Parser::parse(const std::string & expression)
     operator_stack.pop();
   }
 
-  return _output_stack.top();
+  return Function(_output_stack.top());
 }
 
 void

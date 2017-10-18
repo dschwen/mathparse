@@ -3,6 +3,7 @@
 
 #include "SymbolicMathTokenizer.h"
 #include "SymbolicMathNode.h"
+#include "SymbolicMathFunction.h"
 
 // ttodo: remove when introducing value provider manager
 #include "SymbolicMathNodeData.h"
@@ -22,7 +23,7 @@ class Parser
 public:
   Parser();
 
-  Node parse(const std::string & expression);
+  Function parse(const std::string & expression);
 
   std::shared_ptr<ValueProvider> registerValueProvider(std::string name);
   void registerValueProvider(std::shared_ptr<ValueProvider> vp);
