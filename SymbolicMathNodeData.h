@@ -43,6 +43,7 @@ public:
   virtual bool is(UnaryFunctionType) { return false; };
   virtual bool is(BinaryFunctionType) { return false; };
   virtual bool is(ConditionalType) { return false; };
+  virtual bool is(IntegerPowerType) { return false; };
 
   virtual bool isValid() { return true; };
 
@@ -415,9 +416,12 @@ public:
 
   NodeDataPtr clone() override { return std::make_shared<IntegerPowerData>(_arg, _exponent); };
 
-  Node getArg(unsigned int i) override { return _arg; }
+  Node getArg(unsigned int i) override;
   std::size_t size() override { return 1; }
 
+  bool is(IntegerPowerType) override { return true; };
+
+  Node simplify() override;
   Node D(const ValueProvider &) override;
 
   void stackDepth(std::pair<int, int> & current_max) override { _arg.stackDepth(current_max); }

@@ -65,6 +65,7 @@ enum class BinaryOperatorType
 const std::map<BinaryOperatorType, OperatorProperties> _binary_operators = {
     {BinaryOperatorType::SUBTRACTION, {6, true, "-"}},
     {BinaryOperatorType::DIVISION, {5, true, "/"}},
+    {BinaryOperatorType::MODULO, {5, true, "%"}},
     {BinaryOperatorType::POWER, {4, true, "^"}},
     {BinaryOperatorType::LOGICAL_OR, {14, true, "|"}},
     {BinaryOperatorType::LOGICAL_AND, {13, true, "&"}},

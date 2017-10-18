@@ -163,6 +163,9 @@ BinaryOperatorData::value()
     case BinaryOperatorType::POWER:
       return std::pow(A, B);
 
+    case BinaryOperatorType::MODULO:
+      return std::fmod(A, B);
+
     case BinaryOperatorType::LOGICAL_OR:
       return (A != 0.0 || B != 0.0) ? 1.0 : 0.0;
 
@@ -288,7 +291,10 @@ BinaryOperatorData::D(const ValueProvider & vp)
       return dA - dB;
 
     case BinaryOperatorType::DIVISION:
-      return dA / B - dB / (B * B);
+      return dA / B - dB / Node(IntegerPowerType::_ANY, B, 2);
+
+    case BinaryOperatorType::MODULO:
+      return dA;
 
     case BinaryOperatorType::POWER:
     {
@@ -305,7 +311,7 @@ BinaryOperatorData::D(const ValueProvider & vp)
       return Node(0.0);
 
     default:
-      fatalError("Derivative not implemnted");
+      fatalError("Derivative not implemented");
   }
 }
 
@@ -655,16 +661,20 @@ UnaryFunctionData::D(const ValueProvider & vp)
       return dA * A / Node(_type, A);
 
     case UnaryFunctionType::ACOS:
-      return -dA * A / Node(BinaryOperatorType::POWER, Node(1.0) - A * A, Node(0.5));
+      return -dA * A / Node(BinaryOperatorType::POWER,
+                            Node(1.0) - Node(IntegerPowerType::_ANY, A, 2),
+                            Node(0.5));
 
     case UnaryFunctionType::ASIN:
-      return dA * A / Node(BinaryOperatorType::POWER, Node(1.0) - A * A, Node(0.5));
+      return dA * A / Node(BinaryOperatorType::POWER,
+                           Node(1.0) - Node(IntegerPowerType::_ANY, A, 2),
+                           Node(0.5));
 
     case UnaryFunctionType::ATAN:
       return dA / (A * A + Node(1.0));
 
     case UnaryFunctionType::CBRT:
-      return Node(1.0 / 3.0) / (Node(_type, A) * Node(_type, A));
+      return Node(1.0 / 3.0) / Node(IntegerPowerType::_ANY, Node(_type, A), 2);
 
     case UnaryFunctionType::COS:
       return -dA * Node(UnaryFunctionType::SIN, A);
@@ -673,7 +683,8 @@ UnaryFunctionData::D(const ValueProvider & vp)
       return dA * Node(UnaryFunctionType::SINH, A);
 
     case UnaryFunctionType::ERF: // d exp(A) = dA*exp(A)
-      return dA * Node(2.0 / std::sqrt(Constant::pi)) * Node(UnaryFunctionType::EXP, -A * A);
+      return dA * Node(2.0 / std::sqrt(Constant::pi)) *
+             Node(UnaryFunctionType::EXP, -Node(IntegerPowerType::_ANY, A, 2));
 
     case UnaryFunctionType::EXP: // d exp(A) = dA*exp(A)
       return dA * Node(_type, A);
@@ -820,7 +831,8 @@ BinaryFunctionData::D(const ValueProvider & vp)
   switch (_type)
   {
     case BinaryFunctionType::ATAN2:
-      return (B * dA - A * dB) / (A * A + B * B);
+      return (B * dA - A * dB) /
+             (Node(IntegerPowerType::_ANY, A, 2) + Node(IntegerPowerType::_ANY, B, 2));
 
     case BinaryFunctionType::MIN:
       return Node(ConditionalType::IF, A < B, dA, dB);
@@ -829,10 +841,12 @@ BinaryFunctionData::D(const ValueProvider & vp)
       return Node(ConditionalType::IF, A < B, dB, dA);
 
     case BinaryFunctionType::PLOG:
-      return dA * Node(ConditionalType::IF,
-                       A < B,
-                       Node(1.0) / B - (A - B) / (B * B) + (A - B) * (A - B) / (B * B * B),
-                       Node(1.0) / A);
+      return dA *
+             Node(ConditionalType::IF,
+                  A < B,
+                  Node(1.0) / B - (A - B) / Node(IntegerPowerType::_ANY, B, 2) +
+                      Node(IntegerPowerType::_ANY, A - B, 2) / Node(IntegerPowerType::_ANY, B, 3),
+                  Node(1.0) / A);
 
     case BinaryFunctionType::POW:
       if (B.is(NumberType::_ANY))
@@ -959,6 +973,39 @@ IntegerPowerData::formatTree(std::string indent)
 {
   return indent + "ipow" + _arg.formatTree(indent + "  ") + indent + std::to_string(_exponent) +
          '\n';
+}
+
+Node
+IntegerPowerData::getArg(unsigned int i)
+{
+  if (i == 0)
+    return _arg;
+  if (i == 1)
+    return Node(_exponent);
+  fatalError("Requesting invalid argument");
+}
+
+Node
+IntegerPowerData::simplify()
+{
+  //(a^b)^c = a^(b*c) (c00^c01) ^ c1 = c00 ^ (c01*c1)
+  if (_arg.is(IntegerPowerType::_ANY))
+  {
+    auto p = Node(IntegerPowerType::_ANY, _arg[0], _arg[1].value() * _exponent);
+    p.simplify();
+    return p;
+  }
+
+  if (_arg.is(NumberType::_ANY))
+    return Node(value());
+
+  if (_exponent == 1)
+    return _arg;
+
+  if (_exponent == 0)
+    return Node(1.0);
+
+  return Node();
 }
 
 Node
