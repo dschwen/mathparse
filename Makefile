@@ -12,10 +12,13 @@ OBJS := SymbolicMathToken.o SymbolicMathTokenizer.o \
 include jit_$(JIT).mk
 
 mathparse: main.C $(OBJS)
-	$(CXX) -std=c++11 $(CONFIG) $(LDFLAGS) -o mathparse main.C $(OBJS)
+	$(CXX) -std=c++11 $(CONFIG)  $(CPPFLAGS) $(LDFLAGS) -o mathparse main.C $(OBJS)
 
 performance: performance.C $(OBJS)
-	$(CXX) -std=c++11 $(CONFIG) $(LDFLAGS) -o performance performance.C $(OBJS)
+	$(CXX) -std=c++11 $(CONFIG)  $(CPPFLAGS) $(LDFLAGS) -o performance performance.C $(OBJS)
+
+test: test.C $(OBJS)
+	$(CXX) -std=c++11 $(CONFIG)  $(CPPFLAGS) $(LDFLAGS) -o test test.C $(OBJS)
 
 -include $(OBJS:.o=.d)
 

@@ -14,6 +14,7 @@ addons:
 
 before_script:
   # - git clone --depth=1 https://git.savannah.gnu.org/git/libjit.git
+  - cd $TRAVIS_BUILD_DIR
   - wget http://git.savannah.gnu.org/cgit/lightning.git/snapshot/lightning-2.1.2.tar.gz
   - tar xzf lightning-2.1.2.tar.gz
   - cd lightning-2.1.2 && autoreconf -i && ./configure --prefix=/home/travis/install
@@ -23,6 +24,8 @@ before_script:
   # - find /home/travis/install
 
 script:
-  - make clean && make JIT=sljit
-  - make clean && make JIT=lightning LDFLAGS=-L/home/travis/install/lib CPPFLAGS=/home/travis/install/include
-  # - make clean && make JIT=libjit LDFLAGS=-L/home/travis/install/lib CPPFLAGS=/home/travis/install/include
+  - cd $TRAVIS_BUILD_DIR
+  - make clean && make test JIT=sljit
+  - ./test
+  - make clean && make test JIT=lightning LDFLAGS=-L/home/travis/install/lib CPPFLAGS=-I/home/travis/install/include
+  - ./test
