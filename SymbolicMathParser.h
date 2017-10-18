@@ -27,6 +27,7 @@ public:
 
   std::shared_ptr<ValueProvider> registerValueProvider(std::string name);
   void registerValueProvider(std::shared_ptr<ValueProvider> vp);
+  void registerConstant(const std::string & name, Real value);
 
   void registerQPIndex(const unsigned int & qp) { _qp_ptr = &qp; }
 
@@ -46,6 +47,9 @@ private:
 
   /// output stack where the Tree is formed
   std::stack<Node> _output_stack;
+
+  /// constants map
+  std::map<std::string, Real> _constants;
 
   /// value provider ID map
   std::map<std::string, std::shared_ptr<ValueProvider>> _value_providers;
