@@ -1,4 +1,4 @@
-# SymbolicMath
+# SymbolicMath [![Build Status](https://travis-ci.org/dschwen/mathparse.svg?branch=master)](https://travis-ci.org/dschwen/mathparse)
 Abstract syntax tree (AST) based symbolic math system with an expression parser.
 
 It consists of
@@ -13,9 +13,9 @@ It consists of
 SymbolicMath features just-in-time (JIT) compilation of expression trees.
 Available JIT backends are
 
-* [GNU LibJIT](https://www.gnu.org/software/libjit/)
-* [SLJIT](http://sljit.sourceforge.net/) - Broad architecture support, no external dependencies
-* [GNU Lightning](https://www.gnu.org/software/lightning/) - Good architecture support
+* [GNU LibJIT](https://www.gnu.org/software/libjit/) - Fastest option, limited architecture support
+* [GNU Lightning](https://www.gnu.org/software/lightning/) - Good architecture support, medium speed
+* [SLJIT](http://sljit.sourceforge.net/) - Broad architecture support, no external dependencies, slowest option
 
 Research is ongoing as to which backend is best used.
 

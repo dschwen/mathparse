@@ -1,0 +1,28 @@
+dist: trusty
+sudo: false
+
+language: cpp
+
+compiler:
+  - gcc
+  - clang
+
+addons:
+  apt:
+    packages:
+    - texinfo
+
+before_script:
+  # - git clone --depth=1 https://git.savannah.gnu.org/git/libjit.git
+  - wget http://git.savannah.gnu.org/cgit/lightning.git/snapshot/lightning-2.1.2.tar.gz
+  - tar xzf lightning-2.1.2.tar.gz
+  - cd lightning-2.1.2 && autoreconf -i && ./configure --prefix=/home/travis/install
+  - make && make install
+  # - cd ../libjit && ./bootstrap && ./configure --prefix=/home/travis/install
+  # - make && make install
+  # - find /home/travis/install
+
+script:
+  - make clean && make JIT=sljit
+  - make clean && make JIT=lightning LDFLAGS=-L/home/travis/install/lib CPPFLAGS=/home/travis/install/include
+  # - make clean && make JIT=libjit LDFLAGS=-L/home/travis/install/lib CPPFLAGS=/home/travis/install/include

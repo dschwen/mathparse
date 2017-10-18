@@ -25,7 +25,7 @@ performance: performance.C $(OBJS)
 
 %.o : %.c
 	$(CC) $(CONFIG) -c $(CFLAGS) $(CPPFLAGS) $*.c -o $@
-	$(CC) $(CONFIG) -MM $(CXXFLAGS) $*.c > $*.d
+	$(CC) $(CONFIG) -MM $(CFLAGS) $*.c > $*.d
 
 clean:
 	rm -rf $(OBJS) *.o *.d mathparse performance
