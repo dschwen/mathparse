@@ -10,7 +10,13 @@ namespace SymbolicMath
 
 Node::Node() : _data(std::make_shared<EmptyData>()) {}
 
-Node::Node(const Node & copy) : _data(copy._data->clone()) {}
+Node::Node(const Node & copy) : _data(copy._data) {}
+
+Node
+Node::clone(const Node & move)
+{
+  return Node(_data->clone());
+}
 
 Node::Node(Real val) : _data(new RealNumberData(val)) {}
 
