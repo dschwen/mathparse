@@ -198,7 +198,7 @@ BinaryOperatorData::jit(JITStateValue & state)
       return;
 
     case BinaryOperatorType::EQUAL:
-      jit_ger_d(JIT_R0, JIT_F1, JIT_F0);
+      jit_eqr_d(JIT_R0, JIT_F1, JIT_F0);
       jit_extr_d(JIT_F0, JIT_R0);
       return;
 
