@@ -66,6 +66,52 @@ sljit_fcmp_wrapper(JITStateValue & state, sljit_s32 op)
   sljit_set_label(out_lbl, sljit_emit_label(state.C));
 }
 
+void
+sljit_logic_wrapper(JITStateValue & state, sljit_s32 op)
+{
+  // load operands and convert to 0/1 in R0 and R1
+  sljit_emit_op1(state.C, SLJIT_MOV, SLJIT_R0, 0, SLJIT_IMM, (sljit_sw)0);
+  sljit_emit_op1(state.C, SLJIT_MOV, SLJIT_R1, 0, SLJIT_R0, 0);
+  // put zero in FR1
+  sljit_emit_fop1(state.C, SLJIT_MOV_F64, SLJIT_FR0, 0, SLJIT_MEM, (sljit_sw)&sljit_zero);
+
+  struct sljit_jump * r0_zero = sljit_emit_fcmp(
+      state.C, SLJIT_EQUAL_F64, SLJIT_MEM, (sljit_sw)(state.stack - 1), SLJIT_FR0, 0);
+  sljit_emit_op1(state.C, SLJIT_MOV, SLJIT_R0, 0, SLJIT_IMM, (sljit_sw)1);
+  sljit_set_label(r0_zero, sljit_emit_label(state.C));
+
+  struct sljit_jump * r1_zero =
+      sljit_emit_fcmp(state.C, SLJIT_EQUAL_F64, SLJIT_MEM, (sljit_sw)state.stack, SLJIT_FR0, 0);
+  sljit_emit_op1(state.C, SLJIT_MOV, SLJIT_R1, 0, SLJIT_IMM, (sljit_sw)1);
+  sljit_set_label(r1_zero, sljit_emit_label(state.C));
+
+  // bitwise (integer) logic operation
+  sljit_emit_op2(state.C, op, SLJIT_R0, 0, SLJIT_R0, 0, SLJIT_R1, 0);
+
+  struct sljit_jump * true_lbl =
+      sljit_emit_cmp(state.C, SLJIT_NOT_EQUAL, SLJIT_R0, 0, SLJIT_IMM, 0);
+
+  // false case
+  // put 0.0 on stack
+  sljit_emit_op1(
+      state.C, SLJIT_MOV, SLJIT_MEM, (sljit_sw)(state.stack - 1), SLJIT_IMM, (sljit_sw)0);
+  struct sljit_jump * out_lbl = sljit_emit_jump(state.C, SLJIT_JUMP);
+
+  // true case
+  sljit_set_label(true_lbl, sljit_emit_label(state.C));
+
+  // put 1.0 on stack
+  sljit_emit_fop1(state.C,
+                  SLJIT_MOV_F64,
+                  SLJIT_MEM,
+                  (sljit_sw)(state.stack - 1),
+                  SLJIT_MEM,
+                  (sljit_sw)&sljit_one);
+
+  // end if
+  sljit_set_label(out_lbl, sljit_emit_label(state.C));
+}
+
 SLJIT_MATH_WRAPPER1(abs)
 SLJIT_MATH_WRAPPER1(acos)
 SLJIT_MATH_WRAPPER1(acosh)
@@ -226,27 +272,11 @@ BinaryOperatorData::jit(JITStateValue & state)
       return;
 
     case BinaryOperatorType::LOGICAL_OR:
-      // bitwise (integer) or
-      sljit_emit_op2(state.C,
-                     SLJIT_OR,
-                     SLJIT_MEM,
-                     (sljit_sw)(state.stack - 1),
-                     SLJIT_MEM,
-                     (sljit_sw)(state.stack - 1),
-                     SLJIT_MEM,
-                     (sljit_sw)state.stack);
+      sljit_logic_wrapper(state, SLJIT_OR);
       return;
 
     case BinaryOperatorType::LOGICAL_AND:
-      // bitwise (integer) and
-      sljit_emit_op2(state.C,
-                     SLJIT_AND,
-                     SLJIT_MEM,
-                     (sljit_sw)(state.stack - 1),
-                     SLJIT_MEM,
-                     (sljit_sw)(state.stack - 1),
-                     SLJIT_MEM,
-                     (sljit_sw)state.stack);
+      sljit_logic_wrapper(state, SLJIT_AND);
       return;
 
     case BinaryOperatorType::LESS_THAN:
