@@ -32,6 +32,12 @@ const std::vector<Test> tests = {
   {"atan2(c,0.5)", [](double c) { return std::atan2(c, 0.5); }},
   {"atan2(0.5,c)", [](double c) { return std::atan2(0.5, c); }},
   {"atan2(2*c, 3*c)", [](double c) { return std::atan2(2*c, 3*c); }},
+  {"c<0.2", [](double c) { return c<0.2; }},
+  {"c>0.2", [](double c) { return c>0.2; }},
+  {"c<=0.2", [](double c) { return c<=0.2; }},
+  {"c>=0.2", [](double c) { return c>=0.2; }},
+  {"c==0.2", [](double c) { return c==0.2; }},
+  {"c!=0.2", [](double c) { return c!=0.2; }},
   {"c<0.5 & c>-0.5", [](double c) { return c<0.5 && c>-0.5; }},
   {"c>0.5 | c<-0.5", [](double c) { return c>0.5 || c<-0.5; }},
 };

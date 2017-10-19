@@ -37,6 +37,35 @@ namespace SymbolicMath
     return 0;                                                                                      \
   }
 
+const double sljit_one = 1.0;
+const double sljit_zero = 0.0;
+
+void
+sljit_fcmp_wrapper(JITStateValue & state, sljit_s32 op)
+{
+  struct sljit_jump * true_lbl = sljit_emit_fcmp(
+      state.C, op, SLJIT_MEM, (sljit_sw)(state.stack - 1), SLJIT_MEM, (sljit_sw)state.stack);
+  // false case
+  // put 0.0 on stack
+  sljit_emit_op1(
+      state.C, SLJIT_MOV, SLJIT_MEM, (sljit_sw)(state.stack - 1), SLJIT_IMM, (sljit_sw)0);
+  struct sljit_jump * out_lbl = sljit_emit_jump(state.C, SLJIT_JUMP);
+
+  // true case
+  sljit_set_label(true_lbl, sljit_emit_label(state.C));
+
+  // put 1.0 on stack
+  sljit_emit_fop1(state.C,
+                  SLJIT_MOV_F64,
+                  SLJIT_MEM,
+                  (sljit_sw)(state.stack - 1),
+                  SLJIT_MEM,
+                  (sljit_sw)&sljit_one);
+
+  // end if
+  sljit_set_label(out_lbl, sljit_emit_label(state.C));
+}
+
 SLJIT_MATH_WRAPPER1(abs)
 SLJIT_MATH_WRAPPER1(acos)
 SLJIT_MATH_WRAPPER1(acosh)
@@ -85,9 +114,6 @@ emit_sljit_fop2(JITStateValue & state, sljit_s32 op)
                   SLJIT_MEM,
                   (sljit_sw)state.stack);
 }
-
-const double sljit_one = 1.0;
-const double sljit_zero = 0.0;
 
 /********************************************************
  * Real Number immediate
@@ -224,27 +250,27 @@ BinaryOperatorData::jit(JITStateValue & state)
       return;
 
     case BinaryOperatorType::LESS_THAN:
-      emit_sljit_fop2(state, SLJIT_LESS_F64);
+      sljit_fcmp_wrapper(state, SLJIT_LESS_F64);
       return;
 
     case BinaryOperatorType::GREATER_THAN:
-      emit_sljit_fop2(state, SLJIT_GREATER_F64);
+      sljit_fcmp_wrapper(state, SLJIT_GREATER_F64);
       return;
 
     case BinaryOperatorType::LESS_EQUAL:
-      emit_sljit_fop2(state, SLJIT_LESS_EQUAL_F64);
+      sljit_fcmp_wrapper(state, SLJIT_LESS_EQUAL_F64);
       return;
 
     case BinaryOperatorType::GREATER_EQUAL:
-      emit_sljit_fop2(state, SLJIT_GREATER_EQUAL_F64);
+      sljit_fcmp_wrapper(state, SLJIT_GREATER_EQUAL_F64);
       return;
 
     case BinaryOperatorType::EQUAL:
-      emit_sljit_fop2(state, SLJIT_EQUAL_F64);
+      sljit_fcmp_wrapper(state, SLJIT_EQUAL_F64);
       return;
 
     case BinaryOperatorType::NOT_EQUAL:
-      emit_sljit_fop2(state, SLJIT_NOT_EQUAL_F64);
+      sljit_fcmp_wrapper(state, SLJIT_NOT_EQUAL_F64);
       return;
 
     default:
