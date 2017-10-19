@@ -40,6 +40,9 @@ const std::vector<Test> tests = {
   {"c!=0.2", [](double c) { return c!=0.2; }},
   {"c<0.5 & c>-0.5", [](double c) { return c<0.5 && c>-0.5; }},
   {"c>0.5 | c<-0.5", [](double c) { return c>0.5 || c<-0.5; }},
+  // currently failing:
+  // {"c<0.2 & 2.0", [](double c) { return c<0.2 && static_cast<bool>(2.0); }},
+  // {"c<0.2 | 2.0", [](double c) { return c<0.2 || static_cast<bool>(2.0); }},
 };
 // clang-format off
 

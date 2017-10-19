@@ -12,23 +12,23 @@ OBJS := SymbolicMathToken.o SymbolicMathTokenizer.o \
 include jit_$(JIT).mk
 
 mathparse: main.C $(OBJS)
-	$(CXX) -std=c++11 $(CONFIG)  $(CPPFLAGS) $(LDFLAGS) -o mathparse main.C $(OBJS)
+	$(CXX) -std=c++11 $(CONFIG)  $(CPPFLAGS) -o mathparse main.C $(OBJS) $(LDFLAGS)
 
 performance: performance.C $(OBJS)
-	$(CXX) -std=c++11 $(CONFIG)  $(CPPFLAGS) $(LDFLAGS) -o performance performance.C $(OBJS)
+	$(CXX) -std=c++11 $(CONFIG)  $(CPPFLAGS) -o performance performance.C $(OBJS) $(LDFLAGS)
 
 test: test.C $(OBJS)
-	$(CXX) -std=c++11 $(CONFIG)  $(CPPFLAGS) $(LDFLAGS) -o test test.C $(OBJS)
+	$(CXX) -std=c++11 $(CONFIG)  $(CPPFLAGS) -o test test.C $(OBJS) $(LDFLAGS)
 
 -include $(OBJS:.o=.d)
 
 %.o : %.C
 	$(CXX) -std=c++11 $(CONFIG) -c $(CXXFLAGS) $(CPPFLAGS) $*.C -o $@
-	$(CXX) -std=c++11 $(CONFIG) -MM $(CXXFLAGS) $*.C > $*.d
+	$(CXX) -std=c++11 $(CONFIG) -MM $(CXXFLAGS) $(CPPFLAGS) $*.C > $*.d
 
 %.o : %.c
 	$(CC) $(CONFIG) -c $(CFLAGS) $(CPPFLAGS) $*.c -o $@
-	$(CC) $(CONFIG) -MM $(CFLAGS) $*.c > $*.d
+	$(CC) $(CONFIG) -MM $(CFLAGS) $(CPPFLAGS) $*.c > $*.d
 
 clean:
 	rm -rf $(OBJS) *.o *.d mathparse performance

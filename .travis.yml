@@ -17,15 +17,17 @@ before_script:
   - cd $TRAVIS_BUILD_DIR
   - wget http://git.savannah.gnu.org/cgit/lightning.git/snapshot/lightning-2.1.2.tar.gz
   - tar xzf lightning-2.1.2.tar.gz
-  - cd lightning-2.1.2 && autoreconf -i && ./configure --prefix=/home/travis/install
+  - cd lightning-2.1.2 && autoreconf -i && ./configure --prefix=$TRAVIS_BUILD_DIR/install
   - make && make install
-  # - cd ../libjit && ./bootstrap && ./configure --prefix=/home/travis/install
+  # - cd ../libjit && ./bootstrap && ./configure --prefix=$TRAVIS_BUILD_DIR/install
   # - make && make install
   # - find /home/travis/install
 
 script:
   - cd $TRAVIS_BUILD_DIR
+  - export LD_LIBRARY_PATH=$TRAVIS_BUILD_DIR/install/lib:$LD_LIBRARY_PATH
+  - export LIBRARY_PATH=$TRAVIS_BUILD_DIR/install/lib:$LIBRARY_PATH
   - make clean && make test JIT=sljit
   - ./test
-  - make clean && make test JIT=lightning LDFLAGS=-L/home/travis/install/lib CPPFLAGS=-I/home/travis/install/include
+  - make clean && make test JIT=lightning LDFLAGS="-L$TRAVIS_BUILD_DIR/install/lib -llightning" CPPFLAGS=-I$TRAVIS_BUILD_DIR/install/include
   - ./test
