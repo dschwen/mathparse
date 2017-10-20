@@ -132,30 +132,40 @@ BinaryOperatorData::jit(JITStateValue & func)
       return jit_insn_pow(func, A, B);
 
     case BinaryOperatorType::LOGICAL_OR:
-      // using bitwise or
-      return jit_insn_or(func, A, B);
+    {
+      auto iA = jit_insn_to_bool(func, A);
+      auto iB = jit_insn_to_bool(func, B);
+      return jit_insn_or(func, iA, iB);
+    }
 
     case BinaryOperatorType::LOGICAL_AND:
-      // using bitwise and
-      return jit_insn_and(func, A, B);
+    {
+      auto iA = jit_insn_to_bool(func, A);
+      auto iB = jit_insn_to_bool(func, B);
+      return jit_insn_and(func, iA, iB);
+    }
 
     case BinaryOperatorType::LESS_THAN:
-      return jit_insn_lt(func, A, B);
+      return jit_insn_convert(func, jit_insn_lt(func, A, B), jit_type_float64, 0);
 
     case BinaryOperatorType::GREATER_THAN:
-      return jit_insn_gt(func, A, B);
+      return jit_insn_convert(func, jit_insn_gt(func, A, B), jit_type_float64, 0);
 
     case BinaryOperatorType::LESS_EQUAL:
-      return jit_insn_le(func, A, B);
+      return jit_insn_convert(func, jit_insn_le(func, A, B), jit_type_float64, 0);
 
     case BinaryOperatorType::GREATER_EQUAL:
-      return jit_insn_ge(func, A, B);
+      return jit_insn_convert(func, jit_insn_ge(func, A, B), jit_type_float64, 0);
 
     case BinaryOperatorType::EQUAL:
       return jit_insn_eq(func, A, B);
+    // return jit_insn_to_bool(func, jit_insn_eq(func, A, B));
+    // return jit_insn_convert(func, A, jit_type_float64, 0);
+    // return jit_insn_convert(func, jit_insn_eq(func, A, B), jit_type_float64, 0);
 
     case BinaryOperatorType::NOT_EQUAL:
       return jit_insn_ne(func, A, B);
+    // return jit_insn_convert(func, jit_insn_ne(func, A, B), jit_type_float64, 0);
 
     default:
       fatalError("Unknown operator");

@@ -272,6 +272,41 @@ BinaryOperatorData::simplify()
       return pfunc;
     }
 
+    // for this to be an optimization we'll need to make those operators multinary and only replace
+    // size>2 instances
+    //
+    // case BinaryOperatorType::LOGICAL_OR:
+    //   if (_args[0].is(NumberType::_ANY))
+    //   {
+    //     if (_args[0].value() != 0)
+    //       return Node(1.0);
+    //     else
+    //       return _args[1] != Node(0.0);
+    //   }
+    //   else if (_args[1].is(NumberType::_ANY))
+    //   {
+    //     if (_args[1].value() != 0)
+    //       return Node(1.0);
+    //     else
+    //       return _args[0] != Node(0.0);
+    //   }
+    //
+    // case BinaryOperatorType::LOGICAL_AND:
+    //   if (_args[0].is(NumberType::_ANY))
+    //   {
+    //     if (_args[0].value() != 0)
+    //       return _args[1] != Node(0.0);
+    //     else
+    //       return Node(0.0);
+    //   }
+    //   else if (_args[1].is(NumberType::_ANY))
+    //   {
+    //     if (_args[1].value() != 0)
+    //       return _args[0] != Node(0.0);
+    //     else
+    //       return Node(0.0);
+    //   }
+
     default:
       return Node();
   }
@@ -302,6 +337,8 @@ BinaryOperatorData::D(const ValueProvider & vp)
       return pfunc.D(vp);
     }
 
+    case BinaryOperatorType::LOGICAL_OR:
+    case BinaryOperatorType::LOGICAL_AND:
     case BinaryOperatorType::LESS_THAN:
     case BinaryOperatorType::GREATER_THAN:
     case BinaryOperatorType::LESS_EQUAL:
