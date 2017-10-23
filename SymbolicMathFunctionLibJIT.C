@@ -1,6 +1,8 @@
 #include "SymbolicMathFunctionLibJIT.h"
 #include <stdio.h>
 
+#include <jit/jit-dump.h>
+
 namespace SymbolicMath
 {
 
