@@ -617,7 +617,7 @@ UnaryFunctionData::value()
       return std::floor(A);
 
     case UnaryFunctionType::INT:
-      return A < 0 ? std::ceil(A - 0.5) : std::floor(A + 0.5);
+      return std::round(A);
 
     case UnaryFunctionType::LOG:
       return std::log(A);

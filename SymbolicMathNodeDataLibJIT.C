@@ -146,26 +146,22 @@ BinaryOperatorData::jit(JITStateValue & func)
     }
 
     case BinaryOperatorType::LESS_THAN:
-      return jit_insn_convert(func, jit_insn_lt(func, A, B), jit_type_float64, 0);
+      return jit_insn_lt(func, A, B);
 
     case BinaryOperatorType::GREATER_THAN:
-      return jit_insn_convert(func, jit_insn_gt(func, A, B), jit_type_float64, 0);
+      return jit_insn_gt(func, A, B);
 
     case BinaryOperatorType::LESS_EQUAL:
-      return jit_insn_convert(func, jit_insn_le(func, A, B), jit_type_float64, 0);
+      return jit_insn_le(func, A, B);
 
     case BinaryOperatorType::GREATER_EQUAL:
-      return jit_insn_convert(func, jit_insn_ge(func, A, B), jit_type_float64, 0);
+      return jit_insn_ge(func, A, B);
 
     case BinaryOperatorType::EQUAL:
       return jit_insn_eq(func, A, B);
-    // return jit_insn_to_bool(func, jit_insn_eq(func, A, B));
-    // return jit_insn_convert(func, A, jit_type_float64, 0);
-    // return jit_insn_convert(func, jit_insn_eq(func, A, B), jit_type_float64, 0);
 
     case BinaryOperatorType::NOT_EQUAL:
       return jit_insn_ne(func, A, B);
-    // return jit_insn_convert(func, jit_insn_ne(func, A, B), jit_type_float64, 0);
 
     default:
       fatalError("Unknown operator");
@@ -325,7 +321,8 @@ UnaryFunctionData::jit(JITStateValue & func)
       return jit_insn_tan(func, A);
 
     case UnaryFunctionType::TRUNC:
-      return jit_insn_rint(func, A);
+      return jit_insn_convert(
+          func, jit_insn_convert(func, A, jit_type_int, 0), jit_type_float64, 0);
 
     default:
       fatalError("Function not implemented");

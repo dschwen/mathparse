@@ -510,7 +510,8 @@ UnaryFunctionData::jit(JITStateValue & state)
       return;
 
     case UnaryFunctionType::TRUNC:
-      fatalError("Function not implemented");
+      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_trunc));
+      return;
 
     default:
       fatalError("Function not implemented");

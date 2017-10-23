@@ -340,7 +340,8 @@ UnaryFunctionData::jit(JITStateValue & state)
       fatalError("Function not implemented");
 
     case UnaryFunctionType::INT:
-      fatalError("Function not implemented");
+      LIGHTNING_MATH_CALL1(std::round);
+      return;
 
     case UnaryFunctionType::LOG:
       LIGHTNING_MATH_CALL1(std::log);
@@ -387,7 +388,9 @@ UnaryFunctionData::jit(JITStateValue & state)
       return;
 
     case UnaryFunctionType::TRUNC:
-      fatalError("Function not implemented");
+      jit_truncr_d_l(JIT_R0, JIT_F0);
+      jit_extr_d(JIT_F0, JIT_R0);
+      return;
 
     default:
       fatalError("Function not implemented");
