@@ -61,7 +61,7 @@ main()
 
   llvm::LLVMContext Context;
 
-  // Build IR
+  // Build Function and basic block
   std::unique_ptr<llvm::Module> M = llvm::make_unique<llvm::Module>("function", Context);
   llvm::Function * F = llvm::cast<llvm::Function>(
       M->getOrInsertFunction("F", llvm::Type::getDoubleTy(Context), (llvm::Type *)0));
@@ -69,9 +69,26 @@ main()
   llvm::BasicBlock * BB = llvm::BasicBlock::Create(Context, "EntryBlock", F);
   llvm::IRBuilder<> Builder(BB);
 
-  // return 10
+  // Load constant 10
   llvm::Value * Ten = llvm::ConstantFP::get(Builder.getDoubleTy(), 10.0001);
-  Builder.CreateRet(Ten);
+
+  // load variable value
+  double c = 20.0002;
+  llvm::Constant * adr = llvm::ConstantInt::get(Builder.getInt64Ty(), (int64_t)&c);
+  llvm::Value * ptr =
+      llvm::ConstantExpr::getIntToPtr(adr, llvm::PointerType::getUnqual(Builder.getDoubleTy()));
+  // llvm::ConstantExpr::getIntToPtr(adr, llvm::PointerType::getUnqual(Builder.getInt64Ty()));
+  llvm::Value * cval = Builder.CreateLoad(Builder.getDoubleTy(), ptr, "c");
+  // llvm::Value * cval = Builder.CreateLoad(ptr, "c");
+
+  // sum the two values
+  llvm::Value * res = Builder.CreateFAdd(cval, Ten, "cplus10");
+
+  // return result
+  Builder.CreateRet(res);
+
+  // print module
+  M->dump();
 
   // JIT stuff
   std::vector<std::unique_ptr<llvm::Module>> Ms;
