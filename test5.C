@@ -39,7 +39,10 @@ main()
 {
   // move into singleton
   LLVMInitializeNativeTarget();
+  LLVMInitializeNativeAsmPrinter();
+  LLVMInitializeNativeAsmParser();
 
+  std::cout << "Setup...\n";
   std::unique_ptr<llvm::TargetMachine> TM(llvm::EngineBuilder().selectTarget());
   auto DL = TM->createDataLayout();
 
@@ -59,9 +62,10 @@ main()
 
   llvm::LLVMContext Context;
 
-  llvm::sys::Process::PreventCoreFiles();
+  // llvm::sys::Process::PreventCoreFiles();
 
   // Build IR
+  std::cout << "Building IR...\n";
   std::unique_ptr<llvm::Module> M = llvm::make_unique<llvm::Module>("function", Context);
   llvm::Function * F = llvm::cast<llvm::Function>(
       M->getOrInsertFunction("F", llvm::Type::getInt32Ty(Context), (llvm::Type *)0));
@@ -74,7 +78,7 @@ main()
   Builder.CreateRet(Ten);
 
   // JIT stuff
-
+  std::cout << "JIT compiling...\n";
   std::vector<std::unique_ptr<llvm::Module>> Ms;
   Ms.push_back(std::move(M));
 
@@ -94,10 +98,28 @@ main()
         return llvm::RuntimeDyld::SymbolInfo(nullptr);
       });
 
+  std::cout << "Built resolver, adding module set...\n";
+
   // Add the set to the JIT with the resolver we created above and a newly
   // created SectionMemoryManager.
-  auto CL = CompileLayer.addModuleSet(
+  auto H = CompileLayer.addModuleSet(
       std::move(Ms), llvm::make_unique<llvm::SectionMemoryManager>(), std::move(Resolver));
+
+  std::cout << "Module set added, finding compiled function...\n";
+
+  auto ExprSymbol = CompileLayer.findSymbol("F", false);
+  if (!ExprSymbol)
+  {
+    std::cout << "Function not found\n";
+    return 1;
+  }
+
+  // Get the symbol's address and cast it to the right type (takes no
+  // arguments, returns a double) so we can call it as a native function.
+  uint32_t (*FP)() = (uint32_t(*)())(intptr_t)ExprSymbol.getAddress();
+  std::cout << "Evaluated to " << FP() << '\n';
+
+  CompileLayer.removeModuleSet(H);
 
   return 0;
 }

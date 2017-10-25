@@ -47,3 +47,6 @@ test2: test2.C
 
 test3: test3.C
 	clang++ -std=c++11 -DSLJIT_CONFIG_AUTO=1 -o test3 test3.C contrib/sljit_src/sljitLir.c
+
+test5: test5.C
+	clang++ test5.C `llvm-config --cxxflags --ldflags --system-libs --libs core orcjit native` -g -o test5
