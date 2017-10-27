@@ -1,40 +1,73 @@
 #include "SymbolicMathFunctionLLVMIR.h"
 
 #include "llvm/ADT/STLExtras.h"
-#include "llvm/ExecutionEngine/ExecutionEngine.h"
-#include "llvm/ExecutionEngine/Orc/JITSymbol.h"
+#include "llvm/ExecutionEngine/JITSymbol.h"
+#include "llvm/ExecutionEngine/Orc/IRCompileLayer.h"
+#include "llvm/ExecutionEngine/Orc/LambdaResolver.h"
 #include "llvm/ExecutionEngine/RTDyldMemoryManager.h"
 #include "llvm/ExecutionEngine/SectionMemoryManager.h"
-#include "llvm/ExecutionEngine/Orc/CompileUtils.h"
-#include "llvm/ExecutionEngine/Orc/LambdaResolver.h"
-// #include "llvm/ExecutionEngine/Orc/RTDyldObjectLinkingLayer.h"
-#include "llvm/ExecutionEngine/Orc/ObjectLinkingLayer.h"
-#include "llvm/IR/DataLayout.h"
 #include "llvm/IR/Mangler.h"
-#include "llvm/Support/Process.h"
 #include "llvm/Support/DynamicLibrary.h"
+#include "llvm/Support/Process.h"
 #include "llvm/Support/raw_ostream.h"
-#include "llvm/Target/TargetMachine.h"
 
 #include "llvm/IR/BasicBlock.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/Function.h"
+#include "llvm/IR/Instructions.h"
 #include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/LegacyPassManager.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Type.h"
+#include "llvm/IR/Verifier.h"
+#include "llvm/Support/TargetSelect.h"
+#include "llvm/Transforms/Scalar.h"
+#include "llvm/Transforms/Scalar/GVN.h"
 
 #include <algorithm>
+#include <iostream>
 #include <memory>
 #include <string>
 #include <vector>
-#include <iostream>
 
 #include "llvm/Support/TargetRegistry.h"
 
 namespace SymbolicMath
 {
+
+FunctionJITInitialization::FunctionJITInitialization()
+{
+  llvm::InitializeNativeTarget();
+  llvm::InitializeNativeTargetAsmPrinter();
+  llvm::InitializeNativeTargetAsmParser();
+  llvm::sys::DynamicLibrary::LoadLibraryPermanently(nullptr);
+}
+
+Function::Function(const Node & root)
+  : FunctionBase((initialize(), root)),
+    _llvm_target_machine(llvm::EngineBuilder().selectTarget()),
+    _llvm_data_layout(_llvm_target_machine->createDataLayout()),
+    _llvm_object_layer([]() { return std::make_shared<llvm::SectionMemoryManager>(); }),
+    _llvm_compile_layer(_llvm_object_layer, llvm::orc::SimpleCompiler(*_llvm_target_machine)),
+    _llvm_optimize_layer(_llvm_compile_layer, [this](std::shared_ptr<llvm::Module> M) {
+      return optimizeModule(std::move(M));
+    })
+{
+}
+
+Function::Function(const Function & F)
+  : FunctionBase(F._root),
+    _llvm_target_machine(llvm::EngineBuilder().selectTarget()),
+    _llvm_data_layout(_llvm_target_machine->createDataLayout()),
+    _llvm_object_layer([]() { return std::make_shared<llvm::SectionMemoryManager>(); }),
+    _llvm_compile_layer(_llvm_object_layer, llvm::orc::SimpleCompiler(*_llvm_target_machine)),
+    _llvm_optimize_layer(_llvm_compile_layer, [this](std::shared_ptr<llvm::Module> M) {
+      return optimizeModule(std::move(M));
+    })
+{
+}
 
 Function::~Function()
 {
@@ -47,47 +80,23 @@ Function::compile()
   if (_jit_code)
     return;
 
-  // move into singleton
-  LLVMInitializeNativeTarget();
-  LLVMInitializeNativeAsmPrinter();
-  LLVMInitializeNativeAsmParser();
-
-  std::unique_ptr<llvm::TargetMachine> TM(llvm::EngineBuilder().selectTarget());
-  auto DL = TM->createDataLayout();
-
-  // LLVM 5.0.0
-  // RTDyldObjectLinkingLayer ObjectLayer;
-  // LLVM 3.9.0
-  llvm::orc::ObjectLinkingLayer<> ObjectLayer;
-
-  // LLVM 5.0.0
-  // llvm::orc::IRCompileLayer<decltype(ObjectLayer), llvm::orc::SimpleCompiler> CompileLayer(
-  //     ObjectLayer, llvm::orc::SimpleCompiler(*TM));
-  // LLVM 3.9.0
-  llvm::orc::IRCompileLayer<decltype(ObjectLayer)> CompileLayer(ObjectLayer,
-                                                                llvm::orc::SimpleCompiler(*TM));
-
-  llvm::sys::DynamicLibrary::LoadLibraryPermanently(nullptr);
-
-  llvm::LLVMContext Context;
+  llvm::LLVMContext context;
 
   // Build Function and basic block
-  std::unique_ptr<llvm::Module> M = llvm::make_unique<llvm::Module>("function", Context);
-  llvm::Function * F = llvm::cast<llvm::Function>(
-      M->getOrInsertFunction("F", llvm::Type::getDoubleTy(Context), (llvm::Type *)0));
+  std::unique_ptr<llvm::Module> M = llvm::make_unique<llvm::Module>("function", context);
+  M->setDataLayout(_llvm_data_layout);
 
-  llvm::BasicBlock * BB = llvm::BasicBlock::Create(Context, "EntryBlock", F);
-  llvm::IRBuilder<> Builder(BB);
+  llvm::Function * F =
+      llvm::cast<llvm::Function>(M->getOrInsertFunction("F", llvm::Type::getDoubleTy(context)));
+
+  llvm::BasicBlock * BB = llvm::BasicBlock::Create(context, "EntryBlock", F);
+  llvm::IRBuilder<> builder(BB);
 
   // return result
-  Builder.CreateRet(_root.jit(Builder));
+  builder.CreateRet(_root.jit(builder));
 
   // print module (debug)
-  M->dump();
-
-  // JIT stuff
-  std::vector<std::unique_ptr<llvm::Module>> Ms;
-  Ms.push_back(std::move(M));
+  // M->print(llvm::errs(), nullptr);
 
   // Build our symbol resolver:
   // Lambda 1: Look back into the JIT itself to find symbols that are part of
@@ -95,41 +104,57 @@ Function::compile()
   // Lambda 2: Search for external symbols in the host process.
   auto Resolver = llvm::orc::createLambdaResolver(
       [&](const std::string & Name) {
-        if (auto Sym = CompileLayer.findSymbol(Name, false))
-          return Sym.toRuntimeDyldSymbol();
-        return llvm::RuntimeDyld::SymbolInfo(nullptr);
+        if (auto Sym = _llvm_optimize_layer.findSymbol(Name, false))
+          return Sym;
+        return llvm::JITSymbol(nullptr);
       },
       [](const std::string & Name) {
         if (auto SymAddr = llvm::RTDyldMemoryManager::getSymbolAddressInProcess(Name))
-          return llvm::RuntimeDyld::SymbolInfo(SymAddr, llvm::JITSymbolFlags::Exported);
-        return llvm::RuntimeDyld::SymbolInfo(nullptr);
+          return llvm::JITSymbol(SymAddr, llvm::JITSymbolFlags::Exported);
+        return llvm::JITSymbol(nullptr);
       });
 
   // Add the set to the JIT with the resolver we created above and a newly
   // created SectionMemoryManager.
-  auto _H = CompileLayer.addModuleSet(
-      std::move(Ms), llvm::make_unique<llvm::SectionMemoryManager>(), std::move(Resolver));
+  _module_handle =
+      llvm::cantFail(_llvm_optimize_layer.addModule(std::move(M), std::move(Resolver)));
 
-  auto ExprSymbol = CompileLayer.findSymbol("F", false);
+  std::string buf;
+  llvm::raw_string_ostream mangled(buf);
+  llvm::Mangler::getNameWithPrefix(mangled, "F", _llvm_data_layout);
+
+  // std::cout << mangled.str() << '\n';
+  auto ExprSymbol = _llvm_optimize_layer.findSymbol(mangled.str(), false);
   if (!ExprSymbol)
     fatalError("Function not found\n");
 
   // Get the symbol's address and cast it to the right type (takes no
   // arguments, returns a double) so we can call it as a native function.
-  _jit_code = reinterpret_cast<JITFunction>(ExprSymbol.getAddress());
+  _jit_code = reinterpret_cast<JITFunctionPtr>(llvm::cantFail(ExprSymbol.getAddress()));
+  // _jit_code = (double (*)())(intptr_t)(ExprSymbol.getAddress());
+
+  // std::cout << "EVALUATES to " << _jit_code() << '\n';
 }
 
-Real
-Function::value()
+std::shared_ptr<llvm::Module>
+Function::optimizeModule(std::shared_ptr<llvm::Module> M)
 {
-  if (_jit_code)
-  {
-    // if a JIT compiled version exists evaluate it
-    return _jit_code();
-  }
-  else
-    // otherwise recursively walk the expression tree (slow)
-    return _root.value();
+  // Create a function pass manager.
+  auto FPM = llvm::make_unique<llvm::legacy::FunctionPassManager>(M.get());
+
+  // Add some optimizations.
+  FPM->add(llvm::createInstructionCombiningPass());
+  FPM->add(llvm::createReassociatePass());
+  FPM->add(llvm::createGVNPass());
+  FPM->add(llvm::createCFGSimplificationPass());
+  FPM->doInitialization();
+
+  // Run the optimizations over all functions in the module being added to
+  // the JIT.
+  for (auto & F : *M)
+    FPM->run(F);
+
+  return M;
 }
 
 void
@@ -137,7 +162,7 @@ Function::invalidateJIT()
 {
   if (_jit_code)
   {
-    // CompileLayer.removeModuleSet(_H);
+    llvm::cantFail(_llvm_optimize_layer.removeModule(_module_handle));
     _jit_code = nullptr;
   }
 };

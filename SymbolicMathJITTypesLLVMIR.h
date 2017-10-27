@@ -9,6 +9,8 @@ namespace SymbolicMath
 
 const std::string jit_backend_name = "LLVMIR";
 
+typedef Real (*JITFunctionPtr)();
+
 using JITReturnValue = llvm::Value *;
 
 // basic block?!

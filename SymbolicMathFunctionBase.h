@@ -41,6 +41,9 @@ public:
   /// Evaluate the node (using JIT if available)
   virtual Real value();
 
+  /// Perform one time system initialization (must be called outside a threaded region!)
+  static void initialize() {}
+
 protected:
   /// invalidate the JIT compiled function
   virtual void invalidateJIT() = 0;

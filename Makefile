@@ -50,3 +50,6 @@ test3: test3.C
 
 test5: test5.C
 	clang++ test5.C `llvm-config --cxxflags --ldflags --system-libs --libs core orcjit native` -g -o test5
+
+test6: test6.C
+	clang++ test6.C `llvm-config --cxxflags --ldflags --system-libs --libs core orcjit native` -g -o test6
