@@ -17,6 +17,7 @@ class Token
 {
 public:
   Token(std::size_t pos) : _pos(pos) {}
+  virtual ~Token() {}
 
   virtual bool isInvalid() { return false; }
   virtual bool isOperator() { return false; }

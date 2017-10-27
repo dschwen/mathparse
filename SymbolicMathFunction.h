@@ -21,4 +21,8 @@
 #include "SymbolicMathFunctionCCode.h"
 #endif
 
+#ifdef SYMBOLICMATH_USE_LLVMIR
+#include "SymbolicMathFunctionLLVMIR.h"
+#endif
+
 #endif // SYMBOLICMATHFUNCTION_H
