@@ -25,18 +25,9 @@ public:
   /// Compile the expression tree for faster evaluation
   void compile() override;
 
-  /// Evaluate the node (using JIT if available) - Result is on the stack
-  Real value() override;
-
 protected:
   /// invalidate the JIT compiled function
   void invalidateJIT() override;
-
-  /// floating point stack
-  std::vector<double> _stack;
-
-  /// stack entry to return (this is not necessarily _stack[0] if local variables get defined)
-  std::size_t _final_stack_pos;
 };
 
 // end namespace SymbolicMath
