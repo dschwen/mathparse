@@ -17,4 +17,8 @@
 #include "SymbolicMathJITTypesLightning.h"
 #endif
 
+#ifdef SYMBOLICMATH_USE_CCODE
+#include "SymbolicMathJITTypesCCode.h"
+#endif
+
 #endif // SYMBOLICMATHJITTYPES_H
