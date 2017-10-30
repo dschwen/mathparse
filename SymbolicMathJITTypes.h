@@ -1,6 +1,10 @@
 #ifndef SYMBOLICMATHJITTYPES_H
 #define SYMBOLICMATHJITTYPES_H
 
+#ifdef SYMBOLICMATH_USE_GCCJIT
+#include "SymbolicMathJITTypesGCCJIT.h"
+#endif
+
 #ifdef SYMBOLICMATH_USE_SLJIT
 #include "SymbolicMathJITTypesSLJIT.h"
 #endif

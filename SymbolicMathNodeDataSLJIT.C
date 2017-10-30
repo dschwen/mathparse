@@ -554,10 +554,10 @@ BinaryFunctionData::jit(JITStateValue & state)
 
     case BinaryFunctionType::PLOG:
       fatalError("Function not implemented");
-    // return A < B
-    //            ? std::log(B) + (A - B) / B - (A - B) * (A - B) / (2.0 * B * B) +
-    //                  (A - B) * (A - B) * (A - B) / (3.0 * B * B * B)
-    //            : std::log(A);
+      // return A < B
+      //            ? std::log(B) + (A - B) / B - (A - B) * (A - B) / (2.0 * B * B) +
+      //                  (A - B) * (A - B) * (A - B) / (3.0 * B * B * B)
+      //            : std::log(A);
 
     case BinaryFunctionType::POW:
       sljit_emit_ijump(state.C, SLJIT_CALL2, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_pow));
