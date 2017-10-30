@@ -101,6 +101,12 @@ main(int argc, char * argv[])
 
     func.compile();
 
+    if (!func.isCompiled())
+    {
+      std::cerr << "Error compiling expression '" << test.expression << "' simplified to '" << func.format() << "'\n";
+      fail++;
+    }
+
     // evaluate for various values of c
     norm = 0.0;
     for (c = -1.0; c <= 1.0; c += 0.3)
