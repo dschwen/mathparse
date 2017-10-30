@@ -30,8 +30,15 @@ test: test.C $(OBJS)
 	$(CC) $(CONFIG) -c $(CFLAGS) $(CPPFLAGS) $*.c -o $@
 	$(CC) $(CONFIG) -MM $(CFLAGS) $(CPPFLAGS) $*.c > $*.d
 
+.PHONY: force clean
+.jit_backend: force
+	echo '$(JIT)' | cmp -s - $@ || echo '$(JIT)' > $@
+
+# force rebuild when compiling with a new JIT backend
+$(OBJS): .jit_backend
+
 clean:
-	rm -rf $(OBJS) *.o *.d mathparse performance
+	rm -rf $(OBJS) *.o *.d mathparse performance test2 test3
 
 tests: test2 test3
 
