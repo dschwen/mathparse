@@ -118,23 +118,71 @@ BinaryOperatorData::jit(JITStateValue & ctxt)
       op = GCC_JIT_BINARY_OP_LOGICAL_AND;
       break;
 
-      // case BinaryOperatorType::LESS_THAN:
-      //   return jit_insn_lt(func, A, B);
-      //
-      // case BinaryOperatorType::GREATER_THAN:
-      //   return jit_insn_gt(func, A, B);
-      //
-      // case BinaryOperatorType::LESS_EQUAL:
-      //   return jit_insn_le(func, A, B);
-      //
-      // case BinaryOperatorType::GREATER_EQUAL:
-      //   return jit_insn_ge(func, A, B);
-      //
-      // case BinaryOperatorType::EQUAL:
-      //   return jit_insn_eq(func, A, B);
-      //
-      // case BinaryOperatorType::NOT_EQUAL:
-      //   return jit_insn_ne(func, A, B);
+    case BinaryOperatorType::LESS_THAN:
+      return gcc_jit_context_new_cast(
+          ctxt,
+          nullptr,
+          gcc_jit_context_new_cast(
+              ctxt,
+              nullptr,
+              gcc_jit_context_new_comparison(ctxt, nullptr, GCC_JIT_COMPARISON_LT, A, B),
+              gcc_jit_context_get_type(ctxt, GCC_JIT_TYPE_INT)),
+          gcc_jit_context_get_type(ctxt, GCC_JIT_TYPE_DOUBLE));
+
+    case BinaryOperatorType::GREATER_THAN:
+      return gcc_jit_context_new_cast(
+          ctxt,
+          nullptr,
+          gcc_jit_context_new_cast(
+              ctxt,
+              nullptr,
+              gcc_jit_context_new_comparison(ctxt, nullptr, GCC_JIT_COMPARISON_GT, A, B),
+              gcc_jit_context_get_type(ctxt, GCC_JIT_TYPE_INT)),
+          gcc_jit_context_get_type(ctxt, GCC_JIT_TYPE_DOUBLE));
+
+    case BinaryOperatorType::LESS_EQUAL:
+      return gcc_jit_context_new_cast(
+          ctxt,
+          nullptr,
+          gcc_jit_context_new_cast(
+              ctxt,
+              nullptr,
+              gcc_jit_context_new_comparison(ctxt, nullptr, GCC_JIT_COMPARISON_LE, A, B),
+              gcc_jit_context_get_type(ctxt, GCC_JIT_TYPE_INT)),
+          gcc_jit_context_get_type(ctxt, GCC_JIT_TYPE_DOUBLE));
+
+    case BinaryOperatorType::GREATER_EQUAL:
+      return gcc_jit_context_new_cast(
+          ctxt,
+          nullptr,
+          gcc_jit_context_new_cast(
+              ctxt,
+              nullptr,
+              gcc_jit_context_new_comparison(ctxt, nullptr, GCC_JIT_COMPARISON_GE, A, B),
+              gcc_jit_context_get_type(ctxt, GCC_JIT_TYPE_INT)),
+          gcc_jit_context_get_type(ctxt, GCC_JIT_TYPE_DOUBLE));
+
+    case BinaryOperatorType::EQUAL:
+      return gcc_jit_context_new_cast(
+          ctxt,
+          nullptr,
+          gcc_jit_context_new_cast(
+              ctxt,
+              nullptr,
+              gcc_jit_context_new_comparison(ctxt, nullptr, GCC_JIT_COMPARISON_EQ, A, B),
+              gcc_jit_context_get_type(ctxt, GCC_JIT_TYPE_INT)),
+          gcc_jit_context_get_type(ctxt, GCC_JIT_TYPE_DOUBLE));
+
+    case BinaryOperatorType::NOT_EQUAL:
+      return gcc_jit_context_new_cast(
+          ctxt,
+          nullptr,
+          gcc_jit_context_new_cast(
+              ctxt,
+              nullptr,
+              gcc_jit_context_new_comparison(ctxt, nullptr, GCC_JIT_COMPARISON_NE, A, B),
+              gcc_jit_context_get_type(ctxt, GCC_JIT_TYPE_INT)),
+          gcc_jit_context_get_type(ctxt, GCC_JIT_TYPE_DOUBLE));
 
     default:
       fatalError("Unknown operator");

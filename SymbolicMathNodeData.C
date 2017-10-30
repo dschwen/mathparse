@@ -39,7 +39,7 @@ RealReferenceData::D(const ValueProvider & vp)
   auto rrd = dynamic_cast<const RealReferenceData *>(&vp);
 
   std::cout << "d(" << format() << ")/d(" << vp.format()
-            << ") = " << ((rrd && &(rrd->_ref) == &_ref) ? 1 : 0) << "\n";
+            << ") = " << ((rrd && &(rrd->_ref) == &_ref) ? 1 : 0) << "   (" << rrd << ")\n";
 
   // check if the references refer to identical memory locations
   return (rrd && &(rrd->_ref) == &_ref) ? Node(1.0) : Node(0.0);

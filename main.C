@@ -61,7 +61,7 @@ main(int argc, char * argv[])
   deriv.compile();
 
   // evaluate for various values of c
-  for (c = -1.0; c <= 1.0; c += 0.04)
+  for (c = -1.0; c <= 1.0; c += 0.3)
     std::cout << deriv.value() << ' ';
   std::cout << '\n';
 
