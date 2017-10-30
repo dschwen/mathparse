@@ -35,9 +35,9 @@ script:
   - cd $TRAVIS_BUILD_DIR
   - export LD_LIBRARY_PATH=$TRAVIS_BUILD_DIR/install/lib:$LD_LIBRARY_PATH
   - export LIBRARY_PATH=$TRAVIS_BUILD_DIR/install/lib:$LIBRARY_PATH
-  - make clean && make test JIT=sljit
+  - make test JIT=sljit
   - ./test
-  - make clean && make test JIT=lightning LDFLAGS="-L$TRAVIS_BUILD_DIR/install/lib -llightning" CPPFLAGS=-I$TRAVIS_BUILD_DIR/install/include
+  - make test JIT=lightning LDFLAGS="-L$TRAVIS_BUILD_DIR/install/lib -llightning" CPPFLAGS=-I$TRAVIS_BUILD_DIR/install/include
   - ./test
-  - make clean && make test JIT=libjit LDFLAGS="-L$TRAVIS_BUILD_DIR/install/lib -ljit" CPPFLAGS=-I$TRAVIS_BUILD_DIR/install/include
+  - make test JIT=libjit LDFLAGS="-L$TRAVIS_BUILD_DIR/install/lib -ljit" CPPFLAGS=-I$TRAVIS_BUILD_DIR/install/include
   - ./test
