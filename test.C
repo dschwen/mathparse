@@ -68,6 +68,8 @@ const std::vector<Test> tests = {
   {"c<0.2 | 2.0", [](double c) { return c<0.2 || static_cast<bool>(2.0); }},
   {"c<0.2 & 0.0", [](double c) { return c<0.2 && static_cast<bool>(0.0); }},
   {"c<0.2 | 0.0", [](double c) { return c<0.2 || static_cast<bool>(0.0); }},
+  // conditional (if)
+  {"if(c<0.15, 10, 20)", [](double c) { return c < 0.15 ? 10 : 20; }},
   // nested if
   {"if(c<-0.5, 10, if(c>0.2, 20, 30))", [](double c) { return c <= -0.5 ? 10 : (c > 0.2 ? 20 : 30); }},
 };
