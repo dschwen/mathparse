@@ -15,6 +15,7 @@ addons:
       - gcc-5
       - libgccjit-5-dev
       - texinfo
+      - gdb
 
 install:
   - export CXX="g++-5" CC="gcc-5"
@@ -34,13 +35,20 @@ before_script:
   - cd libjit && ./bootstrap && ./configure --prefix=$TRAVIS_BUILD_DIR/install
   - make && make install
   - cd $TRAVIS_BUILD_DIR
+  # enable core dumps
+  - ulimit -c unlimited -S
 
 script:
-  - make test JIT=sljit
+  - make test JIT=sljit CXXFLAGS='-g -O0'
   - ./test
-  - make test JIT=lightning LDFLAGS="-L$TRAVIS_BUILD_DIR/install/lib -llightning" CPPFLAGS=-I$TRAVIS_BUILD_DIR/install/include
+  - make test JIT=lightning CXXFLAGS='-g -O0' LDFLAGS="-L$TRAVIS_BUILD_DIR/install/lib -llightning" CPPFLAGS=-I$TRAVIS_BUILD_DIR/install/include
   - ./test
-  - make test JIT=libjit LDFLAGS="-L$TRAVIS_BUILD_DIR/install/lib -ljit" CPPFLAGS=-I$TRAVIS_BUILD_DIR/install/include
+  - make test JIT=libjit CXXFLAGS='-g -O0' LDFLAGS="-L$TRAVIS_BUILD_DIR/install/lib -ljit" CPPFLAGS=-I$TRAVIS_BUILD_DIR/install/include
   - ./test
-  - make test JIT=gccjit
+  - make test JIT=gccjit CXXFLAGS='-g -O0'
   - ./test
+
+after_failure:
+  - COREFILE=$(find . -maxdepth 1 -name "core*" | head -n 1) # find core file
+  - if [[ -f "$COREFILE" ]]; then gdb -c "$COREFILE" example -ex "thread apply all bt" -ex "set pagination 0" -batch; fi
+  - rm $COREFILE
