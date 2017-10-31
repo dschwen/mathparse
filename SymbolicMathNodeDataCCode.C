@@ -16,7 +16,7 @@ namespace SymbolicMath
 JITReturnValue
 RealNumberData::jit(JITStateValue & func)
 {
-  return std::to_string(_value);
+  return stringify(_value);
 }
 
 /********************************************************
@@ -84,10 +84,10 @@ BinaryOperatorData::jit(JITStateValue & func)
       return "std::pow(" + A + ", " + B + ")";
 
     case BinaryOperatorType::LOGICAL_OR:
-      return "static_cast<double>((" + A + ") || (" + B + "))";
+      return "static_cast<double>(bool(" + A + ") || bool(" + B + "))";
 
     case BinaryOperatorType::LOGICAL_AND:
-      return "static_cast<double>((" + A + ") && (" + B + "))";
+      return "static_cast<double>(bool(" + A + ") && bool(" + B + "))";
 
     case BinaryOperatorType::LESS_THAN:
       return "static_cast<double>((" + A + ") < (" + B + "))";
@@ -324,7 +324,7 @@ JITReturnValue
 IntegerPowerData::jit(JITStateValue & func)
 {
   // teplace this with a template
-  return "std::pow(" + _arg.jit(func) + ", " + std::to_string(_exponent) + ")";
+  return "std::pow(" + _arg.jit(func) + ", " + stringify(_exponent) + ")";
 }
 
 // end namespace SymbolicMath
