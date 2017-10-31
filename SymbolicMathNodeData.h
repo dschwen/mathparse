@@ -27,25 +27,25 @@ public:
   virtual Real value() = 0;
   virtual JITReturnValue jit(JITStateValue & state) = 0;
 
-  virtual std::string format() = 0;
-  virtual std::string formatTree(std::string indent) = 0;
+  virtual std::string format() const = 0;
+  virtual std::string formatTree(std::string indent) const = 0;
 
   virtual NodeDataPtr clone() = 0;
 
   virtual Node getArg(unsigned int i) = 0;
   virtual std::size_t size() { return 0; }
 
-  virtual bool is(Real) { return false; };
-  virtual bool is(NumberType) { return false; };
-  virtual bool is(UnaryOperatorType) { return false; };
-  virtual bool is(BinaryOperatorType) { return false; };
-  virtual bool is(MultinaryOperatorType) { return false; };
-  virtual bool is(UnaryFunctionType) { return false; };
-  virtual bool is(BinaryFunctionType) { return false; };
-  virtual bool is(ConditionalType) { return false; };
-  virtual bool is(IntegerPowerType) { return false; };
+  virtual bool is(Real) const { return false; };
+  virtual bool is(NumberType) const { return false; };
+  virtual bool is(UnaryOperatorType) const { return false; };
+  virtual bool is(BinaryOperatorType) const { return false; };
+  virtual bool is(MultinaryOperatorType) const { return false; };
+  virtual bool is(UnaryFunctionType) const { return false; };
+  virtual bool is(BinaryFunctionType) const { return false; };
+  virtual bool is(ConditionalType) const { return false; };
+  virtual bool is(IntegerPowerType) const { return false; };
 
-  virtual bool isValid() { return true; };
+  virtual bool isValid() const { return true; };
 
   // virtual Shape shape() = 0;
   virtual Shape shape() { return {1}; };
@@ -55,7 +55,7 @@ public:
   virtual Node simplify() { return Node(); };
   virtual Node D(const ValueProvider & vp) = 0;
 
-  virtual unsigned short precedence() { return 0; }
+  virtual unsigned short precedence() const { return 0; }
 
   /// amount of net stack pointer movement of this operator
   virtual void stackDepth(std::pair<int, int> & current_max);
@@ -71,13 +71,13 @@ public:
 class EmptyData : public NodeData
 {
 public:
-  bool isValid() override { return false; };
+  bool isValid() const override { return false; };
 
   Real value() override { fatalError("invalid node"); };
   JITReturnValue jit(JITStateValue & state) override { fatalError("invalid node"); };
 
-  std::string format() override { fatalError("invalid node"); };
-  std::string formatTree(std::string indent) override { fatalError("invalid node"); };
+  std::string format() const override { fatalError("invalid node"); };
+  std::string formatTree(std::string indent) const override { fatalError("invalid node"); };
   NodeDataPtr clone() override { fatalError("invalid node"); };
   Node getArg(unsigned int i) override { fatalError("invalid node"); }
   Node D(const ValueProvider & vp) override { fatalError("invalid node"); }
@@ -98,7 +98,7 @@ public:
   Node getArg(unsigned int i) override { return _args[i]; };
   std::size_t size() override { return N; }
 
-  bool is(Enum type) override { return _type == type || type == Enum::_ANY; }
+  bool is(Enum type) const override { return _type == type || type == Enum::_ANY; }
   void stackDepth(std::pair<int, int> & current_max) override
   {
     for (auto & arg : _args)
@@ -123,7 +123,7 @@ public:
   Node getArg(unsigned int i) override { return _args[i]; };
   std::size_t size() override { return _args.size(); }
 
-  bool is(Enum type) override { return _type == type || type == Enum::_ANY; }
+  bool is(Enum type) const override { return _type == type || type == Enum::_ANY; }
   void stackDepth(std::pair<int, int> & current_max) override
   {
     for (auto & arg : _args)
@@ -145,8 +145,8 @@ public:
   ValueProvider(const std::string & name) : _name(name) {}
   Node getArg(unsigned int i) override { fatalError("Node has no arguments"); };
 
-  std::string format() override { return _name != "" ? _name : "{V}"; }
-  std::string formatTree(std::string indent) override;
+  std::string format() const override { return _name != "" ? _name : "{V}"; }
+  std::string formatTree(std::string indent) const override;
 
   void stackDepth(std::pair<int, int> & current_max) override { current_max.first++; }
 
@@ -252,13 +252,13 @@ public:
   Real value() override { return _value; };
   JITReturnValue jit(JITStateValue & state) override;
 
-  std::string format() override { return stringify(_value); };
-  std::string formatTree(std::string indent) override;
+  std::string format() const override { return stringify(_value); };
+  std::string formatTree(std::string indent) const override;
 
   NodeDataPtr clone() override { return std::make_shared<RealNumberData>(_value); };
 
-  bool is(NumberType type) override;
-  bool is(Real value) override { return value == _value; };
+  bool is(NumberType type) const override;
+  bool is(Real value) const override { return value == _value; };
 
   void setValue(Real value) { _value = value; }
 
@@ -277,15 +277,15 @@ public:
   Real value() override;
   JITReturnValue jit(JITStateValue & state) override;
 
-  std::string format() override;
-  std::string formatTree(std::string indent) override;
+  std::string format() const override;
+  std::string formatTree(std::string indent) const override;
 
   NodeDataPtr clone() override;
 
   Node simplify() override;
   Node D(const ValueProvider &) override;
 
-  unsigned short precedence() override { return 3; }
+  unsigned short precedence() const override { return 3; }
 };
 
 /**
@@ -299,15 +299,15 @@ public:
   Real value() override;
   JITReturnValue jit(JITStateValue & state) override;
 
-  std::string format() override;
-  std::string formatTree(std::string indent) override;
+  std::string format() const override;
+  std::string formatTree(std::string indent) const override;
 
   NodeDataPtr clone() override;
 
   Node simplify() override;
   Node D(const ValueProvider &) override;
 
-  unsigned short precedence() override;
+  unsigned short precedence() const override;
 };
 
 /**
@@ -321,15 +321,15 @@ public:
   Real value() override;
   JITReturnValue jit(JITStateValue & state) override;
 
-  std::string format() override;
-  std::string formatTree(std::string indent) override;
+  std::string format() const override;
+  std::string formatTree(std::string indent) const override;
 
   NodeDataPtr clone() override;
 
   Node simplify() override;
   Node D(const ValueProvider & vp) override;
 
-  unsigned short precedence() override;
+  unsigned short precedence() const override;
 
 private:
   void simplifyHelper(std::vector<Node> & new_args, Node arg);
@@ -346,15 +346,15 @@ public:
   Real value() override;
   JITReturnValue jit(JITStateValue & state) override;
 
-  std::string format() override;
-  std::string formatTree(std::string indent) override;
+  std::string format() const override;
+  std::string formatTree(std::string indent) const override;
 
   NodeDataPtr clone() override;
 
   Node simplify() override;
   Node D(const ValueProvider &) override;
 
-  unsigned short precedence() override { return 3; }
+  unsigned short precedence() const override { return 3; }
 };
 
 /**
@@ -368,8 +368,8 @@ public:
   Real value() override;
   JITReturnValue jit(JITStateValue & state) override;
 
-  std::string format() override;
-  std::string formatTree(std::string indent) override;
+  std::string format() const override;
+  std::string formatTree(std::string indent) const override;
 
   NodeDataPtr clone() override;
 
@@ -389,8 +389,8 @@ public:
   Real value() override;
   JITReturnValue jit(JITStateValue & state) override;
 
-  std::string format() override;
-  std::string formatTree(std::string indent) override;
+  std::string format() const override;
+  std::string formatTree(std::string indent) const override;
 
   NodeDataPtr clone() override;
 
@@ -411,15 +411,15 @@ public:
   Real value() override { return std::pow(_arg.value(), Real(_exponent)); };
   JITReturnValue jit(JITStateValue & state) override;
 
-  std::string format() override;
-  std::string formatTree(std::string indent) override;
+  std::string format() const override;
+  std::string formatTree(std::string indent) const override;
 
   NodeDataPtr clone() override { return std::make_shared<IntegerPowerData>(_arg, _exponent); };
 
   Node getArg(unsigned int i) override;
   std::size_t size() override { return 1; }
 
-  bool is(IntegerPowerType) override { return true; };
+  bool is(IntegerPowerType) const override { return true; };
 
   Node simplify() override;
   Node D(const ValueProvider &) override;

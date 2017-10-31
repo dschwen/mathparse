@@ -14,7 +14,7 @@ NodeData::stackDepth(std::pair<int, int> & current_max)
 }
 
 std::string
-ValueProvider::formatTree(std::string indent)
+ValueProvider::formatTree(std::string indent) const
 {
   return indent + (_name != "" ? _name : "{V}") + '\n';
 }
@@ -38,7 +38,10 @@ RealReferenceData::D(const ValueProvider & vp)
 {
   auto rrd = dynamic_cast<const RealReferenceData *>(&vp);
 
-  // check if the reference refer to identical memory locations
+  std::cout << "d(" << format() << ")/d(" << vp.format()
+            << ") = " << ((rrd && &(rrd->_ref) == &_ref) ? 1 : 0) << "   (" << rrd << ")\n";
+
+  // check if the references refer to identical memory locations
   return (rrd && &(rrd->_ref) == &_ref) ? Node(1.0) : Node(0.0);
 }
 
@@ -61,13 +64,13 @@ RealArrayReferenceData::D(const ValueProvider & vp)
  ********************************************************/
 
 std::string
-RealNumberData::formatTree(std::string indent)
+RealNumberData::formatTree(std::string indent) const
 {
   return indent + stringify(_value) + '\n';
 }
 
 bool
-RealNumberData::is(NumberType type)
+RealNumberData::is(NumberType type) const
 {
   return _type == NumberType::REAL || _type == NumberType::_ANY;
 }
@@ -93,7 +96,7 @@ UnaryOperatorData::value()
 }
 
 std::string
-UnaryOperatorData::format()
+UnaryOperatorData::format() const
 {
   std::string form = stringify(_type);
 
@@ -104,7 +107,7 @@ UnaryOperatorData::format()
 }
 
 std::string
-UnaryOperatorData::formatTree(std::string indent)
+UnaryOperatorData::formatTree(std::string indent) const
 {
   return indent + '{' + stringify(_type) + "}\n" + _args[0].formatTree(indent + "  ");
 }
@@ -196,7 +199,7 @@ BinaryOperatorData::value()
 }
 
 std::string
-BinaryOperatorData::format()
+BinaryOperatorData::format() const
 {
   std::string out;
 
@@ -219,7 +222,7 @@ BinaryOperatorData::format()
 }
 
 std::string
-BinaryOperatorData::formatTree(std::string indent)
+BinaryOperatorData::formatTree(std::string indent) const
 {
   return indent + '{' + stringify(_type) + "}\n" + _args[0].formatTree(indent + "  ") +
          _args[1].formatTree(indent + "  ");
@@ -272,40 +275,40 @@ BinaryOperatorData::simplify()
       return pfunc;
     }
 
-    // for this to be an optimization we'll need to make those operators multinary and only replace
-    // size>2 instances
-    //
-    // case BinaryOperatorType::LOGICAL_OR:
-    //   if (_args[0].is(NumberType::_ANY))
-    //   {
-    //     if (_args[0].value() != 0)
-    //       return Node(1.0);
-    //     else
-    //       return _args[1] != Node(0.0);
-    //   }
-    //   else if (_args[1].is(NumberType::_ANY))
-    //   {
-    //     if (_args[1].value() != 0)
-    //       return Node(1.0);
-    //     else
-    //       return _args[0] != Node(0.0);
-    //   }
-    //
-    // case BinaryOperatorType::LOGICAL_AND:
-    //   if (_args[0].is(NumberType::_ANY))
-    //   {
-    //     if (_args[0].value() != 0)
-    //       return _args[1] != Node(0.0);
-    //     else
-    //       return Node(0.0);
-    //   }
-    //   else if (_args[1].is(NumberType::_ANY))
-    //   {
-    //     if (_args[1].value() != 0)
-    //       return _args[0] != Node(0.0);
-    //     else
-    //       return Node(0.0);
-    //   }
+      // for this to be an optimization we'll need to make those operators multinary and only
+      // replace size>2 instances
+      //
+      // case BinaryOperatorType::LOGICAL_OR:
+      //   if (_args[0].is(NumberType::_ANY))
+      //   {
+      //     if (_args[0].value() != 0)
+      //       return Node(1.0);
+      //     else
+      //       return _args[1] != Node(0.0);
+      //   }
+      //   else if (_args[1].is(NumberType::_ANY))
+      //   {
+      //     if (_args[1].value() != 0)
+      //       return Node(1.0);
+      //     else
+      //       return _args[0] != Node(0.0);
+      //   }
+      //
+      // case BinaryOperatorType::LOGICAL_AND:
+      //   if (_args[0].is(NumberType::_ANY))
+      //   {
+      //     if (_args[0].value() != 0)
+      //       return _args[1] != Node(0.0);
+      //     else
+      //       return Node(0.0);
+      //   }
+      //   else if (_args[1].is(NumberType::_ANY))
+      //   {
+      //     if (_args[1].value() != 0)
+      //       return _args[0] != Node(0.0);
+      //     else
+      //       return Node(0.0);
+      //   }
 
     default:
       return Node();
@@ -353,7 +356,7 @@ BinaryOperatorData::D(const ValueProvider & vp)
 }
 
 unsigned short
-BinaryOperatorData::precedence()
+BinaryOperatorData::precedence() const
 {
   auto it = _binary_operators.find(_type);
   if (it == _binary_operators.end())
@@ -393,7 +396,7 @@ MultinaryOperatorData::value()
 }
 
 std::string
-MultinaryOperatorData::format()
+MultinaryOperatorData::format() const
 {
   const auto form = stringify(_type);
   std::string out;
@@ -413,7 +416,7 @@ MultinaryOperatorData::format()
 }
 
 std::string
-MultinaryOperatorData::formatTree(std::string indent)
+MultinaryOperatorData::formatTree(std::string indent) const
 {
   std::string out = indent + '{' + stringify(_type) + "}\n";
   for (auto & arg : _args)
@@ -539,7 +542,7 @@ MultinaryOperatorData::D(const ValueProvider & vp)
 }
 
 unsigned short
-MultinaryOperatorData::precedence()
+MultinaryOperatorData::precedence() const
 {
   switch (_type)
   {
@@ -655,13 +658,13 @@ UnaryFunctionData::value()
 }
 
 std::string
-UnaryFunctionData::format()
+UnaryFunctionData::format() const
 {
   return stringify(_type) + "(" + _args[0].format() + ")";
 }
 
 std::string
-UnaryFunctionData::formatTree(std::string indent)
+UnaryFunctionData::formatTree(std::string indent) const
 {
   return indent + stringify(_type) + '\n' + _args[0].formatTree(indent + "  ");
 }
@@ -698,14 +701,16 @@ UnaryFunctionData::D(const ValueProvider & vp)
       return dA * A / Node(_type, A);
 
     case UnaryFunctionType::ACOS:
-      return -dA * A / Node(BinaryOperatorType::POWER,
-                            Node(1.0) - Node(IntegerPowerType::_ANY, A, 2),
-                            Node(0.5));
+      return -dA * A /
+             Node(BinaryOperatorType::POWER,
+                  Node(1.0) - Node(IntegerPowerType::_ANY, A, 2),
+                  Node(0.5));
 
     case UnaryFunctionType::ASIN:
-      return dA * A / Node(BinaryOperatorType::POWER,
-                           Node(1.0) - Node(IntegerPowerType::_ANY, A, 2),
-                           Node(0.5));
+      return dA * A /
+             Node(BinaryOperatorType::POWER,
+                  Node(1.0) - Node(IntegerPowerType::_ANY, A, 2),
+                  Node(0.5));
 
     case UnaryFunctionType::ATAN:
       return dA / (A * A + Node(1.0));
@@ -779,10 +784,9 @@ BinaryFunctionData::value()
       return std::max(A, B);
 
     case BinaryFunctionType::PLOG:
-      return A < B
-                 ? std::log(B) + (A - B) / B - (A - B) * (A - B) / (2.0 * B * B) +
-                       (A - B) * (A - B) * (A - B) / (3.0 * B * B * B)
-                 : std::log(A);
+      return A < B ? std::log(B) + (A - B) / B - (A - B) * (A - B) / (2.0 * B * B) +
+                         (A - B) * (A - B) * (A - B) / (3.0 * B * B * B)
+                   : std::log(A);
 
     case BinaryFunctionType::POW:
       return std::pow(A, B);
@@ -794,13 +798,13 @@ BinaryFunctionData::value()
 }
 
 std::string
-BinaryFunctionData::format()
+BinaryFunctionData::format() const
 {
   return stringify(_type) + "(" + _args[0].format() + ", " + _args[1].format() + ")";
 }
 
 std::string
-BinaryFunctionData::formatTree(std::string indent)
+BinaryFunctionData::formatTree(std::string indent) const
 {
   return indent + stringify(_type) + '\n' + _args[0].formatTree(indent + "  ") +
          _args[1].formatTree(indent + "  ");
@@ -922,14 +926,14 @@ ConditionalData::value()
 }
 
 std::string
-ConditionalData::format()
+ConditionalData::format() const
 {
   return stringify(_type) + "(" + _args[0].format() + ", " + _args[1].format() + ", " +
          _args[2].format() + ")";
 }
 
 std::string
-ConditionalData::formatTree(std::string indent)
+ConditionalData::formatTree(std::string indent) const
 {
   return indent + stringify(_type) + '\n' + _args[0].formatTree(indent + "  ") + indent + "do\n" +
          _args[1].formatTree(indent + "  ") + indent + "otherwise\n" +
@@ -1000,13 +1004,13 @@ ConditionalData::stackDepth(std::pair<int, int> & current_max)
  ********************************************************/
 
 std::string
-IntegerPowerData::format()
+IntegerPowerData::format() const
 {
   return "ipow(" + _arg.format() + ", " + std::to_string(_exponent) + ")";
 }
 
 std::string
-IntegerPowerData::formatTree(std::string indent)
+IntegerPowerData::formatTree(std::string indent) const
 {
   return indent + "ipow" + _arg.formatTree(indent + "  ") + indent + std::to_string(_exponent) +
          '\n';

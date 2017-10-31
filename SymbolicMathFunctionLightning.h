@@ -28,6 +28,9 @@ public:
   /// Compile the expression tree for faster evaluation
   void compile();
 
+  /// check if the Function was successfully compiled
+  bool isCompiled() { return _jit_code; }
+
   /// Evaluate the node (using JIT if available)
   Real value();
 

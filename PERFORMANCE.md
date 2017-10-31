@@ -3,6 +3,10 @@ Using an Iron Chromium free energy.
 
 # SymbolicMath `performance.C`
 
+## with backend GCCJIT
+-2.36237e+08
+Elapsed time: 3.60245 s
+
 ## with backend LibJIT
 -2.36237e+08
 Elapsed time: 7.47796 s

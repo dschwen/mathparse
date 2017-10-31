@@ -1,8 +1,8 @@
-#ifndef SYMBOLICMATHFUNCTIONLIBJIT_H
-#define SYMBOLICMATHFUNCTIONLIBJIT_H
+#ifndef SYMBOLICMATHFUNCTIONGCCJIT_H
+#define SYMBOLICMATHFUNCTIONGCCJIT_H
 
 #include "SymbolicMathFunctionBase.h"
-#include "SymbolicMathJITTypesLibJIT.h"
+#include "SymbolicMathJITTypesGCCJIT.h"
 
 namespace SymbolicMath
 {
@@ -40,7 +40,10 @@ protected:
   void invalidateJIT() override {}
 
   /// JIT compilation context
-  jit_context_t _jit_context;
+  gcc_jit_context * _jit_context;
+
+  /// JIT compilation object data
+  gcc_jit_result * _jit_result;
 
   /// JIT compiled function object
   JITFunctionPtr _jit_closure;
@@ -49,4 +52,4 @@ protected:
 // end namespace SymbolicMath
 }
 
-#endif // SYMBOLICMATHFUNCTIONLIBJIT_H
+#endif // SYMBOLICMATHFUNCTIONGCCJIT_H

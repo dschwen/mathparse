@@ -13,10 +13,13 @@ addons:
     packages:
       - g++-5
       - gcc-5
+      - libgccjit-5-dev
       - texinfo
 
 install:
   - export CXX="g++-5" CC="gcc-5"
+  - export LIBRARY_PATH=$LIBRARY_PATH:/usr/lib/gcc/x86_64-linux-gnu/5 #:$TRAVIS_BUILD_DIR/install/lib
+  - export LD_LIBRARY_PATH=$TRAVIS_BUILD_DIR/install/lib:$LD_LIBRARY_PATH
 
 before_script:
   # Build GNU Lightning
@@ -30,14 +33,14 @@ before_script:
   - git clone --depth=1 https://git.savannah.gnu.org/git/libjit.git
   - cd libjit && ./bootstrap && ./configure --prefix=$TRAVIS_BUILD_DIR/install
   - make && make install
+  - cd $TRAVIS_BUILD_DIR
 
 script:
-  - cd $TRAVIS_BUILD_DIR
-  - export LD_LIBRARY_PATH=$TRAVIS_BUILD_DIR/install/lib:$LD_LIBRARY_PATH
-  - export LIBRARY_PATH=$TRAVIS_BUILD_DIR/install/lib:$LIBRARY_PATH
   - make test JIT=sljit
   - ./test
   - make test JIT=lightning LDFLAGS="-L$TRAVIS_BUILD_DIR/install/lib -llightning" CPPFLAGS=-I$TRAVIS_BUILD_DIR/install/include
   - ./test
   - make test JIT=libjit LDFLAGS="-L$TRAVIS_BUILD_DIR/install/lib -ljit" CPPFLAGS=-I$TRAVIS_BUILD_DIR/install/include
+  - ./test
+  - make test JIT=gccjit
   - ./test

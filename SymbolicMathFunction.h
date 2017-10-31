@@ -1,6 +1,10 @@
 #ifndef SYMBOLICMATHFUNCTION_H
 #define SYMBOLICMATHFUNCTION_H
 
+#ifdef SYMBOLICMATH_USE_GCCJIT
+#include "SymbolicMathFunctionGCCJIT.h"
+#endif
+
 #ifdef SYMBOLICMATH_USE_SLJIT
 #include "SymbolicMathFunctionSLJIT.h"
 #endif
