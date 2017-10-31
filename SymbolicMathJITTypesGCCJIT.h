@@ -10,7 +10,12 @@ const std::string jit_backend_name = "GCCJIT";
 
 using JITReturnValue = gcc_jit_rvalue *;
 
-using JITStateValue = gcc_jit_context *;
+struct JITStateValue
+{
+  gcc_jit_context * ctxt;
+  gcc_jit_function * func;
+  gcc_jit_block * block;
+};
 
 // end namespace SymbolicMath
 }

@@ -18,7 +18,7 @@ class Function : public FunctionBase
 {
 public:
   /// Construct form given node
-  Function(const Node & root) : FunctionBase(root), _jit_context(nullptr), _jit_closure(nullptr) {}
+  Function(const Node & root) : FunctionBase(root), _jit_closure(nullptr) { _state.ctxt = nullptr; }
 
   /// tear down function (release JIT context)
   ~Function();
@@ -39,8 +39,8 @@ protected:
   /// invalidate the JIT compiled function
   void invalidateJIT() override {}
 
-  /// JIT compilation context
-  gcc_jit_context * _jit_context;
+  /// JIT compilation context data
+  JITStateValue _state;
 
   /// JIT compilation object data
   gcc_jit_result * _jit_result;

@@ -26,10 +26,10 @@ gccjit_wrap_max(double a, double b)
  ********************************************************/
 
 JITReturnValue
-RealNumberData::jit(JITStateValue & ctxt)
+RealNumberData::jit(JITStateValue & state)
 {
   return gcc_jit_context_new_rvalue_from_double(
-      ctxt, gcc_jit_context_get_type(ctxt, GCC_JIT_TYPE_DOUBLE), (double)_value);
+      state.ctxt, gcc_jit_context_get_type(state.ctxt, GCC_JIT_TYPE_DOUBLE), (double)_value);
 }
 
 /********************************************************
@@ -37,11 +37,11 @@ RealNumberData::jit(JITStateValue & ctxt)
  ********************************************************/
 
 JITReturnValue
-RealReferenceData::jit(JITStateValue & ctxt)
+RealReferenceData::jit(JITStateValue & state)
 {
   gcc_jit_rvalue * ptr = gcc_jit_context_new_rvalue_from_ptr(
-      ctxt,
-      gcc_jit_type_get_pointer(gcc_jit_context_get_type(ctxt, GCC_JIT_TYPE_DOUBLE)),
+      state.ctxt,
+      gcc_jit_type_get_pointer(gcc_jit_context_get_type(state.ctxt, GCC_JIT_TYPE_DOUBLE)),
       reinterpret_cast<void *>(const_cast<double *>(&_ref)));
   return gcc_jit_lvalue_as_rvalue(gcc_jit_rvalue_dereference(ptr, nullptr));
 }
@@ -51,7 +51,7 @@ RealReferenceData::jit(JITStateValue & ctxt)
  ********************************************************/
 
 JITReturnValue
-RealArrayReferenceData::jit(JITStateValue & ctxt)
+RealArrayReferenceData::jit(JITStateValue & state)
 {
   fatalError("Not implemented yet");
 }
@@ -61,19 +61,19 @@ RealArrayReferenceData::jit(JITStateValue & ctxt)
  ********************************************************/
 
 JITReturnValue
-UnaryOperatorData::jit(JITStateValue & ctxt)
+UnaryOperatorData::jit(JITStateValue & state)
 {
   switch (_type)
   {
     case UnaryOperatorType::PLUS:
-      return _args[0].jit(ctxt);
+      return _args[0].jit(state);
 
     case UnaryOperatorType::MINUS:
-      return gcc_jit_context_new_unary_op(ctxt,
+      return gcc_jit_context_new_unary_op(state.ctxt,
                                           nullptr,
                                           GCC_JIT_UNARY_OP_MINUS,
-                                          gcc_jit_context_get_type(ctxt, GCC_JIT_TYPE_DOUBLE),
-                                          _args[0].jit(ctxt));
+                                          gcc_jit_context_get_type(state.ctxt, GCC_JIT_TYPE_DOUBLE),
+                                          _args[0].jit(state));
 
     default:
       fatalError("Unknown operator");
@@ -85,10 +85,10 @@ UnaryOperatorData::jit(JITStateValue & ctxt)
  ********************************************************/
 
 JITReturnValue
-BinaryOperatorData::jit(JITStateValue & ctxt)
+BinaryOperatorData::jit(JITStateValue & state)
 {
-  auto A = _args[0].jit(ctxt);
-  auto B = _args[1].jit(ctxt);
+  auto A = _args[0].jit(state);
+  auto B = _args[1].jit(state);
 
   enum gcc_jit_binary_op op;
 
@@ -120,76 +120,76 @@ BinaryOperatorData::jit(JITStateValue & ctxt)
 
     case BinaryOperatorType::LESS_THAN:
       return gcc_jit_context_new_cast(
-          ctxt,
+          state.ctxt,
           nullptr,
           gcc_jit_context_new_cast(
-              ctxt,
+              state.ctxt,
               nullptr,
-              gcc_jit_context_new_comparison(ctxt, nullptr, GCC_JIT_COMPARISON_LT, A, B),
-              gcc_jit_context_get_type(ctxt, GCC_JIT_TYPE_INT)),
-          gcc_jit_context_get_type(ctxt, GCC_JIT_TYPE_DOUBLE));
+              gcc_jit_context_new_comparison(state.ctxt, nullptr, GCC_JIT_COMPARISON_LT, A, B),
+              gcc_jit_context_get_type(state.ctxt, GCC_JIT_TYPE_INT)),
+          gcc_jit_context_get_type(state.ctxt, GCC_JIT_TYPE_DOUBLE));
 
     case BinaryOperatorType::GREATER_THAN:
       return gcc_jit_context_new_cast(
-          ctxt,
+          state.ctxt,
           nullptr,
           gcc_jit_context_new_cast(
-              ctxt,
+              state.ctxt,
               nullptr,
-              gcc_jit_context_new_comparison(ctxt, nullptr, GCC_JIT_COMPARISON_GT, A, B),
-              gcc_jit_context_get_type(ctxt, GCC_JIT_TYPE_INT)),
-          gcc_jit_context_get_type(ctxt, GCC_JIT_TYPE_DOUBLE));
+              gcc_jit_context_new_comparison(state.ctxt, nullptr, GCC_JIT_COMPARISON_GT, A, B),
+              gcc_jit_context_get_type(state.ctxt, GCC_JIT_TYPE_INT)),
+          gcc_jit_context_get_type(state.ctxt, GCC_JIT_TYPE_DOUBLE));
 
     case BinaryOperatorType::LESS_EQUAL:
       return gcc_jit_context_new_cast(
-          ctxt,
+          state.ctxt,
           nullptr,
           gcc_jit_context_new_cast(
-              ctxt,
+              state.ctxt,
               nullptr,
-              gcc_jit_context_new_comparison(ctxt, nullptr, GCC_JIT_COMPARISON_LE, A, B),
-              gcc_jit_context_get_type(ctxt, GCC_JIT_TYPE_INT)),
-          gcc_jit_context_get_type(ctxt, GCC_JIT_TYPE_DOUBLE));
+              gcc_jit_context_new_comparison(state.ctxt, nullptr, GCC_JIT_COMPARISON_LE, A, B),
+              gcc_jit_context_get_type(state.ctxt, GCC_JIT_TYPE_INT)),
+          gcc_jit_context_get_type(state.ctxt, GCC_JIT_TYPE_DOUBLE));
 
     case BinaryOperatorType::GREATER_EQUAL:
       return gcc_jit_context_new_cast(
-          ctxt,
+          state.ctxt,
           nullptr,
           gcc_jit_context_new_cast(
-              ctxt,
+              state.ctxt,
               nullptr,
-              gcc_jit_context_new_comparison(ctxt, nullptr, GCC_JIT_COMPARISON_GE, A, B),
-              gcc_jit_context_get_type(ctxt, GCC_JIT_TYPE_INT)),
-          gcc_jit_context_get_type(ctxt, GCC_JIT_TYPE_DOUBLE));
+              gcc_jit_context_new_comparison(state.ctxt, nullptr, GCC_JIT_COMPARISON_GE, A, B),
+              gcc_jit_context_get_type(state.ctxt, GCC_JIT_TYPE_INT)),
+          gcc_jit_context_get_type(state.ctxt, GCC_JIT_TYPE_DOUBLE));
 
     case BinaryOperatorType::EQUAL:
       return gcc_jit_context_new_cast(
-          ctxt,
+          state.ctxt,
           nullptr,
           gcc_jit_context_new_cast(
-              ctxt,
+              state.ctxt,
               nullptr,
-              gcc_jit_context_new_comparison(ctxt, nullptr, GCC_JIT_COMPARISON_EQ, A, B),
-              gcc_jit_context_get_type(ctxt, GCC_JIT_TYPE_INT)),
-          gcc_jit_context_get_type(ctxt, GCC_JIT_TYPE_DOUBLE));
+              gcc_jit_context_new_comparison(state.ctxt, nullptr, GCC_JIT_COMPARISON_EQ, A, B),
+              gcc_jit_context_get_type(state.ctxt, GCC_JIT_TYPE_INT)),
+          gcc_jit_context_get_type(state.ctxt, GCC_JIT_TYPE_DOUBLE));
 
     case BinaryOperatorType::NOT_EQUAL:
       return gcc_jit_context_new_cast(
-          ctxt,
+          state.ctxt,
           nullptr,
           gcc_jit_context_new_cast(
-              ctxt,
+              state.ctxt,
               nullptr,
-              gcc_jit_context_new_comparison(ctxt, nullptr, GCC_JIT_COMPARISON_NE, A, B),
-              gcc_jit_context_get_type(ctxt, GCC_JIT_TYPE_INT)),
-          gcc_jit_context_get_type(ctxt, GCC_JIT_TYPE_DOUBLE));
+              gcc_jit_context_new_comparison(state.ctxt, nullptr, GCC_JIT_COMPARISON_NE, A, B),
+              gcc_jit_context_get_type(state.ctxt, GCC_JIT_TYPE_INT)),
+          gcc_jit_context_get_type(state.ctxt, GCC_JIT_TYPE_DOUBLE));
 
     default:
       fatalError("Unknown operator");
   }
 
   return gcc_jit_context_new_binary_op(
-      ctxt, nullptr, op, gcc_jit_context_get_type(ctxt, GCC_JIT_TYPE_DOUBLE), A, B);
+      state.ctxt, nullptr, op, gcc_jit_context_get_type(state.ctxt, GCC_JIT_TYPE_DOUBLE), A, B);
 }
 
 /********************************************************
@@ -197,9 +197,9 @@ BinaryOperatorData::jit(JITStateValue & ctxt)
  ********************************************************/
 
 JITReturnValue
-MultinaryOperatorData::jit(JITStateValue & ctxt)
+MultinaryOperatorData::jit(JITStateValue & state)
 {
-  auto double_type = gcc_jit_context_get_type(ctxt, GCC_JIT_TYPE_DOUBLE);
+  auto double_type = gcc_jit_context_get_type(state.ctxt, GCC_JIT_TYPE_DOUBLE);
   enum gcc_jit_binary_op op;
 
   switch (_type)
@@ -219,13 +219,13 @@ MultinaryOperatorData::jit(JITStateValue & ctxt)
   if (_args.size() == 0)
     fatalError("No child nodes in multinary operator");
   else if (_args.size() == 1)
-    return _args[0].jit(ctxt);
+    return _args[0].jit(state);
   else
   {
-    JITReturnValue temp = _args[0].jit(ctxt);
+    JITReturnValue temp = _args[0].jit(state);
     for (std::size_t i = 1; i < _args.size(); ++i)
-      temp =
-          gcc_jit_context_new_binary_op(ctxt, nullptr, op, double_type, temp, _args[i].jit(ctxt));
+      temp = gcc_jit_context_new_binary_op(
+          state.ctxt, nullptr, op, double_type, temp, _args[i].jit(state));
 
     return temp;
   }
@@ -236,15 +236,15 @@ MultinaryOperatorData::jit(JITStateValue & ctxt)
  ********************************************************/
 
 JITReturnValue
-UnaryFunctionData::jit(JITStateValue & ctxt)
+UnaryFunctionData::jit(JITStateValue & state)
 {
-  auto double_type = gcc_jit_context_get_type(ctxt, GCC_JIT_TYPE_DOUBLE);
+  auto double_type = gcc_jit_context_get_type(state.ctxt, GCC_JIT_TYPE_DOUBLE);
 
   gcc_jit_type * param_types[] = {double_type};
-  gcc_jit_rvalue * args[] = {_args[0].jit(ctxt)};
+  gcc_jit_rvalue * args[] = {_args[0].jit(state)};
 
   gcc_jit_type * fn_ptr_type =
-      gcc_jit_context_new_function_ptr_type(ctxt, nullptr, double_type, 1, param_types, 0);
+      gcc_jit_context_new_function_ptr_type(state.ctxt, nullptr, double_type, 1, param_types, 0);
 
   gcc_jit_rvalue * ptr;
 
@@ -252,17 +252,17 @@ UnaryFunctionData::jit(JITStateValue & ctxt)
   {
     case UnaryFunctionType::ABS:
       ptr = gcc_jit_context_new_rvalue_from_ptr(
-          ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double))(std::abs)));
+          state.ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double))(std::abs)));
       break;
 
     case UnaryFunctionType::ACOS:
       ptr = gcc_jit_context_new_rvalue_from_ptr(
-          ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double))(std::acos)));
+          state.ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double))(std::acos)));
       break;
 
     case UnaryFunctionType::ACOSH:
       ptr = gcc_jit_context_new_rvalue_from_ptr(
-          ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double))(std::acosh)));
+          state.ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double))(std::acosh)));
       break;
 
     case UnaryFunctionType::ARG:
@@ -270,32 +270,32 @@ UnaryFunctionData::jit(JITStateValue & ctxt)
 
     case UnaryFunctionType::ASIN:
       ptr = gcc_jit_context_new_rvalue_from_ptr(
-          ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double))(std::asin)));
+          state.ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double))(std::asin)));
       break;
 
     case UnaryFunctionType::ASINH:
       ptr = gcc_jit_context_new_rvalue_from_ptr(
-          ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double))(std::asinh)));
+          state.ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double))(std::asinh)));
       break;
 
     case UnaryFunctionType::ATAN:
       ptr = gcc_jit_context_new_rvalue_from_ptr(
-          ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double))(std::atan)));
+          state.ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double))(std::atan)));
       break;
 
     case UnaryFunctionType::ATANH:
       ptr = gcc_jit_context_new_rvalue_from_ptr(
-          ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double))(std::atanh)));
+          state.ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double))(std::atanh)));
       break;
 
     case UnaryFunctionType::CBRT:
       ptr = gcc_jit_context_new_rvalue_from_ptr(
-          ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double))(std::cbrt)));
+          state.ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double))(std::cbrt)));
       break;
 
     case UnaryFunctionType::CEIL:
       ptr = gcc_jit_context_new_rvalue_from_ptr(
-          ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double))(std::ceil)));
+          state.ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double))(std::ceil)));
       break;
 
     case UnaryFunctionType::CONJ:
@@ -303,54 +303,54 @@ UnaryFunctionData::jit(JITStateValue & ctxt)
 
     case UnaryFunctionType::COS:
       ptr = gcc_jit_context_new_rvalue_from_ptr(
-          ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double))(std::cos)));
+          state.ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double))(std::cos)));
       break;
 
     case UnaryFunctionType::COSH:
       ptr = gcc_jit_context_new_rvalue_from_ptr(
-          ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double))(std::cosh)));
+          state.ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double))(std::cosh)));
       break;
 
     case UnaryFunctionType::COT:
       ptr = gcc_jit_context_new_rvalue_from_ptr(
-          ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double))(std::tan)));
+          state.ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double))(std::tan)));
       return gcc_jit_context_new_binary_op(
-          ctxt,
+          state.ctxt,
           nullptr,
           GCC_JIT_BINARY_OP_DIVIDE,
           double_type,
-          gcc_jit_context_one(ctxt, double_type),
-          gcc_jit_context_new_call_through_ptr(ctxt, nullptr, ptr, 1, args));
+          gcc_jit_context_one(state.ctxt, double_type),
+          gcc_jit_context_new_call_through_ptr(state.ctxt, nullptr, ptr, 1, args));
 
     case UnaryFunctionType::CSC:
       ptr = gcc_jit_context_new_rvalue_from_ptr(
-          ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double))(std::sin)));
+          state.ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double))(std::sin)));
       return gcc_jit_context_new_binary_op(
-          ctxt,
+          state.ctxt,
           nullptr,
           GCC_JIT_BINARY_OP_DIVIDE,
           double_type,
-          gcc_jit_context_one(ctxt, double_type),
-          gcc_jit_context_new_call_through_ptr(ctxt, nullptr, ptr, 1, args));
+          gcc_jit_context_one(state.ctxt, double_type),
+          gcc_jit_context_new_call_through_ptr(state.ctxt, nullptr, ptr, 1, args));
 
     case UnaryFunctionType::ERF:
       ptr = gcc_jit_context_new_rvalue_from_ptr(
-          ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double))(std::erf)));
+          state.ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double))(std::erf)));
       break;
 
     case UnaryFunctionType::EXP:
       ptr = gcc_jit_context_new_rvalue_from_ptr(
-          ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double))(std::exp)));
+          state.ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double))(std::exp)));
       break;
 
     case UnaryFunctionType::EXP2:
       ptr = gcc_jit_context_new_rvalue_from_ptr(
-          ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double))(std::exp2)));
+          state.ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double))(std::exp2)));
       break;
 
     case UnaryFunctionType::FLOOR:
       ptr = gcc_jit_context_new_rvalue_from_ptr(
-          ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double))(std::floor)));
+          state.ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double))(std::floor)));
       break;
 
     case UnaryFunctionType::IMAG:
@@ -358,22 +358,22 @@ UnaryFunctionData::jit(JITStateValue & ctxt)
 
     case UnaryFunctionType::INT:
       ptr = gcc_jit_context_new_rvalue_from_ptr(
-          ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double))(std::round)));
+          state.ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double))(std::round)));
       break;
 
     case UnaryFunctionType::LOG:
       ptr = gcc_jit_context_new_rvalue_from_ptr(
-          ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double))(std::log)));
+          state.ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double))(std::log)));
       break;
 
     case UnaryFunctionType::LOG10:
       ptr = gcc_jit_context_new_rvalue_from_ptr(
-          ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double))(std::log10)));
+          state.ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double))(std::log10)));
       break;
 
     case UnaryFunctionType::LOG2:
       ptr = gcc_jit_context_new_rvalue_from_ptr(
-          ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double))(std::log2)));
+          state.ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double))(std::log2)));
       break;
 
     case UnaryFunctionType::REAL:
@@ -381,28 +381,28 @@ UnaryFunctionData::jit(JITStateValue & ctxt)
 
     case UnaryFunctionType::SEC:
       ptr = gcc_jit_context_new_rvalue_from_ptr(
-          ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double))(std::cos)));
+          state.ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double))(std::cos)));
       return gcc_jit_context_new_binary_op(
-          ctxt,
+          state.ctxt,
           nullptr,
           GCC_JIT_BINARY_OP_DIVIDE,
           double_type,
-          gcc_jit_context_one(ctxt, double_type),
-          gcc_jit_context_new_call_through_ptr(ctxt, nullptr, ptr, 1, args));
+          gcc_jit_context_one(state.ctxt, double_type),
+          gcc_jit_context_new_call_through_ptr(state.ctxt, nullptr, ptr, 1, args));
 
     case UnaryFunctionType::SIN:
       ptr = gcc_jit_context_new_rvalue_from_ptr(
-          ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double))(std::sin)));
+          state.ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double))(std::sin)));
       break;
 
     case UnaryFunctionType::SINH:
       ptr = gcc_jit_context_new_rvalue_from_ptr(
-          ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double))(std::sinh)));
+          state.ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double))(std::sinh)));
       break;
 
     case UnaryFunctionType::SQRT:
       ptr = gcc_jit_context_new_rvalue_from_ptr(
-          ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double))(std::sqrt)));
+          state.ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double))(std::sqrt)));
       break;
 
     case UnaryFunctionType::T:
@@ -410,27 +410,27 @@ UnaryFunctionData::jit(JITStateValue & ctxt)
 
     case UnaryFunctionType::TAN:
       ptr = gcc_jit_context_new_rvalue_from_ptr(
-          ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double))(std::tan)));
+          state.ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double))(std::tan)));
       break;
 
     case UnaryFunctionType::TANH:
       ptr = gcc_jit_context_new_rvalue_from_ptr(
-          ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double))(std::tanh)));
+          state.ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double))(std::tanh)));
       break;
 
     case UnaryFunctionType::TRUNC:
       return gcc_jit_context_new_cast(
-          ctxt,
+          state.ctxt,
           nullptr,
           gcc_jit_context_new_cast(
-              ctxt, nullptr, args[0], gcc_jit_context_get_type(ctxt, GCC_JIT_TYPE_INT)),
+              state.ctxt, nullptr, args[0], gcc_jit_context_get_type(state.ctxt, GCC_JIT_TYPE_INT)),
           double_type);
 
     default:
       fatalError("Function not implemented");
   }
 
-  return gcc_jit_context_new_call_through_ptr(ctxt, nullptr, ptr, 1, args);
+  return gcc_jit_context_new_call_through_ptr(state.ctxt, nullptr, ptr, 1, args);
 }
 
 /********************************************************
@@ -438,26 +438,28 @@ UnaryFunctionData::jit(JITStateValue & ctxt)
  ********************************************************/
 
 JITReturnValue
-BinaryFunctionData::jit(JITStateValue & ctxt)
+BinaryFunctionData::jit(JITStateValue & state)
 {
-  auto double_type = gcc_jit_context_get_type(ctxt, GCC_JIT_TYPE_DOUBLE);
+  auto double_type = gcc_jit_context_get_type(state.ctxt, GCC_JIT_TYPE_DOUBLE);
 
   gcc_jit_type * param_types[] = {double_type, double_type};
-  gcc_jit_rvalue * args[] = {_args[0].jit(ctxt), _args[1].jit(ctxt)};
+  gcc_jit_rvalue * args[] = {_args[0].jit(state), _args[1].jit(state)};
 
   gcc_jit_type * fn_ptr_type =
-      gcc_jit_context_new_function_ptr_type(ctxt, nullptr, double_type, 2, param_types, 0);
+      gcc_jit_context_new_function_ptr_type(state.ctxt, nullptr, double_type, 2, param_types, 0);
 
   gcc_jit_rvalue * ptr;
 
-  const auto A = _args[0].jit(ctxt);
-  const auto B = _args[1].jit(ctxt);
+  const auto A = _args[0].jit(state);
+  const auto B = _args[1].jit(state);
 
   switch (_type)
   {
     case BinaryFunctionType::ATAN2:
       ptr = gcc_jit_context_new_rvalue_from_ptr(
-          ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double, double))(std::atan2)));
+          state.ctxt,
+          fn_ptr_type,
+          reinterpret_cast<void *>((double (*)(double, double))(std::atan2)));
       break;
 
     case BinaryFunctionType::HYPOT:
@@ -468,14 +470,14 @@ BinaryFunctionData::jit(JITStateValue & ctxt)
 
     case BinaryFunctionType::MIN:
       ptr = gcc_jit_context_new_rvalue_from_ptr(
-          ctxt,
+          state.ctxt,
           fn_ptr_type,
           reinterpret_cast<void *>((double (*)(double, double))(gccjit_wrap_min)));
       break;
 
     case BinaryFunctionType::MAX:
       ptr = gcc_jit_context_new_rvalue_from_ptr(
-          ctxt,
+          state.ctxt,
           fn_ptr_type,
           reinterpret_cast<void *>((double (*)(double, double))(gccjit_wrap_max)));
       break;
@@ -491,7 +493,9 @@ BinaryFunctionData::jit(JITStateValue & ctxt)
 
     case BinaryFunctionType::POW:
       ptr = gcc_jit_context_new_rvalue_from_ptr(
-          ctxt, fn_ptr_type, reinterpret_cast<void *>((double (*)(double, double))(std::pow)));
+          state.ctxt,
+          fn_ptr_type,
+          reinterpret_cast<void *>((double (*)(double, double))(std::pow)));
       break;
 
     case BinaryFunctionType::POLAR:
@@ -499,7 +503,7 @@ BinaryFunctionData::jit(JITStateValue & ctxt)
       fatalError("Function not implemented");
   }
 
-  return gcc_jit_context_new_call_through_ptr(ctxt, nullptr, ptr, 2, args);
+  return gcc_jit_context_new_call_through_ptr(state.ctxt, nullptr, ptr, 2, args);
 }
 
 /********************************************************
@@ -507,24 +511,28 @@ BinaryFunctionData::jit(JITStateValue & ctxt)
  ********************************************************/
 
 JITReturnValue
-ConditionalData::jit(JITStateValue & ctxt)
+ConditionalData::jit(JITStateValue & state)
 {
   // if (_type != ConditionalType::IF)
   fatalError("Conditional not implemented");
+
+  // gcc_jit_lvalue * ret = gcc_jit_function_new_local(state.func, NULL, the_type, "ret");
+  const auto A = _args[0].jit(state);
 
   // jit_label_t label1 = jit_label_undefined;
   // jit_label_t label2 = jit_label_undefined;
   // JITReturnValue result = jit_value_create(func, jit_type_float64);
   //
-  // jit_insn_branch_if_not(func, _args[0].jit(ctxt), &label1);
+  // jit_insn_branch_if_not(func, _args[0].jit(state), &label1);
   // // true branch
-  // jit_insn_store(func, result, _args[1].jit(ctxt));
+  // jit_insn_store(func, result, _args[1].jit(state));
   // jit_insn_branch(func, &label2);
   // jit_insn_label(func, &label1);
   // // false branch
-  // jit_insn_store(func, result, _args[2].jit(ctxt));
+  // jit_insn_store(func, result, _args[2].jit(state));
   // jit_insn_label(func, &label2);
   // return jit_insn_load(func, result);
+  // return ret;
 }
 
 /********************************************************
@@ -532,11 +540,11 @@ ConditionalData::jit(JITStateValue & ctxt)
  ********************************************************/
 
 JITReturnValue
-IntegerPowerData::jit(JITStateValue & ctxt)
+IntegerPowerData::jit(JITStateValue & state)
 {
-  auto double_type = gcc_jit_context_get_type(ctxt, GCC_JIT_TYPE_DOUBLE);
-  gcc_jit_rvalue * result = gcc_jit_context_one(ctxt, double_type);
-  gcc_jit_rvalue * A = _arg.jit(ctxt);
+  auto double_type = gcc_jit_context_get_type(state.ctxt, GCC_JIT_TYPE_DOUBLE);
+  gcc_jit_rvalue * result = gcc_jit_context_one(state.ctxt, double_type);
+  gcc_jit_rvalue * A = _arg.jit(state);
 
   int e = _exponent > 0 ? _exponent : -_exponent;
   while (e)
@@ -544,10 +552,11 @@ IntegerPowerData::jit(JITStateValue & ctxt)
     // if bit 0 is set multiply the current power of two factor of the exponent
     if (e & 1)
       result = gcc_jit_context_new_binary_op(
-          ctxt, nullptr, GCC_JIT_BINARY_OP_MULT, double_type, result, A);
+          state.ctxt, nullptr, GCC_JIT_BINARY_OP_MULT, double_type, result, A);
 
     // x is incrementally set to consecutive powers of powers of two
-    A = gcc_jit_context_new_binary_op(ctxt, nullptr, GCC_JIT_BINARY_OP_MULT, double_type, A, A);
+    A = gcc_jit_context_new_binary_op(
+        state.ctxt, nullptr, GCC_JIT_BINARY_OP_MULT, double_type, A, A);
 
     // bit shift the exponent down
     e >>= 1;
@@ -556,11 +565,11 @@ IntegerPowerData::jit(JITStateValue & ctxt)
   if (_exponent >= 0)
     return result;
   else
-    return gcc_jit_context_new_binary_op(ctxt,
+    return gcc_jit_context_new_binary_op(state.ctxt,
                                          nullptr,
                                          GCC_JIT_BINARY_OP_DIVIDE,
                                          double_type,
-                                         gcc_jit_context_one(ctxt, double_type),
+                                         gcc_jit_context_one(state.ctxt, double_type),
                                          result);
 }
 
