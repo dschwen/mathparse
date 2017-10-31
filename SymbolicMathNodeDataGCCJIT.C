@@ -513,26 +513,51 @@ BinaryFunctionData::jit(JITStateValue & state)
 JITReturnValue
 ConditionalData::jit(JITStateValue & state)
 {
-  // if (_type != ConditionalType::IF)
-  fatalError("Conditional not implemented");
+  if (_type != ConditionalType::IF)
+    fatalError("Conditional not implemented");
 
-  // gcc_jit_lvalue * ret = gcc_jit_function_new_local(state.func, NULL, the_type, "ret");
+  auto double_type = gcc_jit_context_get_type(state.ctxt, GCC_JIT_TYPE_DOUBLE);
+
+  // build blocks
+  gcc_jit_block * b_true = gcc_jit_function_new_block(state.func, "true");
+  gcc_jit_block * b_false = gcc_jit_function_new_block(state.func, "false");
+  gcc_jit_block * b_after = gcc_jit_function_new_block(state.func, "after");
+
+  // allocate space for the result of the cinditional
+  gcc_jit_lvalue * ret = gcc_jit_function_new_local(state.func, NULL, double_type, "ret");
+
+  // evaluate condition
   const auto A = _args[0].jit(state);
 
-  // jit_label_t label1 = jit_label_undefined;
-  // jit_label_t label2 = jit_label_undefined;
-  // JITReturnValue result = jit_value_create(func, jit_type_float64);
-  //
-  // jit_insn_branch_if_not(func, _args[0].jit(state), &label1);
-  // // true branch
-  // jit_insn_store(func, result, _args[1].jit(state));
-  // jit_insn_branch(func, &label2);
-  // jit_insn_label(func, &label1);
-  // // false branch
-  // jit_insn_store(func, result, _args[2].jit(state));
-  // jit_insn_label(func, &label2);
-  // return jit_insn_load(func, result);
-  // return ret;
+  // end current block with conditional jump
+  gcc_jit_block_end_with_conditional(
+      state.block,
+      nullptr,
+      gcc_jit_context_new_comparison(state.ctxt,
+                                     nullptr,
+                                     GCC_JIT_COMPARISON_NE,
+                                     A,
+                                     gcc_jit_context_zero(state.ctxt, double_type)),
+      b_true,
+      b_false);
+
+  // fill true block
+  state.block = b_true;
+  auto B = _args[1].jit(state);
+  gcc_jit_block_add_assignment(state.block, nullptr, ret, B);
+  gcc_jit_block_end_with_jump(state.block, nullptr, b_after);
+
+  // fill false block
+  state.block = b_false;
+  auto C = _args[2].jit(state);
+  gcc_jit_block_add_assignment(state.block, nullptr, ret, C);
+  gcc_jit_block_end_with_jump(state.block, nullptr, b_after);
+
+  // set current block to the after block
+  state.block = b_after;
+
+  // return result for the conditional
+  return gcc_jit_lvalue_as_rvalue(ret);
 }
 
 /********************************************************

@@ -58,6 +58,10 @@ main(int argc, char * argv[])
     std::cout << deriv.value() << ' ';
   std::cout << '\n';
 
+  for (c = -1.0; c <= 1.0; c += 0.3)
+    std::cout << (c <= -0.7 ? 10 : (c > 0.2 ? 20 : 30)) << ' ';
+  std::cout << '\n';
+
   deriv.compile();
 
   // evaluate for various values of c
