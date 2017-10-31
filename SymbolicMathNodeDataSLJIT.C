@@ -584,15 +584,22 @@ ConditionalData::jit(JITStateValue & state)
 
   _args[0].jit(state);
 
-  sljit_emit_op1(state.C, SLJIT_MOV, SLJIT_FR0, 0, SLJIT_MEM, (sljit_sw)state.stack);
-  state.stack--; //?
-  false_case = sljit_emit_cmp(state.C, SLJIT_EQUAL, SLJIT_R0, 0, SLJIT_IMM, 0);
+  // sljit_emit_op1(state.C, SLJIT_MOV, SLJIT_R0, 0, SLJIT_MEM, (sljit_sw)state.stack);
+  false_case = sljit_emit_fcmp(state.C,
+                               SLJIT_EQUAL_F64,
+                               SLJIT_MEM,
+                               (sljit_sw)(state.stack - 1),
+                               SLJIT_MEM,
+                               (sljit_sw)&sljit_zero);
+  state.stack--;
+  auto stack_pos = state.stack;
 
-  // true case`
+  // true case
   _args[1].jit(state);
   end_if = sljit_emit_jump(state.C, SLJIT_JUMP);
 
   // false case
+  state.stack = stack_pos;
   sljit_set_label(false_case, sljit_emit_label(state.C));
   _args[2].jit(state);
 

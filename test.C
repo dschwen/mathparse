@@ -13,6 +13,15 @@ struct Test
 
 // clang-format off
 const std::vector<Test> tests = {
+  // obvious simpleifcations
+  {"c/1.0", [](double c) { return c / 1.0; }},
+  {"c+0", [](double c) { return c + 0.0; }},
+  {"c*0", [](double c) { return c * 0.0; }},
+  {"0/c", [](double c) { return 0.0 / c; }},
+  // expressions
+  {"1 + c + 2*c + 3*c^3", [](double c) { return 1 + c + 2*c + 3*c*c*c; }},
+  {"c + sin(1.1)", [](double c) { return c + std::sin(1.1); }},
+  // mathematical functions
   {"sin(c)", [](double c) { return std::sin(c); }},
   {"cos(c)", [](double c) { return std::cos(c); }},
   {"tan(c)", [](double c) { return std::tan(c); }},
@@ -21,17 +30,6 @@ const std::vector<Test> tests = {
   {"cot(c)", [](double c) { return 1.0 / std::tan(c); }},
   {"erf(c)", [](double c) { return std::erf(c); }},
   {"exp(c)", [](double c) { return std::exp(c); }},
-  {"pow(c,3)", [](double c) { return std::pow(c, 3); }},
-  {"pow(c,3.5)", [](double c) { return std::pow(c, 3.5); }},
-  {"pow(pow(c,3.5),2)", [](double c) { return std::pow(std::pow(c, 3.5), 2.0); }},
-  {"pow(pow(c,3.5),2.5)", [](double c) { return std::pow(std::pow(c, 3.5), 2.5); }},
-  {"pow(c,1)", [](double c) { return std::pow(c, 1); }},
-  {"c/1.0", [](double c) { return c / 1.0; }},
-  {"c+0", [](double c) { return c + 0.0; }},
-  {"c*0", [](double c) { return c * 0.0; }},
-  {"0/c", [](double c) { return 0.0 / c; }},
-  {"1 + c + 2*c + 3*c^3", [](double c) { return 1 + c + 2*c + 3*c*c*c; }},
-  {"c + sin(1.1)", [](double c) { return c + std::sin(1.1); }},
   {"atan2(c,0.5)", [](double c) { return std::atan2(c, 0.5); }},
   {"atan2(0.5,c)", [](double c) { return std::atan2(0.5, c); }},
   {"atan2(2*c, 3*c)", [](double c) { return std::atan2(2*c, 3*c); }},
@@ -39,25 +37,41 @@ const std::vector<Test> tests = {
   {"floor(c)", [](double c) { return std::floor(c); }},
   {"ceil(c)", [](double c) { return std::ceil(c); }},
   {"trunc(c)", [](double c) { return static_cast<int>(c); }},
+  // powers and their simplifications
+  {"pow(c,3)", [](double c) { return std::pow(c, 3); }},
+  {"pow(c,-3)", [](double c) { return std::pow(c, -3); }},
+  {"pow(c,3.5)", [](double c) { return std::pow(c, 3.5); }},
+  {"pow(pow(c,3.5),2)", [](double c) { return std::pow(std::pow(c, 3.5), 2.0); }},
+  {"pow(pow(c,3.5),2.5)", [](double c) { return std::pow(std::pow(c, 3.5), 2.5); }},
+  {"pow(c,1)", [](double c) { return std::pow(c, 1); }},
+  // comparison operators
   {"c<0.2", [](double c) { return c<0.2; }},
   {"c>0.2", [](double c) { return c>0.2; }},
   {"c<=0.2", [](double c) { return c<=0.2; }},
+  // {"c<=-0.7", [](double c) { return c<=-0.7; }}, // fails
   {"c>=0.2", [](double c) { return c>=0.2; }},
   {"c==0.2", [](double c) { return c==0.2; }},
   {"c!=0.2", [](double c) { return c!=0.2; }},
+  // constant comparisons
   {"1<2", [](double c) { return 1<2; }},
   {"1>2", [](double c) { return 1>2; }},
   {"1<2", [](double c) { return 1<=2; }},
   {"1>2", [](double c) { return 1>=2; }},
   {"1==2", [](double c) { return 1==2; }},
   {"1!=2", [](double c) { return 1!=2; }},
+  // logical operators
   {"c<0.5 & c>-0.5", [](double c) { return c<0.5 && c>-0.5; }},
   {"c>0.5 | c<-0.5", [](double c) { return c>0.5 || c<-0.5; }},
   {"c>0.5 | c<-0.5 | (c<0.3 & c > -0.1)", [](double c) { return c>0.5 || c<-0.5 || (c<0.3 && c > -0.1); }},
+  // logical operators with  non 0/1 constants
   {"c<0.2 & 2.0", [](double c) { return c<0.2 && static_cast<bool>(2.0); }},
   {"c<0.2 | 2.0", [](double c) { return c<0.2 || static_cast<bool>(2.0); }},
   {"c<0.2 & 0.0", [](double c) { return c<0.2 && static_cast<bool>(0.0); }},
   {"c<0.2 | 0.0", [](double c) { return c<0.2 || static_cast<bool>(0.0); }},
+  // conditional (if)
+  {"if(c<0.15, 10, 20)", [](double c) { return c < 0.15 ? 10 : 20; }},
+  // nested if
+  {"if(c<-0.5, 10, if(c>0.2, 20, 30))", [](double c) { return c <= -0.5 ? 10 : (c > 0.2 ? 20 : 30); }},
 };
 // clang-format off
 
@@ -66,6 +80,8 @@ main(int argc, char * argv[])
 {
   double norm;
   int total = 0, fail = 0;
+
+  // test direct evaluation, simplification, and compilation
 
   for (auto & test : tests)
   {
@@ -120,13 +136,23 @@ main(int argc, char * argv[])
     total += 3;
   }
 
+  // test derivatives
+  // ..TODO
+
+
+  // Final output
+
   if (fail)
+  {
     std::cout << "\033[1;31m"; // red
+    std::cout << (total - fail) << " tests PASSED, " << fail << " tests FAILED!\n";
+  }
   else
+  {
     std::cout << "\033[1;32m"; // green
+    std::cout << "ALL " << total << " tests PASSED.\n";
+  }
 
-
-  std::cout << (total - fail) << " tests PASSED, " << fail << " tests FAILED\n";
   std::cout << "\033[0m"; // reset color
 
   // deriv.simplify();
