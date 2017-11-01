@@ -28,8 +28,21 @@ const std::vector<Test> tests = {
   {"csc(c)", [](double c) { return 1.0 / std::sin(c); }},
   {"sec(c)", [](double c) { return 1.0 / std::cos(c); }},
   {"cot(c)", [](double c) { return 1.0 / std::tan(c); }},
+  {"sinh(c)", [](double c) { return std::sinh(c); }},
+  {"cosh(c)", [](double c) { return std::cosh(c); }},
+  {"tanh(c)", [](double c) { return std::tanh(c); }},
+  {"asin(c*c)", [](double c) { return std::asin(c*c); }},
+  {"acos(c*c)", [](double c) { return std::acos(c*c); }},
+  {"atan(c)", [](double c) { return std::atan(c); }},
+  {"asinh(c)", [](double c) { return std::asinh(c); }},
+  {"acosh(c+1.1)", [](double c) { return std::acosh(c+1.1); }},
+  {"atanh(c*0.9)", [](double c) { return std::atanh(c*0.9); }},
   {"erf(c)", [](double c) { return std::erf(c); }},
   {"exp(c)", [](double c) { return std::exp(c); }},
+  {"exp2(c)", [](double c) { return std::exp2(c); }},
+  {"log(c+1.1)", [](double c) { return std::log(c+1.1); }},
+  {"log2(c+1.1)", [](double c) { return std::log2(c+1.1); }},
+  {"log10(c+1.1)", [](double c) { return std::log10(c+1.1); }},
   {"atan2(c,0.5)", [](double c) { return std::atan2(c, 0.5); }},
   {"atan2(0.5,c)", [](double c) { return std::atan2(0.5, c); }},
   {"atan2(2*c, 3*c)", [](double c) { return std::atan2(2*c, 3*c); }},
@@ -92,7 +105,7 @@ const std::vector<DiffTest> difftests = {
   {"csc(c)", -0.99, 0.99, 0.1, 1e-9, 1e-7},
   {"sec(c)", -0.99, 0.99, 0.1, 1e-9, 1e-7},
   {"cot(c)", -0.99, 0.99, 0.1, 1e-9, 1e-7},
-  {"sinh(c)", -5, 5, 0.1, 1e-9, 1e-7},
+  {"sinh(c)", -5, 5, 0.1, 1e-9, 2e-7},
   {"cosh(c)", -5, 5, 0.1, 1e-9, 1e-7},
   {"tanh(c)", -5, 5, 0.2, 1e-9, 1e-6},
   {"asin(c)", -0.99, 0.99, 0.1, 1e-9, 1e-7},
@@ -101,11 +114,17 @@ const std::vector<DiffTest> difftests = {
   {"asinh(c)", -5, 5, 0.1, 1e-9, 1e-6},
   {"acosh(c)", 1.01, 5, 0.1, 1e-9, 2e-7},
   {"atanh(c)", -0.99, 0.99, 0.1, 1e-9, 1e-7},
-  {"cbrt(c)", 0.01, 5, 0.1, 1e-9, 2e-7},
+  {"cbrt(c)", 0.01, 5, 0.1, 1e-9, 5e-7},
   {"erf(c)", -5, 5, 0.1, 1e-9, 3e-7},
   {"log(c)", 0.01, 5, 0.1, 1e-9, 2e-7},
-  // {"log2(c)", 0.01, 5, 0.1, 1e-9, 2e-7},
-  // {"log10(c)", 0.01, 5, 0.1, 1e-9, 2e-7},
+  {"log2(c)", 0.01, 5, 0.1, 1e-9, 2e-7},
+  {"log10(c)", 0.01, 5, 0.1, 1e-9, 2e-7},
+  {"exp(c)", -5, 5, 0.1, 1e-9, 2e-7},
+  {"exp2(c)", -5, 5, 0.1, 1e-9, 2e-7},
+  {"c^5", -4, 4, 0.1, 1e-8, 2e-8},
+  {"sin(cos(c))", -4, 4, 0.1, 1e-8, 2e-8},
+  {"sin(c)+cos(c)", -4, 4, 0.1, 1e-8, 2e-8},
+  {"sin(c)*cos(c)", -4, 4, 0.1, 1e-8, 2e-8},
 };
 // clang-format on
 
@@ -212,11 +231,12 @@ main(int argc, char * argv[])
       norm += std::abs(d - (b - a) / test.epsilon);
     }
     // for debug purposes (to set tolerances for new tests)
-    std::cerr << norm / abssum << '\t' << test.expression << '\n';
+    // std::cerr << norm / abssum << '\t' << test.expression << '\n';
     if (norm / abssum > test.tol)
     {
       std::cerr << "Derivative does not match finite differencing for '" << test.expression
-                << "' and the derivative '" << diff.format() << "' " << norm << "\n";
+                << "' and the derivative '" << diff.format()
+                << "'.\nnorm/abssum = " << (norm / abssum) << "\n";
       fail++;
     }
 

@@ -318,7 +318,7 @@ UnaryFunctionData::jit(JITStateValue & func)
       return jit_insn_tan(func, A);
 
     case UnaryFunctionType::TANH:
-      return jit_insn_tan(func, A);
+      return jit_insn_tanh(func, A);
 
     case UnaryFunctionType::TRUNC:
       return jit_insn_convert(

@@ -710,6 +710,9 @@ UnaryFunctionData::D(const ValueProvider & vp)
                        Node(IntegerPowerType::_ANY, A, 2) - Node(1.0),
                        Node(-0.5));
 
+    case UnaryFunctionType::ARG:
+      fatalError("Derivative not implemented");
+
     case UnaryFunctionType::ASIN:
       return dA * Node(BinaryOperatorType::POWER,
                        Node(1.0) - Node(IntegerPowerType::_ANY, A, 2),
@@ -729,11 +732,25 @@ UnaryFunctionData::D(const ValueProvider & vp)
     case UnaryFunctionType::CBRT:
       return Node(1.0 / 3.0) * Node(IntegerPowerType::_ANY, Node(_type, A), -2);
 
+    case UnaryFunctionType::CEIL:
+      fatalError("Derivative not implemented");
+
+    case UnaryFunctionType::CONJ:
+      fatalError("Derivative not implemented");
+
     case UnaryFunctionType::COS:
       return -dA * Node(UnaryFunctionType::SIN, A);
 
     case UnaryFunctionType::COSH:
       return dA * Node(UnaryFunctionType::SINH, A);
+
+    case UnaryFunctionType::COT:
+      // 1 / tan
+      return -dA * Node(IntegerPowerType::_ANY, Node(UnaryFunctionType::CSC, A), 2);
+
+    case UnaryFunctionType::CSC:
+      // 1 / sin
+      return -dA * Node(UnaryFunctionType::COT, A) / Node(UnaryFunctionType::SIN, A);
 
     case UnaryFunctionType::ERF: // d exp(A) = dA*exp(A)
       return dA * Node(2.0 / std::sqrt(Constant::pi)) *
@@ -742,8 +759,30 @@ UnaryFunctionData::D(const ValueProvider & vp)
     case UnaryFunctionType::EXP: // d exp(A) = dA*exp(A)
       return dA * Node(_type, A);
 
+    case UnaryFunctionType::EXP2:
+      return dA * Node(Constant::ln2) * Node(_type, A);
+
+    case UnaryFunctionType::FLOOR:
+      fatalError("Derivative not implemented");
+
+    case UnaryFunctionType::IMAG:
+      fatalError("Derivative not implemented");
+
+    case UnaryFunctionType::INT:
+      fatalError("Derivative not implemented");
+
     case UnaryFunctionType::LOG: // d log(A) = dA/A
       return dA / A;
+
+    case UnaryFunctionType::LOG2:
+      return dA / (A * Node(Constant::ln2));
+
+    case UnaryFunctionType::LOG10:
+      return dA / (A * Node(Constant::ln10));
+
+    case UnaryFunctionType::SEC:
+      // 1 / cos
+      return dA * Node(UnaryFunctionType::TAN, A) / Node(UnaryFunctionType::COS, A);
 
     case UnaryFunctionType::SIN: // d sin(A) = dA*cos(A)
       return dA * Node(UnaryFunctionType::COS, A);
@@ -751,26 +790,14 @@ UnaryFunctionData::D(const ValueProvider & vp)
     case UnaryFunctionType::SINH:
       return dA * Node(UnaryFunctionType::COSH, A);
 
-    case UnaryFunctionType::TANH:
-      return dA * (Node(1.0) - Node(IntegerPowerType::_ANY, Node(UnaryFunctionType::TANH, A), 2));
-
     case UnaryFunctionType::SQRT:
       return Node(0.5) / Node(_type, A);
 
     case UnaryFunctionType::TAN:
       return dA * Node(IntegerPowerType::_ANY, Node(UnaryFunctionType::SEC, A), 2);
 
-    case UnaryFunctionType::CSC:
-      // 1 / sin
-      return -dA * Node(UnaryFunctionType::COT, A) / Node(UnaryFunctionType::SIN, A);
-
-    case UnaryFunctionType::SEC:
-      // 1 / cos
-      return dA * Node(UnaryFunctionType::TAN, A) / Node(UnaryFunctionType::COS, A);
-
-    case UnaryFunctionType::COT:
-      // 1 / tan
-      return -dA * Node(IntegerPowerType::_ANY, Node(UnaryFunctionType::CSC, A), 2);
+    case UnaryFunctionType::TANH:
+      return dA * (Node(1.0) - Node(IntegerPowerType::_ANY, Node(UnaryFunctionType::TANH, A), 2));
 
     default:
       fatalError("Derivative not implemented");
