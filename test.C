@@ -4,6 +4,7 @@
 #include "SymbolicMathJITTypes.h"
 
 #include <iostream>
+#include <functional>
 
 struct Test
 {
