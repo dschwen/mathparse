@@ -1,6 +1,9 @@
 #include "SymbolicMathUtils.h"
 
 #include <cmath>
+#include <sstream>
+#include <iomanip>
+#include <limits>
 
 namespace SymbolicMath
 {
@@ -19,7 +22,15 @@ stringify(Real number)
   if (number == std::round(number))
     return std::to_string(static_cast<int>(number));
   else
-    return std::to_string(number);
+  {
+    // this or std::numeric_limits<T>::max_digits10
+    const unsigned int max_digits10 =
+        std::floor(std::numeric_limits<Real>::digits * std::log10(2) + 2);
+
+    std::ostringstream os;
+    os << std::setprecision(max_digits10) << number;
+    return os.str();
+  }
 }
 
 // end namespace SymbolicMath

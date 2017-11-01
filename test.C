@@ -129,7 +129,7 @@ main(int argc, char * argv[])
       norm += std::abs(func.value() - test.native(c));
     if (norm > 1e-9)
     {
-      std::cerr << "Error evaluating compiled expression '" << test.expression << "' simplified to '" << func.format() << "'\n";
+      std::cerr << "Error "<<norm<<"evaluating compiled expression '" << test.expression << "' simplified to '" << func.format() << "'\n";
       fail++;
     }
 

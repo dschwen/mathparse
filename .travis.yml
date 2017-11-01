@@ -44,3 +44,5 @@ script:
   - ./test
   - make test JIT=gccjit
   - ./test
+  - make test JIT=ccode
+  - ./test

@@ -36,16 +36,29 @@ main(int argc, char * argv[])
   std::cout << " = " << func.format() << '\n'; // << func->formatTree("\t") << '\n';
 
   // evaluate for various values of c
+  std::vector<SymbolicMath::Real> reference;
   for (c = -1.0; c <= 1.0; c += 0.3)
-    std::cout << func.value() << ' ';
+  {
+    auto val = func.value();
+    reference.push_back(val);
+    std::cout << val << ' ';
+  }
   std::cout << '\n';
 
   func.compile();
 
   // evaluate for various values of c
+  unsigned int index = 0;
+  SymbolicMath::Real norm = 0;
   for (c = -1.0; c <= 1.0; c += 0.3)
-    std::cout << func.value() << ' ';
-  std::cout << '\n';
+  {
+    auto val = func.value();
+    std::cout << val << ' ';
+    auto diff = reference[index++] - val;
+    // auto diff = c + std::sin(1.1) - val;
+    norm += std::abs(diff);
+  }
+  std::cout << '\n' << "norm = " << norm << '\n';
 
   auto deriv = func.D(c_var);
   std::cout << "D(F) = " << deriv.format() << '\n'; // << deriv->formatTree("\t") << '\n';

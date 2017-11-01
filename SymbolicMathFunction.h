@@ -17,4 +17,8 @@
 #include "SymbolicMathFunctionLightning.h"
 #endif
 
+#ifdef SYMBOLICMATH_USE_CCODE
+#include "SymbolicMathFunctionCCode.h"
+#endif
+
 #endif // SYMBOLICMATHFUNCTION_H
