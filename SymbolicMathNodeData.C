@@ -38,8 +38,8 @@ RealReferenceData::D(const ValueProvider & vp)
 {
   auto rrd = dynamic_cast<const RealReferenceData *>(&vp);
 
-  std::cout << "d(" << format() << ")/d(" << vp.format()
-            << ") = " << ((rrd && &(rrd->_ref) == &_ref) ? 1 : 0) << "   (" << rrd << ")\n";
+  // std::cout << "d(" << format() << ")/d(" << vp.format()
+  //           << ") = " << ((rrd && &(rrd->_ref) == &_ref) ? 1 : 0) << "   (" << rrd << ")\n";
 
   // check if the references refer to identical memory locations
   return (rrd && &(rrd->_ref) == &_ref) ? Node(1.0) : Node(0.0);
@@ -701,22 +701,33 @@ UnaryFunctionData::D(const ValueProvider & vp)
       return dA * A / Node(_type, A);
 
     case UnaryFunctionType::ACOS:
-      return -dA * A /
-             Node(BinaryOperatorType::POWER,
-                  Node(1.0) - Node(IntegerPowerType::_ANY, A, 2),
-                  Node(0.5));
+      return -dA * Node(BinaryOperatorType::POWER,
+                        Node(1.0) - Node(IntegerPowerType::_ANY, A, 2),
+                        Node(-0.5));
+
+    case UnaryFunctionType::ACOSH:
+      return dA * Node(BinaryOperatorType::POWER,
+                       Node(IntegerPowerType::_ANY, A, 2) - Node(1.0),
+                       Node(-0.5));
 
     case UnaryFunctionType::ASIN:
-      return dA * A /
-             Node(BinaryOperatorType::POWER,
-                  Node(1.0) - Node(IntegerPowerType::_ANY, A, 2),
-                  Node(0.5));
+      return dA * Node(BinaryOperatorType::POWER,
+                       Node(1.0) - Node(IntegerPowerType::_ANY, A, 2),
+                       Node(-0.5));
+
+    case UnaryFunctionType::ASINH:
+      return dA * Node(BinaryOperatorType::POWER,
+                       Node(1.0) + Node(IntegerPowerType::_ANY, A, 2),
+                       Node(-0.5));
 
     case UnaryFunctionType::ATAN:
-      return dA / (A * A + Node(1.0));
+      return dA / (Node(IntegerPowerType::_ANY, A, 2) + Node(1.0));
+
+    case UnaryFunctionType::ATANH:
+      return dA / (Node(1.0) - Node(IntegerPowerType::_ANY, A, 2));
 
     case UnaryFunctionType::CBRT:
-      return Node(1.0 / 3.0) / Node(IntegerPowerType::_ANY, Node(_type, A), 2);
+      return Node(1.0 / 3.0) * Node(IntegerPowerType::_ANY, Node(_type, A), -2);
 
     case UnaryFunctionType::COS:
       return -dA * Node(UnaryFunctionType::SIN, A);
@@ -740,19 +751,26 @@ UnaryFunctionData::D(const ValueProvider & vp)
     case UnaryFunctionType::SINH:
       return dA * Node(UnaryFunctionType::COSH, A);
 
+    case UnaryFunctionType::TANH:
+      return dA * (Node(1.0) - Node(IntegerPowerType::_ANY, Node(UnaryFunctionType::TANH, A), 2));
+
     case UnaryFunctionType::SQRT:
       return Node(0.5) / Node(_type, A);
+
+    case UnaryFunctionType::TAN:
+      return dA * Node(IntegerPowerType::_ANY, Node(UnaryFunctionType::SEC, A), 2);
 
     case UnaryFunctionType::CSC:
       // 1 / sin
       return -dA * Node(UnaryFunctionType::COT, A) / Node(UnaryFunctionType::SIN, A);
+
     case UnaryFunctionType::SEC:
       // 1 / cos
       return dA * Node(UnaryFunctionType::TAN, A) / Node(UnaryFunctionType::COS, A);
+
     case UnaryFunctionType::COT:
       // 1 / tan
-      return -dA * (Node(IntegerPowerType::_ANY, Node(UnaryFunctionType::TAN, A), 2) + Node(1.0)) /
-             Node(IntegerPowerType::_ANY, Node(UnaryFunctionType::TAN, A), 2);
+      return -dA * Node(IntegerPowerType::_ANY, Node(UnaryFunctionType::CSC, A), 2);
 
     default:
       fatalError("Derivative not implemented");
