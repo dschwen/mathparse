@@ -523,7 +523,7 @@ ConditionalData::jit(JITStateValue & state)
   gcc_jit_block * b_false = gcc_jit_function_new_block(state.func, "false");
   gcc_jit_block * b_after = gcc_jit_function_new_block(state.func, "after");
 
-  // allocate space for the result of the cinditional
+  // allocate space for the result of the conditional
   gcc_jit_lvalue * ret = gcc_jit_function_new_local(state.func, NULL, double_type, "ret");
 
   // evaluate condition

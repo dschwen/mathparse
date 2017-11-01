@@ -4,6 +4,7 @@
 #include "SymbolicMathJITTypes.h"
 
 #include <iostream>
+#include <functional>
 
 struct Test
 {
@@ -13,7 +14,7 @@ struct Test
 
 // clang-format off
 const std::vector<Test> tests = {
-  // obvious simpleifcations
+  // obvious simplifications
   {"c/1.0", [](double c) { return c / 1.0; }},
   {"c+0", [](double c) { return c + 0.0; }},
   {"c*0", [](double c) { return c * 0.0; }},
@@ -28,8 +29,21 @@ const std::vector<Test> tests = {
   {"csc(c)", [](double c) { return 1.0 / std::sin(c); }},
   {"sec(c)", [](double c) { return 1.0 / std::cos(c); }},
   {"cot(c)", [](double c) { return 1.0 / std::tan(c); }},
+  {"sinh(c)", [](double c) { return std::sinh(c); }},
+  {"cosh(c)", [](double c) { return std::cosh(c); }},
+  {"tanh(c)", [](double c) { return std::tanh(c); }},
+  {"asin(c*c)", [](double c) { return std::asin(c*c); }},
+  {"acos(c*c)", [](double c) { return std::acos(c*c); }},
+  {"atan(c)", [](double c) { return std::atan(c); }},
+  {"asinh(c)", [](double c) { return std::asinh(c); }},
+  {"acosh(c+1.1)", [](double c) { return std::acosh(c+1.1); }},
+  {"atanh(c*0.9)", [](double c) { return std::atanh(c*0.9); }},
   {"erf(c)", [](double c) { return std::erf(c); }},
   {"exp(c)", [](double c) { return std::exp(c); }},
+  {"exp2(c)", [](double c) { return std::exp2(c); }},
+  {"log(c+1.1)", [](double c) { return std::log(c+1.1); }},
+  {"log2(c+1.1)", [](double c) { return std::log2(c+1.1); }},
+  {"log10(c+1.1)", [](double c) { return std::log10(c+1.1); }},
   {"atan2(c,0.5)", [](double c) { return std::atan2(c, 0.5); }},
   {"atan2(0.5,c)", [](double c) { return std::atan2(0.5, c); }},
   {"atan2(2*c, 3*c)", [](double c) { return std::atan2(2*c, 3*c); }},
@@ -73,7 +87,47 @@ const std::vector<Test> tests = {
   // nested if
   {"if(c<-0.5, 10, if(c>0.2, 20, 30))", [](double c) { return c <= -0.5 ? 10 : (c > 0.2 ? 20 : 30); }},
 };
+// clang-format on
+
+struct DiffTest
+{
+  std::string expression;
+  SymbolicMath::Real cmin, cmax, dc, epsilon;
+  SymbolicMath::Real tol;
+};
+
 // clang-format off
+const std::vector<DiffTest> difftests = {
+  {"c", -10, 10, 0.7, 0.1, 1e-9},
+  {"abs(c)", -10, 10, 0.7, 0.1, 1e-9},
+  {"sin(c)", -4, 4, 0.1, 1e-8, 1e-8},
+  {"cos(c)", -4, 4, 0.1, 1e-8, 1e-8},
+  {"tan(c)", -4, 4, 0.11, 1e-9, 2e-7},
+  {"csc(c)", -0.99, 0.99, 0.1, 1e-9, 1e-7},
+  {"sec(c)", -0.99, 0.99, 0.1, 1e-9, 1e-7},
+  {"cot(c)", -0.99, 0.99, 0.1, 1e-9, 1e-7},
+  {"sinh(c)", -5, 5, 0.1, 1e-9, 2e-7},
+  {"cosh(c)", -5, 5, 0.1, 1e-9, 1e-7},
+  {"tanh(c)", -5, 5, 0.2, 1e-9, 1e-6},
+  {"asin(c)", -0.99, 0.99, 0.1, 1e-9, 1e-7},
+  {"acos(c)", -0.99, 0.99, 0.1, 1e-9, 1e-7},
+  {"atan(c)", -5, 5, 0.1, 1e-9, 1e-6},
+  {"asinh(c)", -5, 5, 0.1, 1e-9, 1e-6},
+  {"acosh(c)", 1.01, 5, 0.1, 1e-9, 2e-7},
+  {"atanh(c)", -0.99, 0.99, 0.1, 1e-9, 1e-7},
+  {"cbrt(c)", 0.01, 5, 0.1, 1e-9, 5e-7},
+  {"erf(c)", -5, 5, 0.1, 1e-9, 3e-7},
+  {"log(c)", 0.01, 5, 0.1, 1e-9, 2e-7},
+  {"log2(c)", 0.01, 5, 0.1, 1e-9, 2e-7},
+  {"log10(c)", 0.01, 5, 0.1, 1e-9, 2e-7},
+  {"exp(c)", -5, 5, 0.1, 1e-9, 2e-7},
+  {"exp2(c)", -5, 5, 0.1, 1e-9, 2e-7},
+  {"c^5", -4, 4, 0.1, 1e-8, 2e-8},
+  {"sin(cos(c))", -4, 4, 0.1, 1e-8, 2e-8},
+  {"sin(c)+cos(c)", -4, 4, 0.1, 1e-8, 2e-8},
+  {"sin(c)*cos(c)", -4, 4, 0.1, 1e-8, 2e-8},
+};
+// clang-format on
 
 int
 main(int argc, char * argv[])
@@ -111,7 +165,8 @@ main(int argc, char * argv[])
       norm += std::abs(func.value() - test.native(c));
     if (norm > 1e-9)
     {
-      std::cerr << "Error evaluating expression '" << test.expression << "' simplified to '" << func.format() << "'\n";
+      std::cerr << "Error evaluating expression '" << test.expression << "' simplified to '"
+                << func.format() << "'\n";
       fail++;
     }
 
@@ -119,7 +174,8 @@ main(int argc, char * argv[])
 
     if (!func.isCompiled())
     {
-      std::cerr << "Error compiling expression '" << test.expression << "' simplified to '" << func.format() << "'\n";
+      std::cerr << "Error compiling expression '" << test.expression << "' simplified to '"
+                << func.format() << "'\n";
       fail++;
     }
 
@@ -129,7 +185,8 @@ main(int argc, char * argv[])
       norm += std::abs(func.value() - test.native(c));
     if (norm > 1e-9)
     {
-      std::cerr << "Error "<<norm<<"evaluating compiled expression '" << test.expression << "' simplified to '" << func.format() << "'\n";
+      std::cerr << "Error " << norm << "evaluating compiled expression '" << test.expression
+                << "' simplified to '" << func.format() << "'\n";
       fail++;
     }
 
@@ -137,8 +194,55 @@ main(int argc, char * argv[])
   }
 
   // test derivatives
-  // ..TODO
+  for (auto & test : difftests)
+  {
+    SymbolicMath::Parser parser;
 
+    SymbolicMath::Real c;
+    auto c_var = std::make_shared<SymbolicMath::RealReferenceData>(c, "c");
+    parser.registerValueProvider(c_var);
+
+    auto func = parser.parse(test.expression);
+    func.simplify();
+    func.compile();
+
+    auto diff = func.D(c_var);
+    diff.simplify();
+    diff.compile();
+    if (!diff.isCompiled())
+    {
+      std::cerr << "Error compiling derivative of '" << test.expression << "' simplified to '"
+                << diff.format() << "'\n";
+      fail++;
+    }
+
+    // finite differencing
+    norm = 0.0;
+    SymbolicMath::Real abssum = 0.0;
+    for (c = test.cmin; c <= test.cmax; c += test.dc)
+    {
+      auto a = func.value();
+      c += test.epsilon;
+      auto b = func.value();
+      c -= test.epsilon;
+
+      auto d = diff.value();
+      abssum += std::abs(d);
+
+      norm += std::abs(d - (b - a) / test.epsilon);
+    }
+    // for debug purposes (to set tolerances for new tests)
+    // std::cerr << norm / abssum << '\t' << test.expression << '\n';
+    if (norm / abssum > test.tol)
+    {
+      std::cerr << "Derivative does not match finite differencing for '" << test.expression
+                << "' and the derivative '" << diff.format()
+                << "'.\nnorm/abssum = " << (norm / abssum) << "\n";
+      fail++;
+    }
+
+    total += 2;
+  }
 
   // Final output
 
@@ -154,31 +258,6 @@ main(int argc, char * argv[])
   }
 
   std::cout << "\033[0m"; // reset color
-
-  // deriv.simplify();
-  //
-  // // evaluate for various values of c
-  // for (c = -1.0; c <= 1.0; c += 0.3)
-  //   std::cout << deriv.value() << ' ';
-  // std::cout << '\n';
-  //
-  // deriv.compile();
-  //
-  // // evaluate for various values of c
-  // for (c = -1.0; c <= 1.0; c += 0.3)
-  //   std::cout << deriv.value() << ' ';
-  //
-  // // finite differencing
-  // auto dc = 1.0e-9;
-  // for (c = -1.0; c <= 1.0; c += 0.3)
-  // {
-  //   auto a = func.value();
-  //   c += dc;
-  //   auto b = func.value();
-  //   c -= dc;
-  //   std::cout << (b - a) / dc << ' ';
-  // }
-  // std::cout << '\n';
 
   return fail ? 1 : 0;
 }

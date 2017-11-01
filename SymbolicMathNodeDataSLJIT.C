@@ -169,7 +169,7 @@ JITReturnValue
 RealNumberData::jit(JITStateValue & state)
 {
   // sljit does not have any 64bit floating point immediates, so we need to make a mem->mem transfer
-  // this makes teh JIT code point to data in the expression tree! When the tree
+  // this makes the JIT code point to data in the expression tree! When the tree
   // gets simplified the node holding this data may be freed. We therefore need to
   // invalidate the JIT code upon simplification!
   sljit_emit_fop1(

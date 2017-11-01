@@ -352,7 +352,7 @@ UnaryFunctionData::jit(JITStateValue & state)
       return;
 
     case UnaryFunctionType::LOG2:
-      LIGHTNING_MATH_CALL1(std::log10);
+      LIGHTNING_MATH_CALL1(std::log2);
       return;
 
     case UnaryFunctionType::REAL:

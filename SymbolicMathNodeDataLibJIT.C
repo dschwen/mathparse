@@ -222,7 +222,7 @@ UnaryFunctionData::jit(JITStateValue & func)
       return jit_insn_acos(func, A);
 
     case UnaryFunctionType::ACOSH:
-      fatalError("Function not implemented");
+      LIBJIT_MATH_WRAPPER1(acosh)
 
     case UnaryFunctionType::ARG:
       fatalError("Function not implemented");
@@ -318,7 +318,7 @@ UnaryFunctionData::jit(JITStateValue & func)
       return jit_insn_tan(func, A);
 
     case UnaryFunctionType::TANH:
-      return jit_insn_tan(func, A);
+      return jit_insn_tanh(func, A);
 
     case UnaryFunctionType::TRUNC:
       return jit_insn_convert(
