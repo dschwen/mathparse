@@ -14,7 +14,7 @@ struct Test
 
 // clang-format off
 const std::vector<Test> tests = {
-  // obvious simplifcations
+  // obvious simplifications
   {"c/1.0", [](double c) { return c / 1.0; }},
   {"c+0", [](double c) { return c + 0.0; }},
   {"c*0", [](double c) { return c * 0.0; }},

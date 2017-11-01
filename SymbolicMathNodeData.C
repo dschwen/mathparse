@@ -54,7 +54,7 @@ RealArrayReferenceData::D(const ValueProvider & vp)
 {
   auto rard = dynamic_cast<const RealArrayReferenceData *>(&vp);
 
-  // check if the reference and teh index refer to identical memory locations
+  // check if the reference and the index refer to identical memory locations
   // TODO: We could dynamically make this evaluate to "rrd->_index == _index"!
   return (rard && &(rard->_ref) == &_ref) && &(rard->_index) == &_index ? Node(1.0) : Node(0.0);
 }
