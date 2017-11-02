@@ -148,23 +148,47 @@ public:
   std::string format() const override { return _name != "" ? _name : "{V}"; }
   std::string formatTree(std::string indent) const override;
 
+  // used to determine if two value providers are of the same type
+  virtual bool is(ValueProvider * a) const { return getTypeID() == a->getTypeID(); }
+
   void stackDepth(std::pair<int, int> & current_max) override { current_max.first++; }
 
 protected:
   std::string _name;
+
+  // we roll our own typeid system to avoid relying on RTTI
+  virtual void * getTypeID() const = 0;
 
   /// The parser needs to be able to read the name of the object upon registration
   friend Parser;
 };
 
 /**
+ * All actual value providers need to inherit from this helper template
+ * which implements the custom typeid system.
+ */
+template <class T>
+class ValueProviderDerived : public ValueProvider
+{
+public:
+protected:
+  ValueProviderDerived(const std::string & name) : ValueProvider(name) { (void)_vp_typeinfo_tag; }
+  virtual void * getTypeID() const { return reinterpret_cast<void *>(&_vp_typeinfo_tag); };
+
+private:
+  static int _vp_typeinfo_tag;
+};
+template <class T>
+int ValueProviderDerived<T>::_vp_typeinfo_tag;
+
+/**
  * Purely symbolic node that cannot be evaluated or compiled by substitted and
  * derived w.r.t.
  */
-class SymbolData : public ValueProvider
+class SymbolData : public ValueProviderDerived<SymbolData>
 {
 public:
-  SymbolData(const std::string & name) : ValueProvider(name) {}
+  SymbolData(const std::string & name) : ValueProviderDerived<SymbolData>(name) {}
 
   Real value() override { fatalError("Node cannot be evaluated"); }
   JITReturnValue jit(JITStateValue & state) override { fatalError("Node cannot be compiled"); }
@@ -177,11 +201,11 @@ public:
 /**
  * Simple value provider that fetches its contents from a referenced Real value
  */
-class RealReferenceData : public ValueProvider
+class RealReferenceData : public ValueProviderDerived<RealReferenceData>
 {
 public:
   RealReferenceData(const Real & ref, const std::string & name = "")
-    : ValueProvider(name), _ref(ref)
+    : ValueProviderDerived<RealReferenceData>(name), _ref(ref)
   {
   }
 
@@ -200,11 +224,11 @@ protected:
  * Simple value provider that fetches its contents from a referenced Real array value
  * and a referenced index variable
  */
-class RealArrayReferenceData : public ValueProvider
+class RealArrayReferenceData : public ValueProviderDerived<RealArrayReferenceData>
 {
 public:
   RealArrayReferenceData(const Real & ref, const int & index, const std::string & name = "")
-    : ValueProvider(name), _ref(ref), _index(index)
+    : ValueProviderDerived<RealArrayReferenceData>(name), _ref(ref), _index(index)
   {
   }
 

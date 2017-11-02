@@ -22,7 +22,10 @@ ValueProvider::formatTree(std::string indent) const
 Node
 SymbolData::D(const ValueProvider & vp)
 {
-  auto sd = dynamic_cast<const SymbolData *>(&vp);
+  if (!vp.is(this))
+    return Node(0.0);
+
+  auto sd = static_cast<const SymbolData *>(&vp);
   if (sd->_name == "")
     fatalError("Cannot differentiate with respect to an anonymous value node");
 
@@ -36,7 +39,10 @@ SymbolData::D(const ValueProvider & vp)
 Node
 RealReferenceData::D(const ValueProvider & vp)
 {
-  auto rrd = dynamic_cast<const RealReferenceData *>(&vp);
+  if (!vp.is(this))
+    return Node(0.0);
+
+  auto rrd = static_cast<const RealReferenceData *>(&vp);
 
   // std::cout << "d(" << format() << ")/d(" << vp.format()
   //           << ") = " << ((rrd && &(rrd->_ref) == &_ref) ? 1 : 0) << "   (" << rrd << ")\n";
@@ -52,7 +58,10 @@ RealReferenceData::D(const ValueProvider & vp)
 Node
 RealArrayReferenceData::D(const ValueProvider & vp)
 {
-  auto rard = dynamic_cast<const RealArrayReferenceData *>(&vp);
+  if (!vp.is(this))
+    return Node(0.0);
+
+  auto rard = static_cast<const RealArrayReferenceData *>(&vp);
 
   // check if the reference and the index refer to identical memory locations
   // TODO: We could dynamically make this evaluate to "rrd->_index == _index"!
