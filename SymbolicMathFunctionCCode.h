@@ -23,17 +23,11 @@ public:
   Function D(ValueProviderPtr vp) const { return Function(_root.D(*vp)); }
 
   /// Compile the expression tree for faster evaluation
-  void compile();
-
-  /// Evaluate the node (using JIT if available)
-  Real value();
+  void compile() override;
 
 protected:
   /// invalidate the JIT compiled function
   void invalidateJIT() override {}
-
-  /// JIT compiled function object
-  JITFunctionPtr _jit_code;
 };
 
 // end namespace SymbolicMath
