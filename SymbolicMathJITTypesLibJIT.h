@@ -8,6 +8,8 @@ namespace SymbolicMath
 
 const std::string jit_backend_name = "LibJIT";
 
+typedef Real (*JITFunctionPtr)();
+
 using JITReturnValue = jit_value_t;
 
 using JITStateValue = jit_function_t;

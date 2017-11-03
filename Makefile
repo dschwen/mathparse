@@ -6,7 +6,7 @@ JIT ?= lightning
 OBJS := SymbolicMathToken.o SymbolicMathTokenizer.o \
 			  SymbolicMathParser.o SymbolicMathSymbols.o \
 				SymbolicMathNode.o SymbolicMathNodeData.o \
-				SymbolicMathUtils.o
+				SymbolicMathUtils.o SymbolicMathFunctionBase.o
 
 # include configuration for the selected JIT backend
 include jit_$(JIT).mk

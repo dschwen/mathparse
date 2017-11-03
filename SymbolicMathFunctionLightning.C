@@ -49,21 +49,10 @@ Function::compile()
   jit_epilog();
 
   // generate machine code
-  _jit_code = reinterpret_cast<JITFunction>(jit_emit());
+  _jit_code = reinterpret_cast<JITFunctionPtr>(jit_emit());
 
   // free the compiler data
   jit_clear_state();
-}
-
-Real
-Function::value()
-{
-  if (_jit_code)
-    // if a JIT compiled version exists evaluate it
-    return _jit_code();
-  else
-    // otherwise recursively walk the expression tree (slow)
-    return _root.value();
 }
 
 void

@@ -16,7 +16,7 @@ Function::~Function()
 void
 Function::compile()
 {
-  if (_jit_closure)
+  if (_jit_code)
     return;
 
   // build and lock context
@@ -34,18 +34,7 @@ Function::compile()
   // compile, unlock context, transform into closure (jit_function_apply does NOT work!)
   jit_function_compile(function);
   jit_context_build_end(_jit_context);
-  _jit_closure = reinterpret_cast<JITFunctionPtr>(jit_function_to_closure(function));
-}
-
-Real
-Function::value()
-{
-  if (_jit_closure)
-    // if a JIT compiled version exists evaluate it
-    return _jit_closure();
-  else
-    // otherwise recursively walk the expression tree (slow)
-    return _root.value();
+  _jit_code = reinterpret_cast<JITFunctionPtr>(jit_function_to_closure(function));
 }
 
 // end namespace SymbolicMath

@@ -8,6 +8,8 @@ namespace SymbolicMath
 
 const std::string jit_backend_name = "GCCJIT";
 
+typedef Real (*JITFunctionPtr)();
+
 using JITReturnValue = gcc_jit_rvalue *;
 
 struct JITStateValue

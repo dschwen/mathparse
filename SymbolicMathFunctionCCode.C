@@ -20,7 +20,7 @@ Function::~Function()
 void
 Function::compile()
 {
-  if (_jit_closure)
+  if (_jit_code)
     return;
 
   // build and lock context
@@ -64,12 +64,12 @@ Function::compile()
   }
 
   // fetch function pointer
-  _jit_closure = reinterpret_cast<JITFunctionPtr>(dlsym(lib, "F"));
+  _jit_code = reinterpret_cast<JITFunctionPtr>(dlsym(lib, "F"));
   const char * error = dlerror();
   if (error)
   {
     std::cerr << "Error binding JIT compiled function\n" << error << '\n';
-    _jit_closure = NULL;
+    _jit_code = NULL;
     std::remove(otmpname);
     return;
   }
@@ -80,9 +80,9 @@ Function::compile()
 Real
 Function::value()
 {
-  if (_jit_closure)
+  if (_jit_code)
     // if a JIT compiled version exists evaluate it
-    return _jit_closure();
+    return _jit_code();
   else
     // otherwise recursively walk the expression tree (slow)
     return _root.value();
