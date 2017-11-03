@@ -44,6 +44,7 @@ public:
   virtual bool is(BinaryFunctionType) const { return false; };
   virtual bool is(ConditionalType) const { return false; };
   virtual bool is(IntegerPowerType) const { return false; };
+  virtual bool is(ValueProvider * a) const { return false; }
 
   virtual bool isValid() const { return true; };
 
@@ -149,7 +150,7 @@ public:
   std::string formatTree(std::string indent) const override;
 
   // used to determine if two value providers are of the same type
-  virtual bool is(ValueProvider * a) const { return getTypeID() == a->getTypeID(); }
+  bool is(ValueProvider * a) const override { return getTypeID() == a->getTypeID(); }
 
   void stackDepth(std::pair<int, int> & current_max) override { current_max.first++; }
 

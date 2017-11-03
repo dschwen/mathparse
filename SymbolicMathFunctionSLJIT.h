@@ -2,12 +2,9 @@
 #define SYMBOLICMATHFUNCTIONSLJIT_H
 
 #include "SymbolicMathFunctionBase.h"
-#include "SymbolicMathJITTypesSLJIT.h"
 
 namespace SymbolicMath
 {
-
-using ValueProviderPtr = std::shared_ptr<ValueProvider>;
 
 /**
  * The Function class is the top level wrapper for a Node based expression tree.
@@ -17,7 +14,7 @@ class Function : public FunctionBase
 {
 public:
   /// Construct form given node
-  Function(const Node & root) : FunctionBase(root), _jit_code(nullptr) {}
+  Function(const Node & root) : FunctionBase(root) {}
 
   /// tear down function (release JIT context)
   ~Function();
@@ -26,22 +23,14 @@ public:
   Function D(ValueProviderPtr vp) const { return Function(_root.D(*vp)); }
 
   /// Compile the expression tree for faster evaluation
-  void compile();
+  void compile() override;
 
-  /// check if the Function was successfully compiled
-  bool isCompiled() { return _jit_code; }
-
-  /// Evaluate the node (using JIT if available)
-  Real value();
+  /// Evaluate the node (using JIT if available) - Result is on the stack
+  Real value() override;
 
 protected:
   /// invalidate the JIT compiled function
   void invalidateJIT() override;
-
-  using JITFunction = long SLJIT_CALL (*)();
-
-  /// executable JIT code
-  JITFunction _jit_code;
 
   /// floating point stack
   std::vector<double> _stack;

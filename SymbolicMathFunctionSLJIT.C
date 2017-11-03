@@ -42,7 +42,7 @@ Function::compile()
   sljit_emit_return(state.C, SLJIT_MOV, SLJIT_R0, 0);
 
   // generate machine code
-  _jit_code = reinterpret_cast<JITFunction>(sljit_generate_code(state.C));
+  _jit_code = reinterpret_cast<JITFunctionPtr>(sljit_generate_code(state.C));
 
   // free the compiler data
   sljit_free_compiler(state.C);

@@ -2,6 +2,7 @@
 #define SYMBOLICMATHFUNCTIONBASE_H
 
 #include "SymbolicMathNode.h"
+#include "SymbolicMathJITTypes.h"
 
 namespace SymbolicMath
 {
@@ -16,7 +17,8 @@ class FunctionBase
 {
 public:
   /// Construct form given node
-  FunctionBase(const Node & root) : _root(root) {}
+  FunctionBase(const Node & root) : _root(root), _jit_code(nullptr) {}
+  virtual ~FunctionBase() {}
 
   /// Simplify the subtree at the node in place
   void simplify()
@@ -30,12 +32,24 @@ public:
   std::string formatTree(std::string indent) const { return _root.formatTree(); }
   ///@}
 
+  /// Compile the expression tree for faster evaluation
+  virtual void compile() = 0;
+
+  /// check if the Function was successfully compiled
+  bool isCompiled() { return _jit_code; }
+
+  /// Evaluate the node (using JIT if available)
+  virtual Real value();
+
 protected:
   /// invalidate the JIT compiled function
   virtual void invalidateJIT() = 0;
 
   /// root node of the exprssion tree managed by this function
   Node _root;
+
+  /// executable JIT code
+  JITFunctionPtr _jit_code;
 };
 
 // end namespace SymbolicMath
