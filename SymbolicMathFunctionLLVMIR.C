@@ -90,10 +90,10 @@ Function::compile()
       llvm::cast<llvm::Function>(M->getOrInsertFunction("F", llvm::Type::getDoubleTy(context)));
 
   llvm::BasicBlock * BB = llvm::BasicBlock::Create(context, "EntryBlock", F);
-  llvm::IRBuilder<> builder(BB);
+  JITStateValue state(BB, M.get());
 
   // return result
-  builder.CreateRet(_root.jit(builder));
+  state.builder.CreateRet(_root.jit(state));
 
   // print module (debug)
   // M->print(llvm::errs(), nullptr);

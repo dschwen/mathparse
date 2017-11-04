@@ -3,6 +3,8 @@
 #include "SymbolicMathNodeData.h"
 #include "SymbolicMathUtils.h"
 
+#include "llvm/IR/Intrinsics.h"
+
 #include <cmath>
 #include <iostream> // debug
 
@@ -16,9 +18,9 @@ namespace SymbolicMath
  ********************************************************/
 
 JITReturnValue
-RealNumberData::jit(JITStateValue & builder)
+RealNumberData::jit(JITStateValue & state)
 {
-  return ConstantFP::get(builder.getDoubleTy(), _value);
+  return ConstantFP::get(state.builder.getDoubleTy(), _value);
 }
 
 /********************************************************
@@ -26,12 +28,12 @@ RealNumberData::jit(JITStateValue & builder)
  ********************************************************/
 
 JITReturnValue
-RealReferenceData::jit(JITStateValue & builder)
+RealReferenceData::jit(JITStateValue & state)
 {
-  auto adr = ConstantInt::get(builder.getInt64Ty(), (int64_t)&_ref);
-  auto ptr =
-      llvm::ConstantExpr::getIntToPtr(adr, llvm::PointerType::getUnqual(builder.getDoubleTy()));
-  return builder.CreateLoad(ptr);
+  auto adr = ConstantInt::get(state.builder.getInt64Ty(), (int64_t)&_ref);
+  auto ptr = llvm::ConstantExpr::getIntToPtr(
+      adr, llvm::PointerType::getUnqual(state.builder.getDoubleTy()));
+  return state.builder.CreateLoad(ptr);
 }
 
 /********************************************************
@@ -39,7 +41,7 @@ RealReferenceData::jit(JITStateValue & builder)
  ********************************************************/
 
 JITReturnValue
-RealArrayReferenceData::jit(JITStateValue & builder)
+RealArrayReferenceData::jit(JITStateValue & state)
 {
   fatalError("Not implemented yet");
 }
@@ -49,15 +51,15 @@ RealArrayReferenceData::jit(JITStateValue & builder)
  ********************************************************/
 
 JITReturnValue
-UnaryOperatorData::jit(JITStateValue & builder)
+UnaryOperatorData::jit(JITStateValue & state)
 {
   switch (_type)
   {
     case UnaryOperatorType::PLUS:
-      return _args[0].jit(builder);
+      return _args[0].jit(state);
 
     case UnaryOperatorType::MINUS:
-      return builder.CreateFNeg(_args[0].jit(builder));
+      return state.builder.CreateFNeg(_args[0].jit(state));
 
     default:
       fatalError("Unknown operator");
@@ -69,18 +71,18 @@ UnaryOperatorData::jit(JITStateValue & builder)
  ********************************************************/
 
 JITReturnValue
-BinaryOperatorData::jit(JITStateValue & builder)
+BinaryOperatorData::jit(JITStateValue & state)
 {
-  auto A = _args[0].jit(builder);
-  auto B = _args[1].jit(builder);
+  auto A = _args[0].jit(state);
+  auto B = _args[1].jit(state);
 
   switch (_type)
   {
     case BinaryOperatorType::SUBTRACTION:
-      return builder.CreateFSub(A, B);
+      return state.builder.CreateFSub(A, B);
 
     case BinaryOperatorType::DIVISION:
-      return builder.CreateFDiv(A, B);
+      return state.builder.CreateFDiv(A, B);
 
     case BinaryOperatorType::MODULO:
       fatalError("Operator not implemented yet");
@@ -89,28 +91,28 @@ BinaryOperatorData::jit(JITStateValue & builder)
       fatalError("Operator not implemented yet");
 
     case BinaryOperatorType::LOGICAL_OR:
-      return builder.CreateOr(A, B); //?
+      return state.builder.CreateOr(A, B); //?
 
     case BinaryOperatorType::LOGICAL_AND:
-      return builder.CreateAnd(A, B); //?
+      return state.builder.CreateAnd(A, B); //?
 
     case BinaryOperatorType::LESS_THAN:
-      return builder.CreateFCmpOLT(A, B);
+      return state.builder.CreateFCmpOLT(A, B);
 
     case BinaryOperatorType::GREATER_THAN:
-      return builder.CreateFCmpOGT(A, B);
+      return state.builder.CreateFCmpOGT(A, B);
 
     case BinaryOperatorType::LESS_EQUAL:
-      return builder.CreateFCmpOLE(A, B);
+      return state.builder.CreateFCmpOLE(A, B);
 
     case BinaryOperatorType::GREATER_EQUAL:
-      return builder.CreateFCmpOGE(A, B);
+      return state.builder.CreateFCmpOGE(A, B);
 
     case BinaryOperatorType::EQUAL:
-      return builder.CreateFCmpOEQ(A, B);
+      return state.builder.CreateFCmpOEQ(A, B);
 
     case BinaryOperatorType::NOT_EQUAL:
-      return builder.CreateFCmpONE(A, B);
+      return state.builder.CreateFCmpONE(A, B);
 
     default:
       fatalError("Unknown operator");
@@ -122,24 +124,24 @@ BinaryOperatorData::jit(JITStateValue & builder)
  ********************************************************/
 
 JITReturnValue
-MultinaryOperatorData::jit(JITStateValue & builder)
+MultinaryOperatorData::jit(JITStateValue & state)
 {
   if (_args.size() == 0)
     fatalError("No child nodes in multinary operator");
   else if (_args.size() == 1)
-    return _args[0].jit(builder);
+    return _args[0].jit(state);
   else
   {
-    JITReturnValue temp = _args[0].jit(builder);
+    JITReturnValue temp = _args[0].jit(state);
     for (std::size_t i = 1; i < _args.size(); ++i)
       switch (_type)
       {
         case MultinaryOperatorType::ADDITION:
-          temp = builder.CreateFAdd(temp, _args[i].jit(builder));
+          temp = state.builder.CreateFAdd(temp, _args[i].jit(state));
           break;
 
         case MultinaryOperatorType::MULTIPLICATION:
-          temp = builder.CreateFMul(temp, _args[i].jit(builder));
+          temp = state.builder.CreateFMul(temp, _args[i].jit(state));
           break;
 
         default:
@@ -154,14 +156,16 @@ MultinaryOperatorData::jit(JITStateValue & builder)
  ********************************************************/
 
 JITReturnValue
-UnaryFunctionData::jit(JITStateValue & builder)
+UnaryFunctionData::jit(JITStateValue & state)
 {
-  std::vector<Value *> args = {_args[0].jit(builder)};
+  std::vector<Value *> args = {_args[0].jit(state)};
+  llvm::Intrinsic::ID func;
 
   switch (_type)
   {
     case UnaryFunctionType::ABS:
-      // return jit_insn_abs(func, A);
+      func = llvm::Intrinsic::fabs;
+      break;
 
     case UnaryFunctionType::ACOS:
 
@@ -182,11 +186,15 @@ UnaryFunctionData::jit(JITStateValue & builder)
     case UnaryFunctionType::CBRT:
 
     case UnaryFunctionType::CEIL:
+      func = llvm::Intrinsic::ceil;
+      break;
 
     case UnaryFunctionType::CONJ:
       fatalError("Function not implemented");
 
     case UnaryFunctionType::COS:
+      func = llvm::Intrinsic::cos;
+      break;
 
     case UnaryFunctionType::COSH:
 
@@ -205,21 +213,35 @@ UnaryFunctionData::jit(JITStateValue & builder)
     case UnaryFunctionType::ERF:
 
     case UnaryFunctionType::EXP:
+      func = llvm::Intrinsic::exp;
+      break;
 
     case UnaryFunctionType::EXP2:
+      func = llvm::Intrinsic::exp2;
+      break;
 
     case UnaryFunctionType::FLOOR:
+      func = llvm::Intrinsic::floor;
+      break;
 
     case UnaryFunctionType::IMAG:
       fatalError("Function not implemented");
 
     case UnaryFunctionType::INT:
+      func = llvm::Intrinsic::round;
+      break;
 
     case UnaryFunctionType::LOG:
+      func = llvm::Intrinsic::log;
+      break;
 
     case UnaryFunctionType::LOG10:
+      func = llvm::Intrinsic::log10;
+      break;
 
     case UnaryFunctionType::LOG2:
+      func = llvm::Intrinsic::log2;
+      break;
 
     case UnaryFunctionType::REAL:
       fatalError("Function not implemented");
@@ -231,10 +253,14 @@ UnaryFunctionData::jit(JITStateValue & builder)
       //     jit_insn_cos(func, A));
 
     case UnaryFunctionType::SIN:
+      func = llvm::Intrinsic::sin;
+      break;
 
     case UnaryFunctionType::SINH:
 
     case UnaryFunctionType::SQRT:
+      func = llvm::Intrinsic::sqrt;
+      break;
 
     case UnaryFunctionType::T:
 
@@ -243,12 +269,15 @@ UnaryFunctionData::jit(JITStateValue & builder)
     case UnaryFunctionType::TANH:
 
     case UnaryFunctionType::TRUNC:
-      // return jit_insn_convert(
-      //     func, jit_insn_convert(func, A, jit_type_int, 0), jit_type_float64, 0);
+      func = llvm::Intrinsic::trunc;
+      break;
 
     default:
       fatalError("Function not implemented");
   }
+
+  return state.builder.CreateCall(
+      Intrinsic::getDeclaration(state.M, func, {state.builder.getDoubleTy()}), args);
 }
 
 /********************************************************
@@ -256,9 +285,9 @@ UnaryFunctionData::jit(JITStateValue & builder)
  ********************************************************/
 
 JITReturnValue
-BinaryFunctionData::jit(JITStateValue & builder)
+BinaryFunctionData::jit(JITStateValue & state)
 {
-  std::vector<Value *> args = {_args[0].jit(builder), _args[1].jit(builder)};
+  std::vector<Value *> args = {_args[0].jit(state), _args[1].jit(state)};
 
   switch (_type)
   {
@@ -296,7 +325,7 @@ BinaryFunctionData::jit(JITStateValue & builder)
  ********************************************************/
 
 JITReturnValue
-ConditionalData::jit(JITStateValue & builder)
+ConditionalData::jit(JITStateValue & state)
 {
   // if (_type != ConditionalType::IF)
   fatalError("Conditional not implemented");
@@ -305,13 +334,13 @@ ConditionalData::jit(JITStateValue & builder)
   // jit_label_t label2 = jit_label_undefined;
   // JITReturnValue result = jit_value_create(func, jit_type_float64);
   //
-  // jit_insn_branch_if_not(func, _args[0].jit(builder), &label1);
+  // jit_insn_branch_if_not(func, _args[0].jit(state), &label1);
   // // true branch
-  // jit_insn_store(func, result, _args[1].jit(builder));
+  // jit_insn_store(func, result, _args[1].jit(state));
   // jit_insn_branch(func, &label2);
   // jit_insn_label(func, &label1);
   // // false branch
-  // jit_insn_store(func, result, _args[2].jit(builder));
+  // jit_insn_store(func, result, _args[2].jit(state));
   // jit_insn_label(func, &label2);
   // return jit_insn_load(func, result);
 }
@@ -321,12 +350,12 @@ ConditionalData::jit(JITStateValue & builder)
  ********************************************************/
 
 JITReturnValue
-IntegerPowerData::jit(JITStateValue & builder)
+IntegerPowerData::jit(JITStateValue & state)
 {
   fatalError("Not implemented yet");
   // auto result = jit_value_create_float64_constant(func, jit_type_float64, (jit_float64)1.0);
   //
-  // auto A = _arg.jit(builder);
+  // auto A = _arg.jit(state);
   // int e = _exponent > 0 ? _exponent : -_exponent;
   // while (e)
   // {

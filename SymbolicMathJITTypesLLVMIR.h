@@ -14,7 +14,12 @@ typedef Real (*JITFunctionPtr)();
 using JITReturnValue = llvm::Value *;
 
 // basic block?!
-using JITStateValue = llvm::IRBuilder<> &;
+struct JITStateValue
+{
+  JITStateValue(llvm::BasicBlock * BB, llvm::Module * M_) : builder(BB), M(M_) {}
+  llvm::IRBuilder<> builder;
+  llvm::Module * M;
+};
 
 // end namespace SymbolicMath
 }
