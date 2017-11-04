@@ -1,8 +1,7 @@
 # SLJIT
 OBJS += SymbolicMathFunctionLLVMIR.o SymbolicMathNodeDataLLVMIR.o
 CONFIG := -DSYMBOLICMATH_USE_LLVMIR
-LDFLAGS := $(shell llvm-config --ldflags --system-libs --libs core orcjit native)
-# filter out the -fno-rtti flag (ok as we're not deriving from LLVM classes)
-#CXXFLAGS += $(shell llvm-config --cxxflags | sed 's/ -fno-rtti//g')
-CXXFLAGS += $(shell llvm-config --cxxflags)
+LLVM_CONFIG ?= llvm-config
+LDFLAGS := $(shell $(LLVM_CONFIG) --ldflags --system-libs --libs core orcjit native)
+CXXFLAGS += $(shell $(LLVM_CONFIG) --cxxflags)
 CPPFLAGS := $(CXXFLAGS)
