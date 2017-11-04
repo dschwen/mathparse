@@ -5,19 +5,33 @@ It consists of
 
 - a tokenizer in `SymbolicMathTokenize`
 - an infix to prefix tree converter in `SymbolicMathParser`
+- an automatic differentiation component
+- Just-in-time compilation
+## Building SymbolicMath
+
+Build using
+```
+make JIT=backend
+```
+
+Where `backend` is one of the options in the table below.
 
 ## Features
 
 ### Just-in-time compilation
 
-SymbolicMath features just-in-time (JIT) compilation of expression trees.
-Available JIT backends are
+SymbolicMath features just-in-time (JIT) compilation of expression trees. Available JIT backends are:
 
-* [GNU LibJIT](https://www.gnu.org/software/libjit/) - Fastest option, limited architecture support
-* [GNU Lightning](https://www.gnu.org/software/lightning/) - Good architecture support, medium speed
-* [SLJIT](http://sljit.sourceforge.net/) - Broad architecture support, no external dependencies, slowest option
+`JIT=` parameter|Project | Description
+---------|-------------|------------
+`llvmir` |[LLVM](http://llvm.org) | Builds LLVM intermediate representation, optimizes it, and compiles it with LLVM Orc JIT
+`gccjit`|[libgccjit](https://gcc.gnu.org/onlinedocs/jit/)| Uses _libggcjit_ from the GNU Compiler Collection (gcc) to build _-O3_ optimized code in memory
+`ccode` | -| Launches an external compiler to compile generated C code and links in the generated object using _dlopen_
+`libjit`| [GNU LibJIT](https://www.gnu.org/software/libjit/) | JIT library originally developed for the Mono project. Limited architecture support
+`lightning`| [GNU Lightning](https://www.gnu.org/software/lightning/) | Low level assembly generator. Good architecture support
+`sljit`| [SLJIT](http://sljit.sourceforge.net/) | Low level assembly generator. Broad architecture support, no external dependencies
 
-Research is ongoing as to which backend is best used.
+Research is ongoing as to which backend is best used. See [performance comparison](PERFORMANCE.md) for details.
 
 ### Detailed error messages:
 
