@@ -24,6 +24,8 @@ class ValueProvider;
 class NodeData
 {
 public:
+  virtual ~NodeData() {}
+
   virtual Real value() = 0;
   virtual JITReturnValue jit(JITStateValue & state) = 0;
 
@@ -92,7 +94,7 @@ class FixedArgumentData : public NodeData
 {
 public:
   template <typename... Args, typename = typename std::enable_if<N == sizeof...(Args), void>::type>
-  FixedArgumentData(Enum type, Args &&... args) : _type(type), _args({args...})
+  FixedArgumentData(Enum type, Args &&... args) : _type(type), _args({{args...}})
   {
   }
 
@@ -108,8 +110,8 @@ public:
   }
 
 protected:
-  std::array<Node, N> _args;
   Enum _type;
+  std::array<Node, N> _args;
 };
 
 /**
@@ -133,8 +135,8 @@ public:
   }
 
 protected:
-  std::vector<Node> _args;
   Enum _type;
+  std::vector<Node> _args;
 };
 
 /**
