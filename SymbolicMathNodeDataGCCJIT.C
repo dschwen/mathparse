@@ -18,7 +18,7 @@ gccjit_wrap_min(double a, double b)
 double
 gccjit_wrap_max(double a, double b)
 {
-  return std::min(a, b);
+  return std::max(a, b);
 }
 
 /********************************************************
