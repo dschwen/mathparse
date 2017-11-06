@@ -9,26 +9,6 @@
 namespace SymbolicMath
 {
 
-#define GLUE_HELPER(x, y) x##y
-#define GLUE(x, y) GLUE_HELPER(x, y)
-
-#define SLJIT_MATH_WRAPPER1X(FUNC, EXPR)                                                           \
-  static long SLJIT_FUNC GLUE(sljit_wrap_, FUNC)(long a)                                           \
-  {                                                                                                \
-    auto & A = *reinterpret_cast<double *>(a);                                                     \
-    A = EXPR;                                                                                      \
-    return 0;                                                                                      \
-  }
-
-#define SLJIT_MATH_WRAPPER2(FUNC)                                                                  \
-  static long SLJIT_FUNC GLUE(sljit_wrap_, FUNC)(long a, long b)                                   \
-  {                                                                                                \
-    auto & A = *reinterpret_cast<double *>(a);                                                     \
-    auto & B = *reinterpret_cast<double *>(b);                                                     \
-    A = std::FUNC(A, B);                                                                           \
-    return 0;                                                                                      \
-  }
-
 const double sljit_one = 1.0;
 const double sljit_zero = 0.0;
 
@@ -55,83 +35,28 @@ sljit_binary_function_call(struct sljit_compiler * C, double (*func)(double, dou
 void
 sljit_fcmp_wrapper(JITStateValue & state, sljit_s32 op)
 {
-  // struct sljit_jump * true_lbl = sljit_emit_fcmp(
-  //     state.C, op, SLJIT_MEM, (sljit_sw)(state.stack - 1), SLJIT_MEM, (sljit_sw)state.stack);
-  // // false case
-  // // put 0.0 on stack
-  // sljit_emit_op1(
-  //     state.C, SLJIT_MOV, SLJIT_MEM, (sljit_sw)(state.stack - 1), SLJIT_IMM, (sljit_sw)0);
-  // struct sljit_jump * out_lbl = sljit_emit_jump(state.C, SLJIT_JUMP);
-  //
-  // // true case
-  // sljit_set_label(true_lbl, sljit_emit_label(state.C));
-  //
-  // // put 1.0 on stack
-  // sljit_emit_fop1(state.C,
-  //                 SLJIT_MOV_F64,
-  //                 SLJIT_MEM,
-  //                 (sljit_sw)(state.stack - 1),
-  //                 SLJIT_MEM,
-  //                 (sljit_sw)&sljit_one);
-  //
-  // // end if
-  // sljit_set_label(out_lbl, sljit_emit_label(state.C));
+  struct sljit_jump * true_lbl = sljit_emit_fcmp(state.C, op, SLJIT_FR0, 0, SLJIT_FR1, 0);
+
+  // false case
+  // put 0.0 on stack
+  sljit_emit_fop1(state.C, SLJIT_MOV_F64, SLJIT_FR0, 0, SLJIT_MEM, (sljit_sw)&sljit_zero);
+  struct sljit_jump * out_lbl = sljit_emit_jump(state.C, SLJIT_JUMP);
+
+  // true case
+  sljit_set_label(true_lbl, sljit_emit_label(state.C));
+
+  // put 1.0 on stack
+  sljit_emit_fop1(state.C, SLJIT_MOV_F64, SLJIT_FR0, 0, SLJIT_MEM, (sljit_sw)&sljit_one);
+
+  // end if
+  sljit_set_label(out_lbl, sljit_emit_label(state.C));
 }
 
-void
-sljit_logic_wrapper(JITStateValue & state, sljit_s32 op)
+double
+sljit_trunc_wrapper(double A)
 {
-  // // load operands and convert to 0/1 in R0 and R1
-  // sljit_emit_op1(state.C, SLJIT_MOV, SLJIT_R0, 0, SLJIT_IMM, (sljit_sw)0);
-  // sljit_emit_op1(state.C, SLJIT_MOV, SLJIT_R1, 0, SLJIT_R0, 0);
-  // // put zero in FR1
-  // sljit_emit_fop1(state.C, SLJIT_MOV_F64, SLJIT_FR0, 0, SLJIT_MEM, (sljit_sw)&sljit_zero);
-  //
-  // struct sljit_jump * r0_zero = sljit_emit_fcmp(
-  //     state.C, SLJIT_EQUAL_F64, SLJIT_MEM, (sljit_sw)(state.stack - 1), SLJIT_FR0, 0);
-  // sljit_emit_op1(state.C, SLJIT_MOV, SLJIT_R0, 0, SLJIT_IMM, (sljit_sw)1);
-  // sljit_set_label(r0_zero, sljit_emit_label(state.C));
-  //
-  // struct sljit_jump * r1_zero =
-  //     sljit_emit_fcmp(state.C, SLJIT_EQUAL_F64, SLJIT_MEM, (sljit_sw)state.stack, SLJIT_FR0, 0);
-  // sljit_emit_op1(state.C, SLJIT_MOV, SLJIT_R1, 0, SLJIT_IMM, (sljit_sw)1);
-  // sljit_set_label(r1_zero, sljit_emit_label(state.C));
-  //
-  // // bitwise (integer) logic operation
-  // sljit_emit_op2(state.C, op, SLJIT_R0, 0, SLJIT_R0, 0, SLJIT_R1, 0);
-  //
-  // struct sljit_jump * true_lbl =
-  //     sljit_emit_cmp(state.C, SLJIT_NOT_EQUAL, SLJIT_R0, 0, SLJIT_IMM, 0);
-  //
-  // // false case
-  // // put 0.0 on stack
-  // sljit_emit_op1(
-  //     state.C, SLJIT_MOV, SLJIT_MEM, (sljit_sw)(state.stack - 1), SLJIT_IMM, (sljit_sw)0);
-  // struct sljit_jump * out_lbl = sljit_emit_jump(state.C, SLJIT_JUMP);
-  //
-  // // true case
-  // sljit_set_label(true_lbl, sljit_emit_label(state.C));
-  //
-  // // put 1.0 on stack
-  // sljit_emit_fop1(state.C,
-  //                 SLJIT_MOV_F64,
-  //                 SLJIT_MEM,
-  //                 (sljit_sw)(state.stack - 1),
-  //                 SLJIT_MEM,
-  //                 (sljit_sw)&sljit_one);
-  //
-  // // end if
-  // sljit_set_label(out_lbl, sljit_emit_label(state.C));
+  return static_cast<int>(A);
 }
-
-SLJIT_MATH_WRAPPER1X(sec, 1.0 / std::cos(A))
-SLJIT_MATH_WRAPPER1X(csc, 1.0 / std::sin(A))
-SLJIT_MATH_WRAPPER1X(cot, 1.0 / std::tan(A))
-SLJIT_MATH_WRAPPER1X(int, A < 0 ? std::ceil(A - 0.5) : std::floor(A + 0.5))
-SLJIT_MATH_WRAPPER1X(trunc, static_cast<int>(A))
-
-SLJIT_MATH_WRAPPER2(max)
-SLJIT_MATH_WRAPPER2(min)
 
 void
 stack_push(JITStateValue & state)
@@ -139,7 +64,6 @@ stack_push(JITStateValue & state)
   if (state.sp >= 0)
     sljit_emit_fop1(
         state.C, SLJIT_MOV_F64, SLJIT_MEM1(SLJIT_SP), state.sp * sizeof(double), SLJIT_FR0, 0);
-  // jit_stxi_d(state.sp * sizeof(double) + state.stack_base, JIT_FP, JIT_F0);
   state.sp++;
 }
 
@@ -150,7 +74,6 @@ stack_pop(JITStateValue & state, sljit_s32 op)
     fatalError("Stack exhausted in stack_pop");
   state.sp--;
   sljit_emit_fop1(state.C, SLJIT_MOV_F64, op, 0, SLJIT_MEM1(SLJIT_SP), state.sp * sizeof(double));
-  // jit_ldxi_d(reg, JIT_FP, state.sp * sizeof(double) + state.stack_base);
 }
 
 /********************************************************
@@ -160,10 +83,10 @@ stack_pop(JITStateValue & state, sljit_s32 op)
 JITReturnValue
 RealNumberData::jit(JITStateValue & state)
 {
-  // sljit does not have any 64bit floating point immediates, so we need to make a mem->mem transfer
-  // this makes the JIT code point to data in the expression tree! When the tree
-  // gets simplified the node holding this data may be freed. We therefore need to
-  // invalidate the JIT code upon simplification!
+  // sljit does not have any 64bit floating point immediates, so we need to make a mem->register
+  // transfer this makes the JIT code point to data in the expression tree! When the tree gets
+  // simplified the node holding this data may be freed. We therefore need to invalidate the JIT
+  // code upon simplification!
   stack_push(state);
   sljit_emit_fop1(state.C, SLJIT_MOV_F64, SLJIT_FR0, 0, SLJIT_MEM, (sljit_sw)&_value);
 }
@@ -256,12 +179,58 @@ BinaryOperatorData::jit(JITStateValue & state)
       return;
 
     case BinaryOperatorType::LOGICAL_OR:
-      sljit_logic_wrapper(state, SLJIT_OR);
+    {
+      sljit_emit_fop1(state.C, SLJIT_MOV_F64, SLJIT_FR2, 0, SLJIT_MEM, (sljit_sw)&sljit_zero);
+      // either argument is true -> true
+      struct sljit_jump * true_lbl1 =
+          sljit_emit_fcmp(state.C, SLJIT_NOT_EQUAL_F64, SLJIT_FR0, 0, SLJIT_FR2, 0);
+      struct sljit_jump * true_lbl2 =
+          sljit_emit_fcmp(state.C, SLJIT_NOT_EQUAL_F64, SLJIT_FR1, 0, SLJIT_FR2, 0);
+
+      // false case
+      // put 0.0 on stack
+      sljit_emit_fop1(state.C, SLJIT_MOV_F64, SLJIT_FR0, 0, SLJIT_FR2, 0);
+      struct sljit_jump * out_lbl = sljit_emit_jump(state.C, SLJIT_JUMP);
+
+      // true case
+      sljit_set_label(true_lbl1, sljit_emit_label(state.C));
+      sljit_set_label(true_lbl2, sljit_emit_label(state.C));
+
+      // put 1.0 on stack
+      sljit_emit_fop1(state.C, SLJIT_MOV_F64, SLJIT_FR0, 0, SLJIT_MEM, (sljit_sw)&sljit_one);
+
+      // end if
+      sljit_set_label(out_lbl, sljit_emit_label(state.C));
+
       return;
+    }
 
     case BinaryOperatorType::LOGICAL_AND:
-      sljit_logic_wrapper(state, SLJIT_AND);
+    {
+      sljit_emit_fop1(state.C, SLJIT_MOV_F64, SLJIT_FR2, 0, SLJIT_MEM, (sljit_sw)&sljit_zero);
+      // either argument is false -> false
+      struct sljit_jump * false_lbl1 =
+          sljit_emit_fcmp(state.C, SLJIT_EQUAL_F64, SLJIT_FR0, 0, SLJIT_FR2, 0);
+      struct sljit_jump * false_lbl2 =
+          sljit_emit_fcmp(state.C, SLJIT_EQUAL_F64, SLJIT_FR1, 0, SLJIT_FR2, 0);
+
+      // true case
+      // put 1.0 on stack
+      sljit_emit_fop1(state.C, SLJIT_MOV_F64, SLJIT_FR0, 0, SLJIT_MEM, (sljit_sw)&sljit_one);
+      struct sljit_jump * out_lbl = sljit_emit_jump(state.C, SLJIT_JUMP);
+
+      // false case
+      sljit_set_label(false_lbl1, sljit_emit_label(state.C));
+      sljit_set_label(false_lbl2, sljit_emit_label(state.C));
+
+      // put 0.0 on stack
+      sljit_emit_fop1(state.C, SLJIT_MOV_F64, SLJIT_FR0, 0, SLJIT_FR2, 0);
+
+      // end if
+      sljit_set_label(out_lbl, sljit_emit_label(state.C));
+
       return;
+    }
 
     case BinaryOperatorType::LESS_THAN:
       sljit_fcmp_wrapper(state, SLJIT_LESS_F64);
@@ -337,7 +306,7 @@ UnaryFunctionData::jit(JITStateValue & state)
   switch (_type)
   {
     case UnaryFunctionType::ABS:
-      sljit_unary_function_call(state.C, std::abs);
+      sljit_emit_fop1(state.C, SLJIT_ABS_F64, SLJIT_FR0, 0, SLJIT_FR0, 0);
       return;
 
     case UnaryFunctionType::ACOS:
@@ -466,9 +435,8 @@ UnaryFunctionData::jit(JITStateValue & state)
       return;
 
     case UnaryFunctionType::TRUNC:
-      // sljit_unary_function_call(state.C, std::tanh);
-      // sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_trunc));
-      // return;
+      sljit_unary_function_call(state.C, sljit_trunc_wrapper);
+      return;
 
     default:
       fatalError("Function not implemented");
@@ -502,12 +470,34 @@ BinaryFunctionData::jit(JITStateValue & state)
       fatalError("Function not implemented");
 
     case BinaryFunctionType::MIN:
-      sljit_emit_ijump(state.C, SLJIT_FAST_CALL, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_min));
+    {
+      struct sljit_jump * out_lbl =
+          sljit_emit_fcmp(state.C, SLJIT_LESS_F64, SLJIT_FR0, 0, SLJIT_FR1, 0);
+
+      // FR0 >= FR1 case
+      // put FR1 on stack
+      sljit_emit_fop1(state.C, SLJIT_MOV_F64, SLJIT_FR0, 0, SLJIT_FR1, 0);
+
+      // else jump here and leave FR0
+      sljit_set_label(out_lbl, sljit_emit_label(state.C));
+
       return;
+    }
 
     case BinaryFunctionType::MAX:
-      sljit_emit_ijump(state.C, SLJIT_FAST_CALL, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_max));
+    {
+      struct sljit_jump * out_lbl =
+          sljit_emit_fcmp(state.C, SLJIT_GREATER_F64, SLJIT_FR0, 0, SLJIT_FR1, 0);
+
+      // FR0 >= FR1 case
+      // put FR1 on stack
+      sljit_emit_fop1(state.C, SLJIT_MOV_F64, SLJIT_FR0, 0, SLJIT_FR1, 0);
+
+      // else jump here and leave FR0
+      sljit_set_label(out_lbl, sljit_emit_label(state.C));
+
       return;
+    }
 
     case BinaryFunctionType::PLOG:
       fatalError("Function not implemented");
