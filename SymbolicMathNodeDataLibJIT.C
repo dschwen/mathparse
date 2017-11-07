@@ -27,9 +27,9 @@ libjit_unary_function_call(JITStateValue & state, double (*func)(double), jit_va
  ********************************************************/
 
 JITReturnValue
-RealNumberData::jit(JITStateValue & func)
+RealNumberData::jit(JITStateValue & state)
 {
-  return jit_value_create_float64_constant(func, jit_type_float64, (jit_float64)_value);
+  return jit_value_create_float64_constant(state, jit_type_float64, (jit_float64)_value);
 }
 
 /********************************************************
@@ -37,11 +37,11 @@ RealNumberData::jit(JITStateValue & func)
  ********************************************************/
 
 JITReturnValue
-RealReferenceData::jit(JITStateValue & func)
+RealReferenceData::jit(JITStateValue & state)
 {
   return jit_insn_load_relative(
-      func,
-      jit_value_create_nint_constant(func, jit_type_void_ptr, reinterpret_cast<jit_nint>(&_ref)),
+      state,
+      jit_value_create_nint_constant(state, jit_type_void_ptr, reinterpret_cast<jit_nint>(&_ref)),
       0,
       jit_type_float64);
 }
@@ -51,17 +51,17 @@ RealReferenceData::jit(JITStateValue & func)
  ********************************************************/
 
 JITReturnValue
-RealArrayReferenceData::jit(JITStateValue & func)
+RealArrayReferenceData::jit(JITStateValue & state)
 {
   auto index = jit_insn_load_relative(
-      func,
-      jit_value_create_nint_constant(func, jit_type_void_ptr, reinterpret_cast<jit_nint>(&_index)),
+      state,
+      jit_value_create_nint_constant(state, jit_type_void_ptr, reinterpret_cast<jit_nint>(&_index)),
       0,
       jit_type_int);
 
   return jit_insn_load_elem_address(
-      func,
-      jit_value_create_nint_constant(func, jit_type_void_ptr, reinterpret_cast<jit_nint>(&_ref)),
+      state,
+      jit_value_create_nint_constant(state, jit_type_void_ptr, reinterpret_cast<jit_nint>(&_ref)),
       index,
       jit_type_float64);
 }
@@ -71,15 +71,15 @@ RealArrayReferenceData::jit(JITStateValue & func)
  ********************************************************/
 
 JITReturnValue
-UnaryOperatorData::jit(JITStateValue & func)
+UnaryOperatorData::jit(JITStateValue & state)
 {
   switch (_type)
   {
     case UnaryOperatorType::PLUS:
-      return _args[0].jit(func);
+      return _args[0].jit(state);
 
     case UnaryOperatorType::MINUS:
-      return jit_insn_neg(func, _args[0].jit(func));
+      return jit_insn_neg(state, _args[0].jit(state));
 
     default:
       fatalError("Unknown operator");
@@ -91,18 +91,18 @@ UnaryOperatorData::jit(JITStateValue & func)
  ********************************************************/
 
 JITReturnValue
-BinaryOperatorData::jit(JITStateValue & func)
+BinaryOperatorData::jit(JITStateValue & state)
 {
-  auto A = _args[0].jit(func);
-  auto B = _args[1].jit(func);
+  auto A = _args[0].jit(state);
+  auto B = _args[1].jit(state);
 
   switch (_type)
   {
     case BinaryOperatorType::SUBTRACTION:
-      return jit_insn_sub(func, A, B);
+      return jit_insn_sub(state, A, B);
 
     case BinaryOperatorType::DIVISION:
-      return jit_insn_div(func, A, B);
+      return jit_insn_div(state, A, B);
 
     case BinaryOperatorType::MODULO:
     {
@@ -110,44 +110,45 @@ BinaryOperatorData::jit(JITStateValue & func)
       jit_type_t signature =
           jit_type_create_signature(jit_abi_cdecl, jit_type_float64, params, 2, 1);
       jit_value_t args[] = {A, B};
+      double (*func)(double, double) = std::fmod;
       return jit_insn_call_native(
-          func, "", reinterpret_cast<void *>(func), signature, args, 2, JIT_CALL_NOTHROW);
+          state, "", reinterpret_cast<void *>(func), signature, args, 2, JIT_CALL_NOTHROW);
     }
 
     case BinaryOperatorType::POWER:
-      return jit_insn_pow(func, A, B);
+      return jit_insn_pow(state, A, B);
 
     case BinaryOperatorType::LOGICAL_OR:
     {
-      auto iA = jit_insn_to_bool(func, A);
-      auto iB = jit_insn_to_bool(func, B);
-      return jit_insn_or(func, iA, iB);
+      auto iA = jit_insn_to_bool(state, A);
+      auto iB = jit_insn_to_bool(state, B);
+      return jit_insn_or(state, iA, iB);
     }
 
     case BinaryOperatorType::LOGICAL_AND:
     {
-      auto iA = jit_insn_to_bool(func, A);
-      auto iB = jit_insn_to_bool(func, B);
-      return jit_insn_and(func, iA, iB);
+      auto iA = jit_insn_to_bool(state, A);
+      auto iB = jit_insn_to_bool(state, B);
+      return jit_insn_and(state, iA, iB);
     }
 
     case BinaryOperatorType::LESS_THAN:
-      return jit_insn_lt(func, A, B);
+      return jit_insn_lt(state, A, B);
 
     case BinaryOperatorType::GREATER_THAN:
-      return jit_insn_gt(func, A, B);
+      return jit_insn_gt(state, A, B);
 
     case BinaryOperatorType::LESS_EQUAL:
-      return jit_insn_le(func, A, B);
+      return jit_insn_le(state, A, B);
 
     case BinaryOperatorType::GREATER_EQUAL:
-      return jit_insn_ge(func, A, B);
+      return jit_insn_ge(state, A, B);
 
     case BinaryOperatorType::EQUAL:
-      return jit_insn_eq(func, A, B);
+      return jit_insn_eq(state, A, B);
 
     case BinaryOperatorType::NOT_EQUAL:
-      return jit_insn_ne(func, A, B);
+      return jit_insn_ne(state, A, B);
 
     default:
       fatalError("Unknown operator");
@@ -159,24 +160,24 @@ BinaryOperatorData::jit(JITStateValue & func)
  ********************************************************/
 
 JITReturnValue
-MultinaryOperatorData::jit(JITStateValue & func)
+MultinaryOperatorData::jit(JITStateValue & state)
 {
   if (_args.size() == 0)
     fatalError("No child nodes in multinary operator");
   else if (_args.size() == 1)
-    return _args[0].jit(func);
+    return _args[0].jit(state);
   else
   {
-    JITReturnValue temp = _args[0].jit(func);
+    JITReturnValue temp = _args[0].jit(state);
     for (std::size_t i = 1; i < _args.size(); ++i)
       switch (_type)
       {
         case MultinaryOperatorType::ADDITION:
-          temp = jit_insn_add(func, temp, _args[i].jit(func));
+          temp = jit_insn_add(state, temp, _args[i].jit(state));
           break;
 
         case MultinaryOperatorType::MULTIPLICATION:
-          temp = jit_insn_mul(func, temp, _args[i].jit(func));
+          temp = jit_insn_mul(state, temp, _args[i].jit(state));
           break;
 
         default:
@@ -191,120 +192,120 @@ MultinaryOperatorData::jit(JITStateValue & func)
  ********************************************************/
 
 JITReturnValue
-UnaryFunctionData::jit(JITStateValue & func)
+UnaryFunctionData::jit(JITStateValue & state)
 {
-  const auto A = _args[0].jit(func);
+  const auto A = _args[0].jit(state);
 
   switch (_type)
   {
     case UnaryFunctionType::ABS:
-      return jit_insn_abs(func, A);
+      return jit_insn_abs(state, A);
 
     case UnaryFunctionType::ACOS:
-      return jit_insn_acos(func, A);
+      return jit_insn_acos(state, A);
 
     case UnaryFunctionType::ACOSH:
-      return libjit_unary_function_call(func, std::acosh, A);
+      return libjit_unary_function_call(state, std::acosh, A);
 
     case UnaryFunctionType::ARG:
       fatalError("Function not implemented");
 
     case UnaryFunctionType::ASIN:
-      return jit_insn_asin(func, A);
+      return jit_insn_asin(state, A);
 
     case UnaryFunctionType::ASINH:
-      return libjit_unary_function_call(func, std::asinh, A);
+      return libjit_unary_function_call(state, std::asinh, A);
 
     case UnaryFunctionType::ATAN:
-      return jit_insn_atan(func, A);
+      return jit_insn_atan(state, A);
 
     case UnaryFunctionType::ATANH:
-      return libjit_unary_function_call(func, std::atanh, A);
+      return libjit_unary_function_call(state, std::atanh, A);
 
     case UnaryFunctionType::CBRT:
-      return libjit_unary_function_call(func, std::cbrt, A);
+      return libjit_unary_function_call(state, std::cbrt, A);
 
     case UnaryFunctionType::CEIL:
-      return jit_insn_ceil(func, A);
+      return jit_insn_ceil(state, A);
 
     case UnaryFunctionType::CONJ:
       fatalError("Function not implemented");
 
     case UnaryFunctionType::COS:
-      return jit_insn_cos(func, A);
+      return jit_insn_cos(state, A);
 
     case UnaryFunctionType::COSH:
-      return jit_insn_cosh(func, A);
+      return jit_insn_cosh(state, A);
 
     case UnaryFunctionType::COT:
       return jit_insn_div(
-          func,
-          jit_value_create_float64_constant(func, jit_type_float64, (jit_float64)1.0),
-          jit_insn_tan(func, A));
+          state,
+          jit_value_create_float64_constant(state, jit_type_float64, (jit_float64)1.0),
+          jit_insn_tan(state, A));
 
     case UnaryFunctionType::CSC:
       return jit_insn_div(
-          func,
-          jit_value_create_float64_constant(func, jit_type_float64, (jit_float64)1.0),
-          jit_insn_sin(func, A));
+          state,
+          jit_value_create_float64_constant(state, jit_type_float64, (jit_float64)1.0),
+          jit_insn_sin(state, A));
 
     case UnaryFunctionType::ERF:
-      return libjit_unary_function_call(func, std::erf, A);
+      return libjit_unary_function_call(state, std::erf, A);
 
     case UnaryFunctionType::EXP:
-      return jit_insn_exp(func, A);
+      return jit_insn_exp(state, A);
 
     case UnaryFunctionType::EXP2:
-      return libjit_unary_function_call(func, std::exp2, A);
+      return libjit_unary_function_call(state, std::exp2, A);
 
     case UnaryFunctionType::FLOOR:
-      return jit_insn_floor(func, A);
+      return jit_insn_floor(state, A);
 
     case UnaryFunctionType::IMAG:
       fatalError("Function not implemented");
 
     case UnaryFunctionType::INT:
-      return jit_insn_round(func, A);
+      return jit_insn_round(state, A);
 
     case UnaryFunctionType::LOG:
-      return jit_insn_log(func, A);
+      return jit_insn_log(state, A);
 
     case UnaryFunctionType::LOG10:
-      return jit_insn_log10(func, A);
+      return jit_insn_log10(state, A);
 
     case UnaryFunctionType::LOG2:
-      return libjit_unary_function_call(func, std::log2, A);
+      return libjit_unary_function_call(state, std::log2, A);
 
     case UnaryFunctionType::REAL:
       fatalError("Function not implemented");
 
     case UnaryFunctionType::SEC:
       return jit_insn_div(
-          func,
-          jit_value_create_float64_constant(func, jit_type_float64, (jit_float64)1.0),
-          jit_insn_cos(func, A));
+          state,
+          jit_value_create_float64_constant(state, jit_type_float64, (jit_float64)1.0),
+          jit_insn_cos(state, A));
 
     case UnaryFunctionType::SIN:
-      return jit_insn_sin(func, A);
+      return jit_insn_sin(state, A);
 
     case UnaryFunctionType::SINH:
-      return jit_insn_sinh(func, A);
+      return jit_insn_sinh(state, A);
 
     case UnaryFunctionType::SQRT:
-      return jit_insn_sqrt(func, A);
+      return jit_insn_sqrt(state, A);
 
     case UnaryFunctionType::T:
       fatalError("Function not implemented");
 
     case UnaryFunctionType::TAN:
-      return jit_insn_tan(func, A);
+      return jit_insn_tan(state, A);
 
     case UnaryFunctionType::TANH:
-      return jit_insn_tanh(func, A);
+      return jit_insn_tanh(state, A);
 
     case UnaryFunctionType::TRUNC:
       return jit_insn_convert(
-          func, jit_insn_convert(func, A, jit_type_int, 0), jit_type_float64, 0);
+          state, jit_insn_convert(state, A, jit_type_int, 0), jit_type_float64, 0);
 
     default:
       fatalError("Function not implemented");
@@ -316,25 +317,25 @@ UnaryFunctionData::jit(JITStateValue & func)
  ********************************************************/
 
 JITReturnValue
-BinaryFunctionData::jit(JITStateValue & func)
+BinaryFunctionData::jit(JITStateValue & state)
 {
-  const auto A = _args[0].jit(func);
-  const auto B = _args[1].jit(func);
+  const auto A = _args[0].jit(state);
+  const auto B = _args[1].jit(state);
 
   switch (_type)
   {
     case BinaryFunctionType::ATAN2:
-      return jit_insn_atan2(func, A, B);
+      return jit_insn_atan2(state, A, B);
 
     case BinaryFunctionType::HYPOT:
-      return jit_insn_sqrt(func,
-                           jit_insn_add(func, jit_insn_mul(func, A, A), jit_insn_mul(func, B, B)));
+      return jit_insn_sqrt(
+          state, jit_insn_add(state, jit_insn_mul(state, A, A), jit_insn_mul(state, B, B)));
 
     case BinaryFunctionType::MIN:
-      return jit_insn_min(func, A, B);
+      return jit_insn_min(state, A, B);
 
     case BinaryFunctionType::MAX:
-      return jit_insn_max(func, A, B);
+      return jit_insn_max(state, A, B);
 
     case BinaryFunctionType::PLOG:
     {
@@ -346,7 +347,7 @@ BinaryFunctionData::jit(JITStateValue & func)
     }
 
     case BinaryFunctionType::POW:
-      return jit_insn_pow(func, A, B);
+      return jit_insn_pow(state, A, B);
 
     case BinaryFunctionType::POLAR:
     default:
@@ -359,24 +360,24 @@ BinaryFunctionData::jit(JITStateValue & func)
  ********************************************************/
 
 JITReturnValue
-ConditionalData::jit(JITStateValue & func)
+ConditionalData::jit(JITStateValue & state)
 {
   if (_type != ConditionalType::IF)
     fatalError("Conditional not implemented");
 
   jit_label_t label1 = jit_label_undefined;
   jit_label_t label2 = jit_label_undefined;
-  JITReturnValue result = jit_value_create(func, jit_type_float64);
+  JITReturnValue result = jit_value_create(state, jit_type_float64);
 
-  jit_insn_branch_if_not(func, _args[0].jit(func), &label1);
+  jit_insn_branch_if_not(state, _args[0].jit(state), &label1);
   // true branch
-  jit_insn_store(func, result, _args[1].jit(func));
-  jit_insn_branch(func, &label2);
-  jit_insn_label(func, &label1);
+  jit_insn_store(state, result, _args[1].jit(state));
+  jit_insn_branch(state, &label2);
+  jit_insn_label(state, &label1);
   // false branch
-  jit_insn_store(func, result, _args[2].jit(func));
-  jit_insn_label(func, &label2);
-  return jit_insn_load(func, result);
+  jit_insn_store(state, result, _args[2].jit(state));
+  jit_insn_label(state, &label2);
+  return jit_insn_load(state, result);
 }
 
 /********************************************************
@@ -384,20 +385,20 @@ ConditionalData::jit(JITStateValue & func)
  ********************************************************/
 
 JITReturnValue
-IntegerPowerData::jit(JITStateValue & func)
+IntegerPowerData::jit(JITStateValue & state)
 {
-  auto result = jit_value_create_float64_constant(func, jit_type_float64, (jit_float64)1.0);
+  auto result = jit_value_create_float64_constant(state, jit_type_float64, (jit_float64)1.0);
 
-  auto A = _arg.jit(func);
+  auto A = _arg.jit(state);
   int e = _exponent > 0 ? _exponent : -_exponent;
   while (e)
   {
     // if bit 0 is set multiply the current power of two factor of the exponent
     if (e & 1)
-      result = jit_insn_mul(func, result, A);
+      result = jit_insn_mul(state, result, A);
 
     // x is incrementally set to consecutive powers of powers of two
-    A = jit_insn_mul(func, A, A);
+    A = jit_insn_mul(state, A, A);
 
     // bit shift the exponent down
     e >>= 1;
@@ -407,7 +408,9 @@ IntegerPowerData::jit(JITStateValue & func)
     return result;
   else
     return jit_insn_div(
-        func, jit_value_create_float64_constant(func, jit_type_float64, (jit_float64)1.0), result);
+        state,
+        jit_value_create_float64_constant(state, jit_type_float64, (jit_float64)1.0),
+        result);
 }
 
 // end namespace SymbolicMath
