@@ -9,156 +9,71 @@
 namespace SymbolicMath
 {
 
-#define GLUE_HELPER(x, y) x##y
-#define GLUE(x, y) GLUE_HELPER(x, y)
-
-#define SLJIT_MATH_WRAPPER1(FUNC)                                                                  \
-  static long SLJIT_CALL GLUE(sljit_wrap_, FUNC)(long a)                                           \
-  {                                                                                                \
-    auto & A = *reinterpret_cast<double *>(a);                                                     \
-    A = std::FUNC(A);                                                                              \
-    return 0;                                                                                      \
-  }
-
-#define SLJIT_MATH_WRAPPER1X(FUNC, EXPR)                                                           \
-  static long SLJIT_CALL GLUE(sljit_wrap_, FUNC)(long a)                                           \
-  {                                                                                                \
-    auto & A = *reinterpret_cast<double *>(a);                                                     \
-    A = EXPR;                                                                                      \
-    return 0;                                                                                      \
-  }
-
-#define SLJIT_MATH_WRAPPER2(FUNC)                                                                  \
-  static long SLJIT_CALL GLUE(sljit_wrap_, FUNC)(long a, long b)                                   \
-  {                                                                                                \
-    auto & A = *reinterpret_cast<double *>(a);                                                     \
-    auto & B = *reinterpret_cast<double *>(b);                                                     \
-    A = std::FUNC(A, B);                                                                           \
-    return 0;                                                                                      \
-  }
-
 const double sljit_one = 1.0;
 const double sljit_zero = 0.0;
 
 void
+sljit_unary_function_call(struct sljit_compiler * C, double (*func)(double))
+{
+  sljit_emit_icall(C,
+                   SLJIT_CALL_CDECL,
+                   SLJIT_RET(F64) | SLJIT_ARG1(F64),
+                   SLJIT_IMM,
+                   reinterpret_cast<sljit_sw>(func));
+}
+
+void
+sljit_binary_function_call(struct sljit_compiler * C, double (*func)(double, double))
+{
+  sljit_emit_icall(C,
+                   SLJIT_CALL_CDECL,
+                   SLJIT_RET(F64) | SLJIT_ARG1(F64) | SLJIT_ARG2(F64),
+                   SLJIT_IMM,
+                   reinterpret_cast<sljit_sw>(func));
+}
+
+void
 sljit_fcmp_wrapper(JITStateValue & state, sljit_s32 op)
 {
-  struct sljit_jump * true_lbl = sljit_emit_fcmp(
-      state.C, op, SLJIT_MEM, (sljit_sw)(state.stack - 1), SLJIT_MEM, (sljit_sw)state.stack);
+  struct sljit_jump * true_lbl = sljit_emit_fcmp(state.C, op, SLJIT_FR0, 0, SLJIT_FR1, 0);
+
   // false case
   // put 0.0 on stack
-  sljit_emit_op1(
-      state.C, SLJIT_MOV, SLJIT_MEM, (sljit_sw)(state.stack - 1), SLJIT_IMM, (sljit_sw)0);
-  struct sljit_jump * out_lbl = sljit_emit_jump(state.C, SLJIT_JUMP);
-
-  // true case
-  sljit_set_label(true_lbl, sljit_emit_label(state.C));
-
-  // put 1.0 on stack
-  sljit_emit_fop1(state.C,
-                  SLJIT_MOV_F64,
-                  SLJIT_MEM,
-                  (sljit_sw)(state.stack - 1),
-                  SLJIT_MEM,
-                  (sljit_sw)&sljit_one);
-
-  // end if
-  sljit_set_label(out_lbl, sljit_emit_label(state.C));
-}
-
-void
-sljit_logic_wrapper(JITStateValue & state, sljit_s32 op)
-{
-  // load operands and convert to 0/1 in R0 and R1
-  sljit_emit_op1(state.C, SLJIT_MOV, SLJIT_R0, 0, SLJIT_IMM, (sljit_sw)0);
-  sljit_emit_op1(state.C, SLJIT_MOV, SLJIT_R1, 0, SLJIT_R0, 0);
-  // put zero in FR1
   sljit_emit_fop1(state.C, SLJIT_MOV_F64, SLJIT_FR0, 0, SLJIT_MEM, (sljit_sw)&sljit_zero);
-
-  struct sljit_jump * r0_zero = sljit_emit_fcmp(
-      state.C, SLJIT_EQUAL_F64, SLJIT_MEM, (sljit_sw)(state.stack - 1), SLJIT_FR0, 0);
-  sljit_emit_op1(state.C, SLJIT_MOV, SLJIT_R0, 0, SLJIT_IMM, (sljit_sw)1);
-  sljit_set_label(r0_zero, sljit_emit_label(state.C));
-
-  struct sljit_jump * r1_zero =
-      sljit_emit_fcmp(state.C, SLJIT_EQUAL_F64, SLJIT_MEM, (sljit_sw)state.stack, SLJIT_FR0, 0);
-  sljit_emit_op1(state.C, SLJIT_MOV, SLJIT_R1, 0, SLJIT_IMM, (sljit_sw)1);
-  sljit_set_label(r1_zero, sljit_emit_label(state.C));
-
-  // bitwise (integer) logic operation
-  sljit_emit_op2(state.C, op, SLJIT_R0, 0, SLJIT_R0, 0, SLJIT_R1, 0);
-
-  struct sljit_jump * true_lbl =
-      sljit_emit_cmp(state.C, SLJIT_NOT_EQUAL, SLJIT_R0, 0, SLJIT_IMM, 0);
-
-  // false case
-  // put 0.0 on stack
-  sljit_emit_op1(
-      state.C, SLJIT_MOV, SLJIT_MEM, (sljit_sw)(state.stack - 1), SLJIT_IMM, (sljit_sw)0);
   struct sljit_jump * out_lbl = sljit_emit_jump(state.C, SLJIT_JUMP);
 
   // true case
   sljit_set_label(true_lbl, sljit_emit_label(state.C));
 
   // put 1.0 on stack
-  sljit_emit_fop1(state.C,
-                  SLJIT_MOV_F64,
-                  SLJIT_MEM,
-                  (sljit_sw)(state.stack - 1),
-                  SLJIT_MEM,
-                  (sljit_sw)&sljit_one);
+  sljit_emit_fop1(state.C, SLJIT_MOV_F64, SLJIT_FR0, 0, SLJIT_MEM, (sljit_sw)&sljit_one);
 
   // end if
   sljit_set_label(out_lbl, sljit_emit_label(state.C));
 }
 
-SLJIT_MATH_WRAPPER1(abs)
-SLJIT_MATH_WRAPPER1(acos)
-SLJIT_MATH_WRAPPER1(acosh)
-SLJIT_MATH_WRAPPER1(asin)
-SLJIT_MATH_WRAPPER1(asinh)
-SLJIT_MATH_WRAPPER1(atan)
-SLJIT_MATH_WRAPPER1(atanh)
-SLJIT_MATH_WRAPPER1(cbrt)
-SLJIT_MATH_WRAPPER1(ceil)
-SLJIT_MATH_WRAPPER1(cos)
-SLJIT_MATH_WRAPPER1(cosh)
-SLJIT_MATH_WRAPPER1(erf)
-SLJIT_MATH_WRAPPER1(exp)
-SLJIT_MATH_WRAPPER1(exp2)
-SLJIT_MATH_WRAPPER1(floor)
-SLJIT_MATH_WRAPPER1(log)
-SLJIT_MATH_WRAPPER1(log10)
-SLJIT_MATH_WRAPPER1(log2)
-SLJIT_MATH_WRAPPER1(round)
-SLJIT_MATH_WRAPPER1(sin)
-SLJIT_MATH_WRAPPER1(sinh)
-SLJIT_MATH_WRAPPER1(sqrt)
-SLJIT_MATH_WRAPPER1(tan)
-SLJIT_MATH_WRAPPER1(tanh)
-SLJIT_MATH_WRAPPER1X(sec, 1.0 / std::cos(A))
-SLJIT_MATH_WRAPPER1X(csc, 1.0 / std::sin(A))
-SLJIT_MATH_WRAPPER1X(cot, 1.0 / std::tan(A))
-SLJIT_MATH_WRAPPER1X(int, A < 0 ? std::ceil(A - 0.5) : std::floor(A + 0.5))
-SLJIT_MATH_WRAPPER1X(trunc, static_cast<int>(A))
-
-SLJIT_MATH_WRAPPER2(atan2)
-SLJIT_MATH_WRAPPER2(fmod)
-SLJIT_MATH_WRAPPER2(max)
-SLJIT_MATH_WRAPPER2(min)
-SLJIT_MATH_WRAPPER2(pow)
+double
+sljit_trunc_wrapper(double A)
+{
+  return static_cast<int>(A);
+}
 
 void
-emit_sljit_fop2(JITStateValue & state, sljit_s32 op)
+stack_push(JITStateValue & state)
 {
-  sljit_emit_fop2(state.C,
-                  op,
-                  SLJIT_MEM,
-                  (sljit_sw)(state.stack - 1),
-                  SLJIT_MEM,
-                  (sljit_sw)(state.stack - 1),
-                  SLJIT_MEM,
-                  (sljit_sw)state.stack);
+  if (state.sp >= 0)
+    sljit_emit_fop1(
+        state.C, SLJIT_MOV_F64, SLJIT_MEM1(SLJIT_SP), state.sp * sizeof(double), SLJIT_FR0, 0);
+  state.sp++;
+}
+
+void
+stack_pop(JITStateValue & state, sljit_s32 op)
+{
+  if (state.sp == 0)
+    fatalError("Stack exhausted in stack_pop");
+  state.sp--;
+  sljit_emit_fop1(state.C, SLJIT_MOV_F64, op, 0, SLJIT_MEM1(SLJIT_SP), state.sp * sizeof(double));
 }
 
 /********************************************************
@@ -168,13 +83,12 @@ emit_sljit_fop2(JITStateValue & state, sljit_s32 op)
 JITReturnValue
 RealNumberData::jit(JITStateValue & state)
 {
-  // sljit does not have any 64bit floating point immediates, so we need to make a mem->mem transfer
-  // this makes the JIT code point to data in the expression tree! When the tree
-  // gets simplified the node holding this data may be freed. We therefore need to
-  // invalidate the JIT code upon simplification!
-  sljit_emit_fop1(
-      state.C, SLJIT_MOV_F64, SLJIT_MEM, (sljit_sw)state.stack, SLJIT_MEM, (sljit_sw)&_value);
-  state.stack++;
+  // sljit does not have any 64bit floating point immediates, so we need to make a mem->register
+  // transfer this makes the JIT code point to data in the expression tree! When the tree gets
+  // simplified the node holding this data may be freed. We therefore need to invalidate the JIT
+  // code upon simplification!
+  stack_push(state);
+  sljit_emit_fop1(state.C, SLJIT_MOV_F64, SLJIT_FR0, 0, SLJIT_MEM, (sljit_sw)&_value);
 }
 
 /********************************************************
@@ -184,9 +98,8 @@ RealNumberData::jit(JITStateValue & state)
 JITReturnValue
 RealReferenceData::jit(JITStateValue & state)
 {
-  sljit_emit_fop1(
-      state.C, SLJIT_MOV_F64, SLJIT_MEM, (sljit_sw)state.stack, SLJIT_MEM, (sljit_sw)&_ref);
-  state.stack++;
+  stack_push(state);
+  sljit_emit_fop1(state.C, SLJIT_MOV_F64, SLJIT_FR0, 0, SLJIT_MEM, (sljit_sw)&_ref);
 }
 
 /********************************************************
@@ -225,12 +138,7 @@ UnaryOperatorData::jit(JITStateValue & state)
       return;
 
     case UnaryOperatorType::MINUS:
-      sljit_emit_fop1(state.C,
-                      SLJIT_NEG_F64,
-                      SLJIT_MEM,
-                      (sljit_sw)(state.stack - 1),
-                      SLJIT_MEM,
-                      (sljit_sw)(state.stack - 1));
+      sljit_emit_fop1(state.C, SLJIT_NEG_F64, SLJIT_FR0, 0, SLJIT_FR0, 0);
       return;
 
     default:
@@ -247,37 +155,82 @@ BinaryOperatorData::jit(JITStateValue & state)
 {
   _args[0].jit(state);
   _args[1].jit(state);
-  state.stack--;
+
+  // Arguments A = SLJIT_FR0, B = SLJIT_FR1
+  sljit_emit_fop1(state.C, SLJIT_MOV_F64, SLJIT_FR1, 0, SLJIT_FR0, 0);
+  stack_pop(state, SLJIT_FR0);
 
   switch (_type)
   {
     case BinaryOperatorType::SUBTRACTION:
-      emit_sljit_fop2(state, SLJIT_SUB_F64);
+      sljit_emit_fop2(state.C, SLJIT_SUB_F64, SLJIT_FR0, 0, SLJIT_FR0, 0, SLJIT_FR1, 0);
       return;
 
     case BinaryOperatorType::DIVISION:
-      emit_sljit_fop2(state, SLJIT_DIV_F64);
+      sljit_emit_fop2(state.C, SLJIT_DIV_F64, SLJIT_FR0, 0, SLJIT_FR0, 0, SLJIT_FR1, 0);
       return;
 
     case BinaryOperatorType::MODULO:
-      sljit_emit_op1(state.C, SLJIT_MOV, SLJIT_R0, 0, SLJIT_IMM, (sljit_sw)(state.stack - 1));
-      sljit_emit_op1(state.C, SLJIT_MOV, SLJIT_R1, 0, SLJIT_IMM, (sljit_sw)state.stack);
-      sljit_emit_ijump(state.C, SLJIT_CALL2, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_fmod));
+      sljit_binary_function_call(state.C, std::fmod);
       return;
 
     case BinaryOperatorType::POWER:
-      sljit_emit_op1(state.C, SLJIT_MOV, SLJIT_R0, 0, SLJIT_IMM, (sljit_sw)(state.stack - 1));
-      sljit_emit_op1(state.C, SLJIT_MOV, SLJIT_R1, 0, SLJIT_IMM, (sljit_sw)state.stack);
-      sljit_emit_ijump(state.C, SLJIT_CALL2, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_pow));
+      sljit_binary_function_call(state.C, std::pow);
       return;
 
     case BinaryOperatorType::LOGICAL_OR:
-      sljit_logic_wrapper(state, SLJIT_OR);
+    {
+      sljit_emit_fop1(state.C, SLJIT_MOV_F64, SLJIT_FR2, 0, SLJIT_MEM, (sljit_sw)&sljit_zero);
+      // either argument is true -> true
+      struct sljit_jump * true_lbl1 =
+          sljit_emit_fcmp(state.C, SLJIT_NOT_EQUAL_F64, SLJIT_FR0, 0, SLJIT_FR2, 0);
+      struct sljit_jump * true_lbl2 =
+          sljit_emit_fcmp(state.C, SLJIT_NOT_EQUAL_F64, SLJIT_FR1, 0, SLJIT_FR2, 0);
+
+      // false case
+      // put 0.0 on stack
+      sljit_emit_fop1(state.C, SLJIT_MOV_F64, SLJIT_FR0, 0, SLJIT_FR2, 0);
+      struct sljit_jump * out_lbl = sljit_emit_jump(state.C, SLJIT_JUMP);
+
+      // true case
+      sljit_set_label(true_lbl1, sljit_emit_label(state.C));
+      sljit_set_label(true_lbl2, sljit_emit_label(state.C));
+
+      // put 1.0 on stack
+      sljit_emit_fop1(state.C, SLJIT_MOV_F64, SLJIT_FR0, 0, SLJIT_MEM, (sljit_sw)&sljit_one);
+
+      // end if
+      sljit_set_label(out_lbl, sljit_emit_label(state.C));
+
       return;
+    }
 
     case BinaryOperatorType::LOGICAL_AND:
-      sljit_logic_wrapper(state, SLJIT_AND);
+    {
+      sljit_emit_fop1(state.C, SLJIT_MOV_F64, SLJIT_FR2, 0, SLJIT_MEM, (sljit_sw)&sljit_zero);
+      // either argument is false -> false
+      struct sljit_jump * false_lbl1 =
+          sljit_emit_fcmp(state.C, SLJIT_EQUAL_F64, SLJIT_FR0, 0, SLJIT_FR2, 0);
+      struct sljit_jump * false_lbl2 =
+          sljit_emit_fcmp(state.C, SLJIT_EQUAL_F64, SLJIT_FR1, 0, SLJIT_FR2, 0);
+
+      // true case
+      // put 1.0 on stack
+      sljit_emit_fop1(state.C, SLJIT_MOV_F64, SLJIT_FR0, 0, SLJIT_MEM, (sljit_sw)&sljit_one);
+      struct sljit_jump * out_lbl = sljit_emit_jump(state.C, SLJIT_JUMP);
+
+      // false case
+      sljit_set_label(false_lbl1, sljit_emit_label(state.C));
+      sljit_set_label(false_lbl2, sljit_emit_label(state.C));
+
+      // put 0.0 on stack
+      sljit_emit_fop1(state.C, SLJIT_MOV_F64, SLJIT_FR0, 0, SLJIT_FR2, 0);
+
+      // end if
+      sljit_set_label(out_lbl, sljit_emit_label(state.C));
+
       return;
+    }
 
     case BinaryOperatorType::LESS_THAN:
       sljit_fcmp_wrapper(state, SLJIT_LESS_F64);
@@ -324,15 +277,15 @@ MultinaryOperatorData::jit(JITStateValue & state)
     for (std::size_t i = 1; i < _args.size(); ++i)
     {
       _args[i].jit(state);
-      state.stack--;
+      stack_pop(state, SLJIT_FR1);
       switch (_type)
       {
         case MultinaryOperatorType::ADDITION:
-          emit_sljit_fop2(state, SLJIT_ADD_F64);
+          sljit_emit_fop2(state.C, SLJIT_ADD_F64, SLJIT_FR0, 0, SLJIT_FR0, 0, SLJIT_FR1, 0);
           break;
 
         case MultinaryOperatorType::MULTIPLICATION:
-          emit_sljit_fop2(state, SLJIT_MUL_F64);
+          sljit_emit_fop2(state.C, SLJIT_MUL_F64, SLJIT_FR0, 0, SLJIT_FR0, 0, SLJIT_FR1, 0);
           break;
 
         default:
@@ -349,168 +302,140 @@ JITReturnValue
 UnaryFunctionData::jit(JITStateValue & state)
 {
   _args[0].jit(state);
-  sljit_emit_op1(state.C, SLJIT_MOV, SLJIT_R0, 0, SLJIT_IMM, (sljit_sw)(state.stack - 1));
 
   switch (_type)
   {
     case UnaryFunctionType::ABS:
-      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_abs));
+      sljit_emit_fop1(state.C, SLJIT_ABS_F64, SLJIT_FR0, 0, SLJIT_FR0, 0);
       return;
 
     case UnaryFunctionType::ACOS:
-      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_acos));
+      sljit_unary_function_call(state.C, std::acos);
       return;
 
     case UnaryFunctionType::ACOSH:
-      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_acosh));
+      sljit_unary_function_call(state.C, std::acosh);
       return;
 
     case UnaryFunctionType::ARG:
       fatalError("Function not implemented");
 
     case UnaryFunctionType::ASIN:
-      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_asin));
+      sljit_unary_function_call(state.C, std::asin);
       return;
 
     case UnaryFunctionType::ASINH:
-      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_asinh));
+      sljit_unary_function_call(state.C, std::asinh);
       return;
 
     case UnaryFunctionType::ATAN:
-      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_atan));
+      sljit_unary_function_call(state.C, std::atan);
       return;
 
     case UnaryFunctionType::ATANH:
-      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_atanh));
+      sljit_unary_function_call(state.C, std::atanh);
       return;
 
     case UnaryFunctionType::CBRT:
-      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_cbrt));
+      sljit_unary_function_call(state.C, std::cbrt);
       return;
 
     case UnaryFunctionType::CEIL:
-      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_ceil));
+      sljit_unary_function_call(state.C, std::ceil);
       return;
 
     case UnaryFunctionType::CONJ:
       fatalError("Function not implemented");
 
     case UnaryFunctionType::COS:
-      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_cos));
+      sljit_unary_function_call(state.C, std::cos);
       return;
 
     case UnaryFunctionType::COSH:
-      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_cosh));
+      sljit_unary_function_call(state.C, std::cosh);
       return;
 
     case UnaryFunctionType::COT:
-    {
-      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_tan));
-      sljit_emit_fop1(state.C, SLJIT_MOV_F64, SLJIT_FR0, 0, SLJIT_MEM, (sljit_sw)&sljit_one);
-      sljit_emit_fop2(state.C,
-                      SLJIT_DIV_F64,
-                      SLJIT_MEM,
-                      (sljit_sw)(state.stack - 1),
-                      SLJIT_FR0,
-                      0,
-                      SLJIT_MEM,
-                      (sljit_sw)(state.stack - 1));
+      sljit_unary_function_call(state.C, std::tan);
+      sljit_emit_fop2(
+          state.C, SLJIT_DIV_F64, SLJIT_FR0, 0, SLJIT_MEM, (sljit_sw)&sljit_one, SLJIT_FR0, 0);
       return;
-    }
 
     case UnaryFunctionType::CSC:
-    {
-      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_sin));
-      sljit_emit_fop1(state.C, SLJIT_MOV_F64, SLJIT_FR0, 0, SLJIT_MEM, (sljit_sw)&sljit_one);
-      sljit_emit_fop2(state.C,
-                      SLJIT_DIV_F64,
-                      SLJIT_MEM,
-                      (sljit_sw)(state.stack - 1),
-                      SLJIT_FR0,
-                      0,
-                      SLJIT_MEM,
-                      (sljit_sw)(state.stack - 1));
+      sljit_unary_function_call(state.C, std::sin);
+      sljit_emit_fop2(
+          state.C, SLJIT_DIV_F64, SLJIT_FR0, 0, SLJIT_MEM, (sljit_sw)&sljit_one, SLJIT_FR0, 0);
       return;
-    }
 
     case UnaryFunctionType::ERF:
-      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_erf));
+      sljit_unary_function_call(state.C, std::erf);
       return;
 
     case UnaryFunctionType::EXP:
-      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_exp));
+      sljit_unary_function_call(state.C, std::exp);
       return;
 
     case UnaryFunctionType::EXP2:
-      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_exp2));
+      sljit_unary_function_call(state.C, std::exp2);
       return;
 
     case UnaryFunctionType::FLOOR:
-      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_floor));
+      sljit_unary_function_call(state.C, std::floor);
       return;
 
     case UnaryFunctionType::IMAG:
       fatalError("Function not implemented");
 
     case UnaryFunctionType::INT:
-      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_round));
+      sljit_unary_function_call(state.C, std::round);
       return;
 
     case UnaryFunctionType::LOG:
-      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_log));
+      sljit_unary_function_call(state.C, std::log);
       return;
 
     case UnaryFunctionType::LOG10:
-      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_log10));
+      sljit_unary_function_call(state.C, std::log10);
       return;
 
     case UnaryFunctionType::LOG2:
-      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_log2));
+      sljit_unary_function_call(state.C, std::log2);
       return;
 
     case UnaryFunctionType::REAL:
       fatalError("Function not implemented");
 
     case UnaryFunctionType::SEC:
-    {
-      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_cos));
-      sljit_emit_fop1(state.C, SLJIT_MOV_F64, SLJIT_FR0, 0, SLJIT_MEM, (sljit_sw)&sljit_one);
-      sljit_emit_fop2(state.C,
-                      SLJIT_DIV_F64,
-                      SLJIT_MEM,
-                      (sljit_sw)(state.stack - 1),
-                      SLJIT_FR0,
-                      0,
-                      SLJIT_MEM,
-                      (sljit_sw)(state.stack - 1));
+      sljit_unary_function_call(state.C, std::cos);
+      sljit_emit_fop2(
+          state.C, SLJIT_DIV_F64, SLJIT_FR0, 0, SLJIT_MEM, (sljit_sw)&sljit_one, SLJIT_FR0, 0);
       return;
-    }
 
     case UnaryFunctionType::SIN:
-      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_sin));
+      sljit_unary_function_call(state.C, std::sin);
       return;
 
     case UnaryFunctionType::SINH:
-      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_sinh));
+      sljit_unary_function_call(state.C, std::sinh);
       return;
 
     case UnaryFunctionType::SQRT:
-      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_sqrt));
+      sljit_unary_function_call(state.C, std::sqrt);
       return;
 
     case UnaryFunctionType::T:
       fatalError("Function not implemented");
 
     case UnaryFunctionType::TAN:
-      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_tan));
+      sljit_unary_function_call(state.C, std::tan);
       return;
 
     case UnaryFunctionType::TANH:
-      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_tanh));
+      sljit_unary_function_call(state.C, std::tanh);
       return;
 
     case UnaryFunctionType::TRUNC:
-      sljit_emit_ijump(state.C, SLJIT_CALL1, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_trunc));
+      sljit_unary_function_call(state.C, sljit_trunc_wrapper);
       return;
 
     default:
@@ -527,15 +452,15 @@ BinaryFunctionData::jit(JITStateValue & state)
 {
   _args[0].jit(state);
   _args[1].jit(state);
-  state.stack--;
 
-  sljit_emit_op1(state.C, SLJIT_MOV, SLJIT_R0, 0, SLJIT_IMM, (sljit_sw)(state.stack - 1));
-  sljit_emit_op1(state.C, SLJIT_MOV, SLJIT_R1, 0, SLJIT_IMM, (sljit_sw)state.stack);
+  // Arguments A = SLJIT_FR0, B = SLJIT_FR1
+  sljit_emit_fop1(state.C, SLJIT_MOV_F64, SLJIT_FR1, 0, SLJIT_FR0, 0);
+  stack_pop(state, SLJIT_FR0);
 
   switch (_type)
   {
     case BinaryFunctionType::ATAN2:
-      sljit_emit_ijump(state.C, SLJIT_CALL2, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_atan2));
+      sljit_binary_function_call(state.C, std::atan2);
       return;
 
     case BinaryFunctionType::HYPOT:
@@ -545,12 +470,34 @@ BinaryFunctionData::jit(JITStateValue & state)
       fatalError("Function not implemented");
 
     case BinaryFunctionType::MIN:
-      sljit_emit_ijump(state.C, SLJIT_CALL2, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_min));
+    {
+      struct sljit_jump * out_lbl =
+          sljit_emit_fcmp(state.C, SLJIT_LESS_F64, SLJIT_FR0, 0, SLJIT_FR1, 0);
+
+      // FR0 >= FR1 case
+      // put FR1 on stack
+      sljit_emit_fop1(state.C, SLJIT_MOV_F64, SLJIT_FR0, 0, SLJIT_FR1, 0);
+
+      // else jump here and leave FR0
+      sljit_set_label(out_lbl, sljit_emit_label(state.C));
+
       return;
+    }
 
     case BinaryFunctionType::MAX:
-      sljit_emit_ijump(state.C, SLJIT_CALL2, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_max));
+    {
+      struct sljit_jump * out_lbl =
+          sljit_emit_fcmp(state.C, SLJIT_GREATER_F64, SLJIT_FR0, 0, SLJIT_FR1, 0);
+
+      // FR0 >= FR1 case
+      // put FR1 on stack
+      sljit_emit_fop1(state.C, SLJIT_MOV_F64, SLJIT_FR0, 0, SLJIT_FR1, 0);
+
+      // else jump here and leave FR0
+      sljit_set_label(out_lbl, sljit_emit_label(state.C));
+
       return;
+    }
 
     case BinaryFunctionType::PLOG:
       fatalError("Function not implemented");
@@ -560,7 +507,7 @@ BinaryFunctionData::jit(JITStateValue & state)
       //            : std::log(A);
 
     case BinaryFunctionType::POW:
-      sljit_emit_ijump(state.C, SLJIT_CALL2, SLJIT_IMM, SLJIT_FUNC_OFFSET(sljit_wrap_pow));
+      sljit_binary_function_call(state.C, std::pow);
       return;
 
     case BinaryFunctionType::POLAR:
@@ -585,21 +532,16 @@ ConditionalData::jit(JITStateValue & state)
   _args[0].jit(state);
 
   // sljit_emit_op1(state.C, SLJIT_MOV, SLJIT_R0, 0, SLJIT_MEM, (sljit_sw)state.stack);
-  false_case = sljit_emit_fcmp(state.C,
-                               SLJIT_EQUAL_F64,
-                               SLJIT_MEM,
-                               (sljit_sw)(state.stack - 1),
-                               SLJIT_MEM,
-                               (sljit_sw)&sljit_zero);
-  state.stack--;
-  auto stack_pos = state.stack;
+  false_case =
+      sljit_emit_fcmp(state.C, SLJIT_EQUAL_F64, SLJIT_FR0, 0, SLJIT_MEM, (sljit_sw)&sljit_zero);
 
   // true case
+  auto stack_pos = state.sp;
   _args[1].jit(state);
   end_if = sljit_emit_jump(state.C, SLJIT_JUMP);
 
   // false case
-  state.stack = stack_pos;
+  state.sp = stack_pos;
   sljit_set_label(false_case, sljit_emit_label(state.C));
   _args[2].jit(state);
 
@@ -617,18 +559,12 @@ IntegerPowerData::jit(JITStateValue & state)
   if (_exponent == 0)
   {
     // this case should be simplified away and never reached
-    sljit_emit_fop1(state.C,
-                    SLJIT_MOV_F64,
-                    SLJIT_MEM,
-                    (sljit_sw)(state.stack - 1),
-                    SLJIT_MEM,
-                    (sljit_sw)&sljit_one);
+    sljit_emit_fop1(state.C, SLJIT_MOV_F64, SLJIT_FR0, 0, SLJIT_MEM, (sljit_sw)&sljit_one);
     return;
   }
 
   // FR0 = A
   _arg.jit(state);
-  sljit_emit_fop1(state.C, SLJIT_MOV_F64, SLJIT_FR0, 0, SLJIT_MEM, (sljit_sw)(state.stack - 1));
 
   // FR1 = FR2 = 1.0
   sljit_emit_fop1(state.C, SLJIT_MOV_F64, SLJIT_FR2, 0, SLJIT_MEM, (sljit_sw)&sljit_one);
@@ -649,12 +585,11 @@ IntegerPowerData::jit(JITStateValue & state)
   }
 
   if (_exponent >= 0)
-    sljit_emit_fop1(state.C, SLJIT_MOV_F64, SLJIT_MEM, (sljit_sw)(state.stack - 1), SLJIT_FR1, 0);
+    sljit_emit_fop1(state.C, SLJIT_MOV_F64, SLJIT_FR0, 0, SLJIT_FR1, 0);
   else
   {
     sljit_emit_fop1(state.C, SLJIT_MOV_F64, SLJIT_FR0, 0, SLJIT_FR2, 0); // FR0 = 1.0
-    sljit_emit_fop2(
-        state.C, SLJIT_DIV_F64, SLJIT_MEM, (sljit_sw)(state.stack - 1), SLJIT_FR0, 0, SLJIT_FR1, 0);
+    sljit_emit_fop2(state.C, SLJIT_DIV_F64, SLJIT_FR0, 0, SLJIT_FR0, 0, SLJIT_FR1, 0);
   }
 }
 

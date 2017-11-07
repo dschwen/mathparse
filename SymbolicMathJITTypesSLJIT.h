@@ -8,13 +8,16 @@ namespace SymbolicMath
 
 const std::string jit_backend_name = "SLJIT";
 
-using JITFunctionPtr = long SLJIT_CALL (*)();
+using JITFunctionPtr = Real SLJIT_FUNC (*)();
 
 using JITReturnValue = void;
 
 struct JITStateValue
 {
-  sljit_f64 * stack;
+  /// current stack entry (as array index)
+  int sp;
+
+  /// SLJIT compiler context
   struct sljit_compiler * C;
 };
 

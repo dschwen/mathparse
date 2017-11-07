@@ -282,10 +282,10 @@ BinaryFunctionData::jit(JITStateValue & func)
       return "std::sqrt((" + A + ")*(" + A + ") + (" + B + ")*(" + B + "))";
 
     case BinaryFunctionType::MIN:
-      return "std::min(" + A + ", " + B + ")";
+      return "((" + A + ") < (" + B + ") ? (" + A + ") : (" + B + "))";
 
     case BinaryFunctionType::MAX:
-      return "std::max(" + A + ", " + B + ")";
+      return "((" + A + ") > (" + B + ") ? (" + A + ") : (" + B + "))";
 
     case BinaryFunctionType::PLOG:
     {

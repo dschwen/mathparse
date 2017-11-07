@@ -58,6 +58,9 @@ const std::vector<Test> tests = {
   {"pow(pow(c,3.5),2)", [](double c) { return std::pow(std::pow(c, 3.5), 2.0); }},
   {"pow(pow(c,3.5),2.5)", [](double c) { return std::pow(std::pow(c, 3.5), 2.5); }},
   {"pow(c,1)", [](double c) { return std::pow(c, 1); }},
+  // min max
+  {"min(c,0.1111)", [](double c) { return std::min(c, 0.1111); }},
+  {"max(c,0.1111)", [](double c) { return std::max(c, 0.1111); }},
   // comparison operators
   {"c<0.2", [](double c) { return c<0.2; }},
   {"c>0.2", [](double c) { return c>0.2; }},
