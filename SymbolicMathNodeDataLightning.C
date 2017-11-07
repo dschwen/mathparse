@@ -11,19 +11,19 @@ namespace SymbolicMath
 
 #define _jit state.C
 
-#define LIGHTNING_MATH_CALL1(FUNC)                                                                 \
-  {                                                                                                \
-    double (*fptr)(double) = FUNC;                                                                 \
-    jit_finishi(reinterpret_cast<void *>(fptr));                                                   \
-    jit_retval_d(JIT_F0);                                                                          \
-  }
+void
+libjit_unary_function_call(JITStateValue & state, double (*func)(double))
+{
+  jit_finishi(reinterpret_cast<void *>(func));
+  jit_retval_d(JIT_F0);
+}
 
-#define LIGHTNING_MATH_CALL2(FUNC)                                                                 \
-  {                                                                                                \
-    double (*fptr)(double, double) = FUNC;                                                         \
-    jit_finishi(reinterpret_cast<void *>(fptr));                                                   \
-    jit_retval_d(JIT_F0);                                                                          \
-  }
+void
+libjit_binary_function_call(JITStateValue & state, double (*func)(double, double))
+{
+  jit_finishi(reinterpret_cast<void *>(func));
+  jit_retval_d(JIT_F0);
+}
 
 double
 ligntning_wrap_min(double a, double b)
@@ -148,7 +148,7 @@ BinaryOperatorData::jit(JITStateValue & state)
       jit_prepare();
       jit_pushargr_d(JIT_F1);
       jit_pushargr_d(JIT_F0);
-      LIGHTNING_MATH_CALL2(std::fmod);
+      libjit_binary_function_call(state, std::fmod);
       return;
     }
 
@@ -157,7 +157,7 @@ BinaryOperatorData::jit(JITStateValue & state)
       jit_prepare();
       jit_pushargr_d(JIT_F1);
       jit_pushargr_d(JIT_F0);
-      LIGHTNING_MATH_CALL2(std::pow);
+      libjit_binary_function_call(state, std::pow);
       return;
     }
 
@@ -259,132 +259,132 @@ UnaryFunctionData::jit(JITStateValue & state)
   switch (_type)
   {
     case UnaryFunctionType::ABS:
-      LIGHTNING_MATH_CALL1(std::abs);
+      libjit_unary_function_call(state, std::abs);
       return;
 
     case UnaryFunctionType::ACOS:
-      LIGHTNING_MATH_CALL1(std::acos);
+      libjit_unary_function_call(state, std::acos);
       return;
 
     case UnaryFunctionType::ACOSH:
-      LIGHTNING_MATH_CALL1(std::acosh);
+      libjit_unary_function_call(state, std::acosh);
       return;
 
     case UnaryFunctionType::ARG:
       fatalError("Function not implemented");
 
     case UnaryFunctionType::ASIN:
-      LIGHTNING_MATH_CALL1(std::asin);
+      libjit_unary_function_call(state, std::asin);
       return;
 
     case UnaryFunctionType::ASINH:
-      LIGHTNING_MATH_CALL1(std::asinh);
+      libjit_unary_function_call(state, std::asinh);
       return;
 
     case UnaryFunctionType::ATAN:
-      LIGHTNING_MATH_CALL1(std::atan);
+      libjit_unary_function_call(state, std::atan);
       return;
 
     case UnaryFunctionType::ATANH:
-      LIGHTNING_MATH_CALL1(std::atanh);
+      libjit_unary_function_call(state, std::atanh);
       return;
 
     case UnaryFunctionType::CBRT:
-      LIGHTNING_MATH_CALL1(std::cbrt);
+      libjit_unary_function_call(state, std::cbrt);
       return;
 
     case UnaryFunctionType::CEIL:
-      LIGHTNING_MATH_CALL1(std::ceil);
+      libjit_unary_function_call(state, std::ceil);
       return;
 
     case UnaryFunctionType::CONJ:
       fatalError("Function not implemented");
 
     case UnaryFunctionType::COS:
-      LIGHTNING_MATH_CALL1(std::cos);
+      libjit_unary_function_call(state, std::cos);
       return;
 
     case UnaryFunctionType::COSH:
-      LIGHTNING_MATH_CALL1(std::cosh);
+      libjit_unary_function_call(state, std::cosh);
       return;
 
     case UnaryFunctionType::COT:
-      LIGHTNING_MATH_CALL1(std::tan);
+      libjit_unary_function_call(state, std::tan);
       jit_movi_d(JIT_F1, 1.0);
       jit_divr_d(JIT_F0, JIT_F1, JIT_F0);
       return;
 
     case UnaryFunctionType::CSC:
-      LIGHTNING_MATH_CALL1(std::sin);
+      libjit_unary_function_call(state, std::sin);
       jit_movi_d(JIT_F1, 1.0);
       jit_divr_d(JIT_F0, JIT_F1, JIT_F0);
       return;
 
     case UnaryFunctionType::ERF:
-      LIGHTNING_MATH_CALL1(std::erf);
+      libjit_unary_function_call(state, std::erf);
       return;
 
     case UnaryFunctionType::EXP:
-      LIGHTNING_MATH_CALL1(std::exp);
+      libjit_unary_function_call(state, std::exp);
       return;
 
     case UnaryFunctionType::EXP2:
-      LIGHTNING_MATH_CALL1(std::exp2);
+      libjit_unary_function_call(state, std::exp2);
       return;
 
     case UnaryFunctionType::FLOOR:
-      LIGHTNING_MATH_CALL1(std::floor);
+      libjit_unary_function_call(state, std::floor);
       return;
 
     case UnaryFunctionType::IMAG:
       fatalError("Function not implemented");
 
     case UnaryFunctionType::INT:
-      LIGHTNING_MATH_CALL1(std::round);
+      libjit_unary_function_call(state, std::round);
       return;
 
     case UnaryFunctionType::LOG:
-      LIGHTNING_MATH_CALL1(std::log);
+      libjit_unary_function_call(state, std::log);
       return;
 
     case UnaryFunctionType::LOG10:
-      LIGHTNING_MATH_CALL1(std::log10);
+      libjit_unary_function_call(state, std::log10);
       return;
 
     case UnaryFunctionType::LOG2:
-      LIGHTNING_MATH_CALL1(std::log2);
+      libjit_unary_function_call(state, std::log2);
       return;
 
     case UnaryFunctionType::REAL:
       fatalError("Function not implemented");
 
     case UnaryFunctionType::SEC:
-      LIGHTNING_MATH_CALL1(std::cos);
+      libjit_unary_function_call(state, std::cos);
       jit_movi_d(JIT_F1, 1.0);
       jit_divr_d(JIT_F0, JIT_F1, JIT_F0);
       return;
 
     case UnaryFunctionType::SIN:
-      LIGHTNING_MATH_CALL1(std::sin);
+      libjit_unary_function_call(state, std::sin);
       return;
 
     case UnaryFunctionType::SINH:
-      LIGHTNING_MATH_CALL1(std::sinh);
+      libjit_unary_function_call(state, std::sinh);
       return;
 
     case UnaryFunctionType::SQRT:
-      LIGHTNING_MATH_CALL1(std::sqrt);
+      libjit_unary_function_call(state, std::sqrt);
       return;
 
     case UnaryFunctionType::T:
       fatalError("Function not implemented");
 
     case UnaryFunctionType::TAN:
-      LIGHTNING_MATH_CALL1(std::tan);
+      libjit_unary_function_call(state, std::tan);
       return;
 
     case UnaryFunctionType::TANH:
-      LIGHTNING_MATH_CALL1(std::tanh);
+      libjit_unary_function_call(state, std::tanh);
       return;
 
     case UnaryFunctionType::TRUNC:
@@ -417,18 +417,18 @@ BinaryFunctionData::jit(JITStateValue & state)
   switch (_type)
   {
     case BinaryFunctionType::ATAN2:
-      LIGHTNING_MATH_CALL2(std::atan2);
+      libjit_binary_function_call(state, std::atan2);
       return;
 
     case BinaryFunctionType::HYPOT:
       fatalError("Function not implemented");
 
     case BinaryFunctionType::MIN:
-      LIGHTNING_MATH_CALL2(ligntning_wrap_min);
+      libjit_binary_function_call(state, ligntning_wrap_min);
       return;
 
     case BinaryFunctionType::MAX:
-      LIGHTNING_MATH_CALL2(ligntning_wrap_max);
+      libjit_binary_function_call(state, ligntning_wrap_max);
       return;
 
     case BinaryFunctionType::PLOG:
@@ -439,7 +439,7 @@ BinaryFunctionData::jit(JITStateValue & state)
       //            : std::log(A);
 
     case BinaryFunctionType::POW:
-      LIGHTNING_MATH_CALL2(std::pow);
+      libjit_binary_function_call(state, std::pow);
       return;
 
     case BinaryFunctionType::POLAR:
