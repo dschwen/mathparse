@@ -9,34 +9,18 @@
 namespace SymbolicMath
 {
 
-#define GLUE_HELPER(x, y) x##y
-#define GLUE(x, y) GLUE_HELPER(x, y)
+jit_value_t
+libjit_unary_function_call(JITStateValue & state, double (*func)(double), jit_value_t A)
+{
+  // Prepare calling native_mult: create its signature
+  jit_type_t params[] = {jit_type_float64};
+  jit_type_t signature = jit_type_create_signature(jit_abi_cdecl, jit_type_float64, params, 1, 1);
 
-#define LIBJIT_MATH_WRAPPER1(FUNC)                                                                 \
-  {                                                                                                \
-    double (*GLUE(FUNC, _ptr))(double) = std::FUNC;                                                \
-    jit_value_t GLUE(FUNC, _args)[] = {A};                                                         \
-    return jit_insn_call_native(func,                                                              \
-                                "std::" #FUNC,                                                     \
-                                reinterpret_cast<void *>(GLUE(FUNC, _ptr)),                        \
-                                signature,                                                         \
-                                GLUE(FUNC, _args),                                                 \
-                                1,                                                                 \
-                                JIT_CALL_NOTHROW);                                                 \
-  }
-
-#define LIBJIT_MATH_WRAPPER2(FUNC)                                                                 \
-  {                                                                                                \
-    double (*GLUE(FUNC, _ptr))(double, double) = std::FUNC;                                        \
-    jit_value_t GLUE(FUNC, _args)[] = {A, B};                                                      \
-    return jit_insn_call_native(func,                                                              \
-                                "std::" #FUNC,                                                     \
-                                reinterpret_cast<void *>(GLUE(FUNC, _ptr)),                        \
-                                signature,                                                         \
-                                GLUE(FUNC, _args),                                                 \
-                                2,                                                                 \
-                                JIT_CALL_NOTHROW);                                                 \
-  }
+  // set arguments and call function
+  jit_value_t args[] = {A};
+  return jit_insn_call_native(
+      state, "", reinterpret_cast<void *>(func), signature, args, 1, JIT_CALL_NOTHROW);
+}
 
 /********************************************************
  * Real Number immediate
@@ -125,7 +109,9 @@ BinaryOperatorData::jit(JITStateValue & func)
       jit_type_t params[] = {jit_type_float64, jit_type_float64};
       jit_type_t signature =
           jit_type_create_signature(jit_abi_cdecl, jit_type_float64, params, 2, 1);
-      LIBJIT_MATH_WRAPPER2(fmod)
+      jit_value_t args[] = {A, B};
+      return jit_insn_call_native(
+          func, "", reinterpret_cast<void *>(func), signature, args, 2, JIT_CALL_NOTHROW);
     }
 
     case BinaryOperatorType::POWER:
@@ -209,10 +195,6 @@ UnaryFunctionData::jit(JITStateValue & func)
 {
   const auto A = _args[0].jit(func);
 
-  // Prepare calling native_mult: create its signature
-  jit_type_t params[] = {jit_type_float64};
-  jit_type_t signature = jit_type_create_signature(jit_abi_cdecl, jit_type_float64, params, 1, 1);
-
   switch (_type)
   {
     case UnaryFunctionType::ABS:
@@ -222,7 +204,7 @@ UnaryFunctionData::jit(JITStateValue & func)
       return jit_insn_acos(func, A);
 
     case UnaryFunctionType::ACOSH:
-      LIBJIT_MATH_WRAPPER1(acosh)
+      return libjit_unary_function_call(func, std::acosh, A);
 
     case UnaryFunctionType::ARG:
       fatalError("Function not implemented");
@@ -231,16 +213,16 @@ UnaryFunctionData::jit(JITStateValue & func)
       return jit_insn_asin(func, A);
 
     case UnaryFunctionType::ASINH:
-      LIBJIT_MATH_WRAPPER1(asinh)
+      return libjit_unary_function_call(func, std::asinh, A);
 
     case UnaryFunctionType::ATAN:
       return jit_insn_atan(func, A);
 
     case UnaryFunctionType::ATANH:
-      LIBJIT_MATH_WRAPPER1(atanh)
+      return libjit_unary_function_call(func, std::atanh, A);
 
     case UnaryFunctionType::CBRT:
-      LIBJIT_MATH_WRAPPER1(cbrt)
+      return libjit_unary_function_call(func, std::cbrt, A);
 
     case UnaryFunctionType::CEIL:
       return jit_insn_ceil(func, A);
@@ -267,13 +249,13 @@ UnaryFunctionData::jit(JITStateValue & func)
           jit_insn_sin(func, A));
 
     case UnaryFunctionType::ERF:
-      LIBJIT_MATH_WRAPPER1(erf)
+      return libjit_unary_function_call(func, std::erf, A);
 
     case UnaryFunctionType::EXP:
       return jit_insn_exp(func, A);
 
     case UnaryFunctionType::EXP2:
-      LIBJIT_MATH_WRAPPER1(exp2)
+      return libjit_unary_function_call(func, std::exp2, A);
 
     case UnaryFunctionType::FLOOR:
       return jit_insn_floor(func, A);
@@ -291,7 +273,7 @@ UnaryFunctionData::jit(JITStateValue & func)
       return jit_insn_log10(func, A);
 
     case UnaryFunctionType::LOG2:
-      LIBJIT_MATH_WRAPPER1(log2)
+      return libjit_unary_function_call(func, std::log2, A);
 
     case UnaryFunctionType::REAL:
       fatalError("Function not implemented");
