@@ -73,7 +73,6 @@ private:
   std::string formatError(std::size_t pos, const std::string & message, std::size_t width = 80);
 };
 
-// end namespace SymbolicMath
-}
+} // namespace SymbolicMath
 
 #endif // SYMBOLICMATH_PARSER_H

@@ -77,5 +77,4 @@ Function::compile()
   std::remove(otmpname);
 }
 
-// end namespace SymbolicMath
-}
+} // namespace SymbolicMath

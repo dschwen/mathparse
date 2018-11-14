@@ -413,7 +413,6 @@ IntegerPowerData::jit(JITStateValue & state)
         result);
 }
 
-// end namespace SymbolicMath
-}
+} // namespace SymbolicMath
 
 #endif // SYMBOLICMATH_USE_LIBJIT

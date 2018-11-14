@@ -111,7 +111,6 @@ protected:
   NodeDataPtr _data;
 };
 
-// end namespace SymbolicMath
-}
+} // namespace SymbolicMath
 
 #endif // SYMBOLICMATHNODE_H

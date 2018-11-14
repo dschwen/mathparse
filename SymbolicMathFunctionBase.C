@@ -16,5 +16,4 @@ FunctionBase::value()
     return _root.value();
 }
 
-// end namespace SymbolicMath
-}
+} // namespace SymbolicMath

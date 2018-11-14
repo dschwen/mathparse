@@ -55,7 +55,6 @@ protected:
   JITFunctionPtr _jit_code;
 };
 
-// end namespace SymbolicMath
-}
+} // namespace SymbolicMath
 
 #endif // SYMBOLICMATHFUNCTIONBASE_H

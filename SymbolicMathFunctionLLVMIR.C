@@ -69,10 +69,7 @@ Function::Function(const Function & F)
 {
 }
 
-Function::~Function()
-{
-  // CompileLayer.removeModuleSet(_H);
-}
+Function::~Function() { invalidateJIT(); }
 
 void
 Function::compile()
@@ -94,9 +91,6 @@ Function::compile()
 
   // return result
   state.builder.CreateRet(_root.jit(state));
-
-  // print module (debug)
-  // M->print(llvm::errs(), nullptr);
 
   // Build our symbol resolver:
   // Lambda 1: Look back into the JIT itself to find symbols that are part of
@@ -123,7 +117,6 @@ Function::compile()
   llvm::raw_string_ostream mangled(buf);
   llvm::Mangler::getNameWithPrefix(mangled, "F", _llvm_data_layout);
 
-  // std::cout << mangled.str() << '\n';
   auto ExprSymbol = _llvm_optimize_layer.findSymbol(mangled.str(), false);
   if (!ExprSymbol)
     fatalError("Function not found\n");
@@ -131,9 +124,6 @@ Function::compile()
   // Get the symbol's address and cast it to the right type (takes no
   // arguments, returns a double) so we can call it as a native function.
   _jit_code = reinterpret_cast<JITFunctionPtr>(llvm::cantFail(ExprSymbol.getAddress()));
-  // _jit_code = (double (*)())(intptr_t)(ExprSymbol.getAddress());
-
-  // std::cout << "EVALUATES to " << _jit_code() << '\n';
 }
 
 std::shared_ptr<llvm::Module>
@@ -167,5 +157,4 @@ Function::invalidateJIT()
   }
 };
 
-// end namespace SymbolicMath
-}
+} // namespace SymbolicMath

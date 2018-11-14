@@ -242,7 +242,6 @@ protected:
   ConditionalType _type;
 };
 
-// end namespace SymbolicMath
-}
+} // namespace SymbolicMath
 
 #endif // SYMBOLICMATHTOKENIZER_H

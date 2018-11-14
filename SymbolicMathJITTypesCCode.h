@@ -12,7 +12,6 @@ using JITReturnValue = std::string;
 
 using JITStateValue = bool;
 
-// end namespace SymbolicMath
-}
+} // namespace SymbolicMath
 
 #endif // SYMBOLICMATHTYPESCCODE_H

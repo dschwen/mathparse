@@ -21,7 +21,6 @@ struct JITStateValue
   llvm::Module * M;
 };
 
-// end namespace SymbolicMath
-}
+} // namespace SymbolicMath
 
 #endif // SYMBOLICMATHTYPESLLVMIR_H

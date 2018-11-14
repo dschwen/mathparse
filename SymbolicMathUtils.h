@@ -23,13 +23,12 @@ const Real phi = 1.6180339887498948482;
 const Real ln2 = std::log(2.0);
 // natural logarithm of 10
 const Real ln10 = std::log(10.0);
-}
+} // namespace Constant
 
 [[noreturn]] void fatalError(const std::string & error);
 
 std::string stringify(Real number);
 
-// end namespace SymbolicMath
-}
+} // namespace SymbolicMath
 
 #endif // SYMBOLICMATHUTILS_H

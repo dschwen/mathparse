@@ -1,7 +1,8 @@
 #ifndef SYMBOLICMATHTYPESLIGHTNING_H
 #define SYMBOLICMATHTYPESLIGHTNING_H
 
-extern "C" {
+extern "C"
+{
 #include <lightning.h>
 }
 
@@ -26,7 +27,6 @@ struct JITStateValue
   jit_state_t * C;
 };
 
-// end namespace SymbolicMath
-}
+} // namespace SymbolicMath
 
 #endif // SYMBOLICMATHTYPESLIGHTNING_H

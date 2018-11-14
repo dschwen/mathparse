@@ -157,5 +157,4 @@ FunctionToken::build(const std::string & string, std::size_t pos)
   return new FunctionToken(pos);
 }
 
-// end namespace SymbolicMath
-}
+} // namespace SymbolicMath

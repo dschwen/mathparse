@@ -14,7 +14,6 @@ using JITReturnValue = jit_value_t;
 
 using JITStateValue = jit_function_t;
 
-// end namespace SymbolicMath
-}
+} // namespace SymbolicMath
 
 #endif // SYMBOLICMATHTYPESLIBJIT_H

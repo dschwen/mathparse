@@ -55,5 +55,4 @@ Function::invalidateJIT()
   }
 };
 
-// end namespace SymbolicMath
-}
+} // namespace SymbolicMath

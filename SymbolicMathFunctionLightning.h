@@ -33,7 +33,6 @@ protected:
   JITStateValue _state;
 };
 
-// end namespace SymbolicMath
-}
+} // namespace SymbolicMath
 
 #endif // SYMBOLICMATHFUNCTIONLIGHTNING_H

@@ -1111,5 +1111,4 @@ IntegerPowerData::D(const ValueProvider & vp)
   return dA * Node(_exponent) * Node(IntegerPowerType::_ANY, A, _exponent - 1);
 }
 
-// end namespace SymbolicMath
-}
+} // namespace SymbolicMath

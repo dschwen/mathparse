@@ -89,7 +89,6 @@ private:
   ModuleHandle _module_handle;
 };
 
-// end namespace SymbolicMath
-}
+} // namespace SymbolicMath
 
 #endif // SYMBOLICMATHFUNCTIONLLVMIR_H

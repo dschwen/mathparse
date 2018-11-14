@@ -214,7 +214,6 @@ std::string stringify(UnaryFunctionType type);
 std::string stringify(BinaryFunctionType type);
 std::string stringify(ConditionalType type);
 
-// end namespace SymbolicMath
-}
+} // namespace SymbolicMath
 
 #endif // SYMBOLICMATH_SYMBOLS_H
