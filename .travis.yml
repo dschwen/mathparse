@@ -1,4 +1,4 @@
-dist: trusty
+dist: xenial
 sudo: false
 
 language: cpp
@@ -11,8 +11,6 @@ addons:
     sources:
       - ubuntu-toolchain-r-test
     packages:
-      - g++-5
-      - gcc-5
       - libgccjit-5-dev
       - texinfo
 
@@ -30,8 +28,9 @@ before_script:
   - make && make install
   # Build LibJIT
   - cd $TRAVIS_BUILD_DIR
-  - git clone --depth=1 https://git.savannah.gnu.org/git/libjit.git
-  - cd libjit && ./bootstrap && ./configure --prefix=$TRAVIS_BUILD_DIR/install
+  - wget http://git.savannah.gnu.org/cgit/libjit.git/snapshot/libjit-0.1.4.tar.gz
+  - tar xzf libjit-0.1.4.tar.gz
+  - cd libjit-0.1.4 && ./bootstrap && ./configure --prefix=$TRAVIS_BUILD_DIR/install
   - make && make install
   - cd $TRAVIS_BUILD_DIR
 
