@@ -36,7 +36,7 @@ public:
   virtual void compile() = 0;
 
   /// check if the Function was successfully compiled
-  bool isCompiled() { return _jit_code; }
+  virtual bool isCompiled() { return _jit_code; }
 
   /// Evaluate the node (using JIT if available)
   virtual Real value();
