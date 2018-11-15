@@ -45,5 +45,4 @@ Function::compile()
   _jit_code = reinterpret_cast<JITFunctionPtr>(gcc_jit_result_get_code(_jit_result, "F"));
 }
 
-// end namespace SymbolicMath
-}
+} // namespace SymbolicMath

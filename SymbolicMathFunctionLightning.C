@@ -60,7 +60,7 @@ Function::invalidateJIT()
 {
   if (_jit_code)
   {
-    // sljit_free_code(reinterpret_cast<void *>(_jit_code));
+    // there is a potential memory leak here
     _jit_code = nullptr;
   }
 };
@@ -68,5 +68,4 @@ Function::invalidateJIT()
 // undefine the lightning helper macro
 #undef _jit
 
-// end namespace SymbolicMath
-}
+} // namespace SymbolicMath

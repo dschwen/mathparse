@@ -45,3 +45,5 @@ script:
   - ./test
   - make test JIT=ccode
   - ./test
+  - make test JIT=vm
+  - ./test

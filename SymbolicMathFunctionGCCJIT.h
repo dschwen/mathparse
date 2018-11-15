@@ -36,7 +36,6 @@ protected:
   gcc_jit_result * _jit_result;
 };
 
-// end namespace SymbolicMath
-}
+} // namespace SymbolicMath
 
 #endif // SYMBOLICMATHFUNCTIONGCCJIT_H

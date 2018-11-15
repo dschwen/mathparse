@@ -33,7 +33,6 @@ protected:
   jit_context_t _jit_context;
 };
 
-// end namespace SymbolicMath
-}
+} // namespace SymbolicMath
 
 #endif // SYMBOLICMATHFUNCTIONLIBJIT_H

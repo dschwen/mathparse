@@ -349,5 +349,4 @@ Parser::formatError(std::size_t pos, const std::string & message, std::size_t wi
   return error;
 }
 
-// end namespace SymbolicMath
-}
+} // namespace SymbolicMath

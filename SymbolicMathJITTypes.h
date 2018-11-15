@@ -25,4 +25,8 @@
 #include "SymbolicMathJITTypesLLVMIR.h"
 #endif
 
+#ifdef SYMBOLICMATH_USE_VM
+#include "SymbolicMathJITTypesVM.h"
+#endif
+
 #endif // SYMBOLICMATHJITTYPES_H

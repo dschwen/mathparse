@@ -68,5 +68,4 @@ stringify(ConditionalType type)
   fatalError("Unknown conditional");
 }
 
-// end namespace SymbolicMath
-}
+} // namespace SymbolicMath

@@ -21,7 +21,6 @@ struct JITStateValue
   struct sljit_compiler * C;
 };
 
-// end namespace SymbolicMath
-}
+} // namespace SymbolicMath
 
 #endif // SYMBOLICMATHTYPESSLJIT_H

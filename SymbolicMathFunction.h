@@ -25,4 +25,8 @@
 #include "SymbolicMathFunctionLLVMIR.h"
 #endif
 
+#ifdef SYMBOLICMATH_USE_VM
+#include "SymbolicMathFunctionVM.h"
+#endif
+
 #endif // SYMBOLICMATHFUNCTION_H

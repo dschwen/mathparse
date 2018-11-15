@@ -30,7 +30,6 @@ protected:
   void invalidateJIT() override;
 };
 
-// end namespace SymbolicMath
-}
+} // namespace SymbolicMath
 
 #endif // SYMBOLICMATHFUNCTIONSLJIT_H

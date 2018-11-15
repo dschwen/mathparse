@@ -458,7 +458,6 @@ protected:
   int _exponent;
 };
 
-// end namespace SymbolicMath
-}
+} // namespace SymbolicMath
 
 #endif // SYMBOLICMATHNODEDATA_H

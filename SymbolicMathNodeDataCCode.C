@@ -327,7 +327,6 @@ IntegerPowerData::jit(JITStateValue & func)
   return "std::pow(" + _arg.jit(func) + ", " + stringify(_exponent) + ")";
 }
 
-// end namespace SymbolicMath
-}
+} // namespace SymbolicMath
 
 #endif // SYMBOLICMATH_USE_CCODE

@@ -43,7 +43,6 @@ private:
   std::size_t pos() { return std::distance(_mpt_expression.begin(), _c); }
 };
 
-// end namespace SymbolicMath
-}
+} // namespace SymbolicMath
 
 #endif // SYMBOLICMATHTOKENIZER_H

@@ -250,5 +250,4 @@ Node::stackDepth(std::pair<int, int> & current_max)
 //       fatalError("Index out of range");
 // }
 
-// end namespace SymbolicMath
-}
+} // namespace SymbolicMath

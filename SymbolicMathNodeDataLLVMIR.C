@@ -199,16 +199,16 @@ UnaryFunctionData::jit(JITStateValue & state)
     case UnaryFunctionType::COSH:
 
     case UnaryFunctionType::COT:
-    // return jit_insn_div(
-    //     func,
-    //     jit_value_create_float64_constant(func, jit_type_float64, (jit_float64)1.0),
-    //     jit_insn_tan(func, A));
+      // return jit_insn_div(
+      //     func,
+      //     jit_value_create_float64_constant(func, jit_type_float64, (jit_float64)1.0),
+      //     jit_insn_tan(func, A));
 
     case UnaryFunctionType::CSC:
-    // return jit_insn_div(
-    //     func,
-    //     jit_value_create_float64_constant(func, jit_type_float64, (jit_float64)1.0),
-    //     jit_insn_sin(func, A));
+      // return jit_insn_div(
+      //     func,
+      //     jit_value_create_float64_constant(func, jit_type_float64, (jit_float64)1.0),
+      //     jit_insn_sin(func, A));
 
     case UnaryFunctionType::ERF:
 
@@ -247,10 +247,10 @@ UnaryFunctionData::jit(JITStateValue & state)
       fatalError("Function not implemented");
 
     case UnaryFunctionType::SEC:
-    // return jit_insn_div(
-    //     func,
-    //     jit_value_create_float64_constant(func, jit_type_float64, (jit_float64)1.0),
-    //     jit_insn_cos(func, A));
+      // return jit_insn_div(
+      //     func,
+      //     jit_value_create_float64_constant(func, jit_type_float64, (jit_float64)1.0),
+      //     jit_insn_cos(func, A));
 
     case UnaryFunctionType::SIN:
       func = llvm::Intrinsic::sin;
@@ -294,9 +294,9 @@ BinaryFunctionData::jit(JITStateValue & state)
     case BinaryFunctionType::ATAN2:
 
     case BinaryFunctionType::HYPOT:
-    // return jit_insn_sqrt(func,
-    //                      jit_insn_add(func, jit_insn_mul(func, A, A), jit_insn_mul(func, B,
-    //                      B)));
+      // return jit_insn_sqrt(func,
+      //                      jit_insn_add(func, jit_insn_mul(func, A, A), jit_insn_mul(func, B,
+      //                      B)));
 
     case BinaryFunctionType::MIN:
 
@@ -312,7 +312,7 @@ BinaryFunctionData::jit(JITStateValue & state)
     }
 
     case BinaryFunctionType::POW:
-    // return jit_insn_pow(func, A, B);
+      // return jit_insn_pow(func, A, B);
 
     case BinaryFunctionType::POLAR:
     default:
@@ -375,7 +375,6 @@ IntegerPowerData::jit(JITStateValue & state)
     return state.builder.CreateFDiv(ConstantFP::get(state.builder.getDoubleTy(), 1.0), result);
 }
 
-// end namespace SymbolicMath
-}
+} // namespace SymbolicMath
 
 #endif // SYMBOLICMATH_USE_LLVMIR

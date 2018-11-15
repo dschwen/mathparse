@@ -512,7 +512,6 @@ IntegerPowerData::jit(JITStateValue & state)
   }
 }
 
-// end namespace SymbolicMath
-}
+} // namespace SymbolicMath
 
 #endif // SYMBOLICMATH_USE_LIGHTNING

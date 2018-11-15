@@ -37,5 +37,4 @@ Function::compile()
   _jit_code = reinterpret_cast<JITFunctionPtr>(jit_function_to_closure(function));
 }
 
-// end namespace SymbolicMath
-}
+} // namespace SymbolicMath

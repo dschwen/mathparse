@@ -54,7 +54,6 @@ symbol(const std::string & name)
   return std::make_shared<SymbolicMath::SymbolData>(name);
 }
 
-// end namespace SymbolicMath
-}
+} // namespace SymbolicMath
 
 #endif // SYMBOLICMATHHELPERS_H

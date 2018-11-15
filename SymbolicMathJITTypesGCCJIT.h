@@ -19,7 +19,6 @@ struct JITStateValue
   gcc_jit_block * block;
 };
 
-// end namespace SymbolicMath
-}
+} // namespace SymbolicMath
 
 #endif // SYMBOLICMATHTYPESGCCJIT_H

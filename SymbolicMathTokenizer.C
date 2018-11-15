@@ -152,5 +152,4 @@ Tokenizer::getToken()
   return new InvalidToken(pos());
 }
 
-// end namespace SymbolicMath
-}
+} // namespace SymbolicMath

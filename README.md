@@ -26,10 +26,11 @@ SymbolicMath features just-in-time (JIT) compilation of expression trees. Availa
 ---------|-------------|------------
 `llvmir` |[LLVM](http://llvm.org) | Builds LLVM intermediate representation, optimizes it, and compiles it with LLVM Orc JIT
 `gccjit`|[libgccjit](https://gcc.gnu.org/onlinedocs/jit/)| Uses _libggcjit_ from the GNU Compiler Collection (gcc) to build _-O3_ optimized code in memory
-`ccode` | -| Launches an external compiler to compile generated C code and links in the generated object using _dlopen_
+`ccode` | - | Launches an external compiler to compile generated C code and links in the generated object using _dlopen_
 `libjit`| [GNU LibJIT](https://www.gnu.org/software/libjit/) | JIT library originally developed for the Mono project. Limited architecture support
 `lightning`| [GNU Lightning](https://www.gnu.org/software/lightning/) | Low level assembly generator. Good architecture support
 `sljit`| [SLJIT](http://sljit.sourceforge.net/) | Low level assembly generator. Broad architecture support, no external dependencies
+`vm`   | - | Builds byte code for a stack based virtual machine. This is a _fallback_ backend in case none of the proper JIT backends work
 
 Research is ongoing as to which backend is best used. See [performance comparison](PERFORMANCE.md) for details.
 
