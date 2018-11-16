@@ -4,4 +4,4 @@ GCCDIR ?= $(GCC_BIN)/..
 OBJS += SymbolicMathFunctionGCCJIT.o SymbolicMathNodeDataGCCJIT.o
 CONFIG := -DSYMBOLICMATH_USE_GCCJIT
 LDFLAGS := -lgccjit -L$(GCCDIR)/lib
-CPPFLAGS := -I$(GCCDIR)/include/
+CPPFLAGS += -I$(GCCDIR)/include/

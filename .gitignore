@@ -3,6 +3,11 @@ mathparse
 *.d
 .jit_backend
 performance
-test2
-test3
+test?
 test
+fparser4.5.2.zip
+fparser
+performance_fparser
+a.out
+.DS_Store
+*.dSym

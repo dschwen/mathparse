@@ -1,4 +1,5 @@
 CXX ?= clang++
+CPPFLAGS ?= -O2
 
 # (lightning,sljit,libjit)
 JIT ?= lightning
@@ -43,7 +44,28 @@ test: test.C $(OBJS)
 $(OBJS): .jit_backend
 
 clean:
-	rm -rf $(OBJS) *.o *.d mathparse performance test2 test3
+	rm -rf $(OBJS) *.o *.d mathparse performance test2 test3 performance_fparser
+
+# FParser (for performance comparison)
+
+fparser4.5.2.zip:
+	wget http://warp.povusers.org/FunctionParser/fparser4.5.2.zip
+
+fparser/fparser.hh: fparser4.5.2.zip
+	mkdir -p fparser && cd fparser && unzip -DD ../fparser4.5.2.zip
+
+%.o : %.cc
+	$(CXX) -std=c++11 $(CONFIG) -c $(CXXFLAGS) $(CPPFLAGS) $*.cc -o $@
+	$(CXX) -std=c++11 $(CONFIG) -MM $(CXXFLAGS) $(CPPFLAGS) $*.cc > $*.d
+
+FPARSER_SRC := $(wildcard fparser/*.cc)
+FPARSER_OBJS := $(patsubst %.cc, %.o, $(FPARSER_SRC))
+fparser: $(FPARSER_OBJS)
+
+performance_fparser: performance_fparser.C fparser/fparser.hh $(FPARSER_OBJS)
+	$(CXX) -std=c++11 $(CPPFLAGS) $(CXXFLAGS) -Ifparser -o performance_fparser performance_fparser.C $(FPARSER_OBJS)
+
+# Tinkering around
 
 tests: test2 test3
 
