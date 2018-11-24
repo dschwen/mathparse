@@ -68,7 +68,9 @@ public:
   /// Bracket operator for child node access
   Node operator[](unsigned int i);
   /// Number of child nodes
-  std::size_t size();
+  std::size_t size() const;
+  /// Simple hash for quick comparison
+  std::size_t hash() const;
 
   /// pass through functions
   Real value() const;
