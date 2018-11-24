@@ -5,6 +5,7 @@
 #include <memory>
 #include <array>
 #include <cmath>
+#include <functional>
 #include <type_traits>
 
 #include "SymbolicMathNode.h"
@@ -35,7 +36,8 @@ public:
   virtual NodeDataPtr clone() = 0;
 
   virtual Node getArg(unsigned int i) = 0;
-  virtual std::size_t size() { return 0; }
+  virtual std::size_t size() const { return 0; }
+  virtual std::size_t hash() const = 0;
 
   virtual bool is(Real) const { return false; };
   virtual bool is(NumberType) const { return false; };
@@ -74,6 +76,7 @@ public:
 class EmptyData : public NodeData
 {
 public:
+  std::size_t hash() const override { return 0; }
   bool isValid() const override { return false; };
 
   Real value() override { fatalError("invalid node"); };
@@ -99,7 +102,14 @@ public:
   }
 
   Node getArg(unsigned int i) override { return _args[i]; };
-  std::size_t size() override { return N; }
+  std::size_t size() const override { return N; }
+  std::size_t hash() const override
+  {
+    std::size_t h = 0;
+    for (auto & arg : _args)
+      h ^= (arg.hash() << 1);
+    return h;
+  }
 
   bool is(Enum type) const override { return _type == type || type == Enum::_ANY; }
   void stackDepth(std::pair<int, int> & current_max) override
@@ -124,7 +134,14 @@ public:
   MultinaryData(Enum type, std::vector<Node> args) : _type(type), _args(args) {}
 
   Node getArg(unsigned int i) override { return _args[i]; };
-  std::size_t size() override { return _args.size(); }
+  std::size_t size() const override { return _args.size(); }
+  std::size_t hash() const override
+  {
+    std::size_t h = 0;
+    for (auto & arg : _args)
+      h ^= (arg.hash() << 1);
+    return h;
+  }
 
   bool is(Enum type) const override { return _type == type || type == Enum::_ANY; }
   void stackDepth(std::pair<int, int> & current_max) override
@@ -197,6 +214,7 @@ public:
   JITReturnValue jit(JITStateValue & state) override { fatalError("Node cannot be compiled"); }
 
   NodeDataPtr clone() override { return std::make_shared<SymbolData>(_name); };
+  std::size_t hash() const override { return std::hash<std::string>{}(_name); }
 
   Node D(const ValueProvider & vp) override;
 };
@@ -216,6 +234,7 @@ public:
   JITReturnValue jit(JITStateValue & state) override;
 
   NodeDataPtr clone() override { return std::make_shared<RealReferenceData>(_ref, _name); };
+  std::size_t hash() const override { return std::hash<const Real *>{}(&_ref); }
 
   Node D(const ValueProvider & vp) override;
 
@@ -242,6 +261,10 @@ public:
   {
     return std::make_shared<RealArrayReferenceData>(_ref, _index, _name);
   };
+  std::size_t hash() const override
+  {
+    return std::hash<const Real *>{}(&_ref) ^ (std::hash<const int *>{}(&_index) << 1);
+  }
 
   Node D(const ValueProvider & vp) override;
 
@@ -283,6 +306,7 @@ public:
   std::string formatTree(std::string indent) const override;
 
   NodeDataPtr clone() override { return std::make_shared<RealNumberData>(_value); };
+  std::size_t hash() const override { return std::hash<Real>{}(_value); }
 
   bool is(NumberType type) const override;
   bool is(Real value) const override { return value == _value; };
@@ -444,7 +468,8 @@ public:
   NodeDataPtr clone() override { return std::make_shared<IntegerPowerData>(_arg, _exponent); };
 
   Node getArg(unsigned int i) override;
-  std::size_t size() override { return 1; }
+  std::size_t size() const override { return 1; }
+  std::size_t hash() const override { return _arg.hash() ^ (std::hash<int>{}(_exponent) << 1); }
 
   bool is(IntegerPowerType) const override { return true; };
 

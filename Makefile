@@ -11,6 +11,11 @@ OBJS := SymbolicMathToken.o SymbolicMathTokenizer.o \
 # include configuration for the selected JIT backend
 include jit_$(JIT).mk
 
+# add machine specific stuff
+ifneq (,$(findstring armv,$(shell uname -m)))
+  LDFLAGS += -latomic
+endif
+
 mathparse: main.C $(OBJS)
 	$(CXX) -std=c++11 $(CONFIG) $(CPPFLAGS) $(CXXFLAGS) -o mathparse main.C $(OBJS) $(LDFLAGS)
 

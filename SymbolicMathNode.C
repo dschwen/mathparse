@@ -118,9 +118,15 @@ Node::operator-()
 Node Node::operator[](unsigned int i) { return _data->getArg(i); }
 
 std::size_t
-Node::size()
+Node::size() const
 {
   return _data->size();
+}
+
+std::size_t
+Node::hash() const
+{
+  return _data->hash();
 }
 
 Real
