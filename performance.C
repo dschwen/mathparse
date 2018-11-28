@@ -11,7 +11,7 @@
 int
 main(int argc, char * argv[])
 {
-  std::cout << "SymbolicMath with backend " << SymbolicMath::jit_backend_name << '\n';
+  std::cout << "\n## with backend " << SymbolicMath::jit_backend_name << '\n';
   SymbolicMath::Parser parser;
 
   SymbolicMath::Real c;

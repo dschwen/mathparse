@@ -5,22 +5,9 @@
 #include <iostream>
 #include <chrono>
 
-int
-main(int argc, char * argv[])
+void
+bench(FunctionParser & fparser)
 {
-  std::cout << "FParser\n";
-
-  FunctionParser fparser;
-  fparser.AddConstant("kB", 8.6173324e-5);
-  fparser.AddConstant("T0", 410.0);
-  fparser.Parse(expression, "c,y");
-
-  // optimize
-  fparser.Optimize();
-
-  // if (!fparser.JITCompile())
-  //   exit(1);
-
   double p[2];
   double & c = p[0];
   double & T = p[1];
@@ -37,6 +24,28 @@ main(int argc, char * argv[])
 
   std::chrono::duration<double> elapsed = finish - start;
   std::cout << "Elapsed time: " << elapsed.count() << " s\n";
+}
+
+int
+main(int argc, char * argv[])
+{
+  std::cout << "\n# FParser\n";
+
+  FunctionParser fparser;
+  fparser.AddConstant("kB", 8.6173324e-5);
+  fparser.AddConstant("T0", 410.0);
+  fparser.Parse(expression, "c,y");
+
+  std::cout << "\n## Bytecode\n";
+  bench(fparser);
+
+  // optimize
+  fparser.Optimize();
+  std::cout << "\n## Bytecode with Optimizer\n";
+  bench(fparser);
+
+  // if (!fparser.JITCompile())
+  //   exit(1);
 
   return 0;
 }
