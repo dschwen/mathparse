@@ -26,10 +26,11 @@ main(int argc, char * argv[])
   parser.registerConstant("T0", 410.0);
 
   auto func = parser.parse(expression);
-  std::cout << func.format() << '\n';
+  // std::cout << func.format() << '\n';
 
   func.simplify();
-  std::cout << " = " << func.format() << '\n'; // << func->formatTree("\t") << '\n';
+  // std::cout << " = " << func.format() << '\n'
+  //           << func->formatTree("\t") << '\n';
 
   func.compile();
 
