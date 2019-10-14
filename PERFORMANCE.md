@@ -1,5 +1,5 @@
 # Performance comparison
-Using an Iron Chromium free energy.
+Using an Iron Chromium free energy. All times for single core execution on a Mac Pro (trashcan) unless otherwise stated.
 
 # SymbolicMath `performance.C`
 
@@ -22,6 +22,11 @@ Elapsed time: 11.2395 s
 ## with backend GNU Lightning
 -2.36237e+08
 Elapsed time: 12.0255 s
+
+## with backend Byte code VM
+-2.36237e+08
+Elapsed time: 126.709 s
+Elapsed time: 44.8053 s (Mac Book Pro)
 
 ## without JIT
  -2.36237e+08
