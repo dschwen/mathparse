@@ -4,14 +4,17 @@
 #include "SymbolicMathFunctionBase.h"
 #include "SymbolicMathJITTypesLLVMIR.h"
 
-#include "llvm/ExecutionEngine/ExecutionEngine.h"
+#include "llvm/ExecutionEngine/JITSymbol.h"
+// #include "llvm/ExecutionEngine/ExecutionEngine.h"
 #include "llvm/ExecutionEngine/Orc/CompileUtils.h"
+#include "llvm/ExecutionEngine/Orc/Core.h"
+#include "llvm/ExecutionEngine/Orc/ExecutionUtils.h"
 #include "llvm/ExecutionEngine/Orc/IRCompileLayer.h"
-#include "llvm/ExecutionEngine/Orc/IRTransformLayer.h"
+#include "llvm/ExecutionEngine/Orc/JITTargetMachineBuilder.h"
 #include "llvm/ExecutionEngine/Orc/RTDyldObjectLinkingLayer.h"
+#include "llvm/ExecutionEngine/SectionMemoryManager.h"
 #include "llvm/IR/DataLayout.h"
-#include "llvm/Support/CachePruning.h"
-#include "llvm/Target/TargetMachine.h"
+#include "llvm/IR/LLVMContext.h"
 
 #include <memory>
 
@@ -64,29 +67,27 @@ protected:
   using JITFunction = double (*)();
 
 private:
-  std::shared_ptr<llvm::Module> optimizeModule(std::shared_ptr<llvm::Module> M);
-
-  /// LLVM Target machine
-  std::unique_ptr<llvm::TargetMachine> _llvm_target_machine;
-
-  /// LLVM Data layout
-  const llvm::DataLayout _llvm_data_layout;
-
-  /// Object layer
+  decltype(llvm::orc::JITTargetMachineBuilder::detectHost()) _llvm_jtmb;
+  llvm::orc::ExecutionSession _llvm_es;
   llvm::orc::RTDyldObjectLinkingLayer _llvm_object_layer;
+  llvm::orc::IRCompileLayer _llvm_compile_layer;
+  llvm::orc::IRTransformLayer _llvm_optimize_layer;
 
-  // Compile layer
-  llvm::orc::IRCompileLayer<decltype(_llvm_object_layer), llvm::orc::SimpleCompiler>
-      _llvm_compile_layer;
+  llvm::DataLayout _llvm_data_layout;
+  llvm::orc::MangleAndInterner _llvm_mangle;
+  llvm::orc::ThreadSafeContext _llvm_ctx;
+
+  static Expected<ThreadSafeModule> optimizeModule(ThreadSafeModule M,
+                                                   const MaterializationResponsibility & R);
 
   // Optimize layer
-  using OptimizeFunction =
-      std::function<std::shared_ptr<llvm::Module>(std::shared_ptr<llvm::Module>)>;
-  llvm::orc::IRTransformLayer<decltype(_llvm_compile_layer), OptimizeFunction> _llvm_optimize_layer;
+  // using OptimizeFunction =
+  //     std::function<std::shared_ptr<llvm::Module>(std::shared_ptr<llvm::Module>)>;
+  // llvm::IRTransformLayer<decltype(_llvm_compile_layer), OptimizeFunction> _llvm_optimize_layer;
 
   /// LLVM module handle
-  using ModuleHandle = decltype(_llvm_optimize_layer)::ModuleHandleT;
-  ModuleHandle _module_handle;
+  // using ModuleHandle = decltype(_llvm_optimize_layer)::ModuleHandleT;
+  // ModuleHandle _module_handle;
 };
 
 } // namespace SymbolicMath

@@ -9,7 +9,7 @@ ifeq "$(LLVM_MAJOR)" "5"
   $(info compiling with LLVM version 5) 
 else ifeq "$(LLVM_MAJOR)" "6"
   $(info compiling with LLVM version 6) 
-else ifeq "$(LLVM_MAJOR)" "7"
+else ifeq "$(LLVM_MAJOR)" "9"
   $(info compiling with LLVM version 7) 
 else
   $(error LLVM version 5.x or 6.x is required to build the llvmir backend)

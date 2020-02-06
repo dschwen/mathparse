@@ -47,26 +47,31 @@ FunctionJITInitialization::FunctionJITInitialization()
 
 Function::Function(const Node & root)
   : FunctionBase((initialize(), root)),
-    _llvm_target_machine(llvm::EngineBuilder().selectTarget()),
-    _llvm_data_layout(_llvm_target_machine->createDataLayout()),
-    _llvm_object_layer([]() { return std::make_shared<llvm::SectionMemoryManager>(); }),
-    _llvm_compile_layer(_llvm_object_layer, llvm::orc::SimpleCompiler(*_llvm_target_machine)),
-    _llvm_optimize_layer(_llvm_compile_layer, [this](std::shared_ptr<llvm::Module> M) {
-      return optimizeModule(std::move(M));
-    })
+    _llvm_jtmb(JITTargetMachineBuilder::detectHost()),
+    _llvm_data_layout(std::move(_llvm_jtmb->getDefaultDataLayoutForTarget())),
+    _llvm_object_layer(_llvm_es, []() { return std::make_unique<llvm::SectionMemoryManager>(); }),
+    _llvm_compile_layer(
+        _llvm_es, _llvm_object_layer, llvm::orc::ConcurrentIRCompiler(std::move(_llvm_jtmb))),
+    _llvm_optimize_layer(_llvm_es, _llvm_compile_layer, optimizeModule),
+    _llvm_mangle(_llvm_es, this->_llvm_data_layout),
+    _llvm_ctx(std::make_unique<LLVMContext>())
 {
+  _llvm_es.getMainJITDylib().setGenerator(
+      cantFail(DynamicLibrarySearchGenerator::GetForCurrentProcess(_llvm_data_layout)));
 }
 
 Function::Function(const Function & F)
   : FunctionBase(F._root),
-    _llvm_target_machine(llvm::EngineBuilder().selectTarget()),
-    _llvm_data_layout(_llvm_target_machine->createDataLayout()),
-    _llvm_object_layer([]() { return std::make_shared<llvm::SectionMemoryManager>(); }),
-    _llvm_compile_layer(_llvm_object_layer, llvm::orc::SimpleCompiler(*_llvm_target_machine)),
-    _llvm_optimize_layer(_llvm_compile_layer, [this](std::shared_ptr<llvm::Module> M) {
-      return optimizeModule(std::move(M));
-    })
+    _llvm_jtmb(JITTargetMachineBuilder::detectHost()),
+    _llvm_data_layout(std::move(_llvm_jtmb->getDefaultDataLayoutForTarget())),
+    _llvm_object_layer(_llvm_es, []() { return std::make_unique<llvm::SectionMemoryManager>(); }),
+    _llvm_compile_layer(
+        _llvm_es, _llvm_object_layer, llvm::orc::ConcurrentIRCompiler(std::move(_llvm_jtmb))),
+    _llvm_mangle(_llvm_es, this->_llvm_data_layout),
+    _llvm_ctx(std::make_unique<LLVMContext>())
 {
+  _llvm_es.getMainJITDylib().setGenerator(
+      cantFail(DynamicLibrarySearchGenerator::GetForCurrentProcess(_llvm_data_layout)));
 }
 
 Function::~Function() { invalidateJIT(); }
@@ -77,11 +82,11 @@ Function::compile()
   if (_jit_code)
     return;
 
-  llvm::LLVMContext context;
-
   // Build Function and basic block
-  std::unique_ptr<llvm::Module> M = llvm::make_unique<llvm::Module>("function", context);
-  M->setDataLayout(_llvm_data_layout);
+  std::unique_ptr<llvm::Module> M = llvm::make_unique<llvm::Module>("function", _llvm_ctx);
+  cantFail(_llvm_compile_layer.add(_llvm_optimize_layeres.getMainJITDylib(),
+                                   ThreadSafeModule(std::move(M), _llvm_ctx)));
+  // M->setDataLayout(_llvm_data_layout);
 
   llvm::Function * F =
       llvm::cast<llvm::Function>(M->getOrInsertFunction("F", llvm::Type::getDoubleTy(context)));
@@ -126,17 +131,17 @@ Function::compile()
   _jit_code = reinterpret_cast<JITFunctionPtr>(llvm::cantFail(ExprSymbol.getAddress()));
 }
 
-std::shared_ptr<llvm::Module>
-Function::optimizeModule(std::shared_ptr<llvm::Module> M)
+static Expected<llvm::ThreadSafeModule>
+Function::optimizeModule(llvm::ThreadSafeModule M, const llvm::MaterializationResponsibility & R)
 {
   // Create a function pass manager.
-  auto FPM = llvm::make_unique<llvm::legacy::FunctionPassManager>(M.get());
+  auto FPM = std::make_unique<llvm::legacy::FunctionPassManager>(M.get());
 
   // Add some optimizations.
-  FPM->add(llvm::createInstructionCombiningPass());
-  FPM->add(llvm::createReassociatePass());
-  FPM->add(llvm::createGVNPass());
-  FPM->add(llvm::createCFGSimplificationPass());
+  FPM->add(createInstructionCombiningPass());
+  FPM->add(createReassociatePass());
+  FPM->add(createGVNPass());
+  FPM->add(createCFGSimplificationPass());
   FPM->doInitialization();
 
   // Run the optimizations over all functions in the module being added to
