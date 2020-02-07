@@ -1,21 +1,17 @@
-#ifndef SYMBOLICMATHFUNCTIONLLVMIR_H
-#define SYMBOLICMATHFUNCTIONLLVMIR_H
+#pragma once
 
+#include <llvm/ExecutionEngine/ExecutionEngine.h>
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/LLVMContext.h>
+#include <llvm/IR/Verifier.h>
+#include <llvm/Support/Format.h>
+#include <llvm/Support/TargetSelect.h>
+#include <llvm/Support/raw_ostream.h>
+
+#include "LLJITHelper.h"
 #include "SymbolicMathFunctionBase.h"
-#include "SymbolicMathJITTypesLLVMIR.h"
 
-#include "llvm/ExecutionEngine/JITSymbol.h"
-// #include "llvm/ExecutionEngine/ExecutionEngine.h"
-#include "llvm/ExecutionEngine/Orc/CompileUtils.h"
-#include "llvm/ExecutionEngine/Orc/Core.h"
-#include "llvm/ExecutionEngine/Orc/ExecutionUtils.h"
-#include "llvm/ExecutionEngine/Orc/IRCompileLayer.h"
-#include "llvm/ExecutionEngine/Orc/JITTargetMachineBuilder.h"
-#include "llvm/ExecutionEngine/Orc/RTDyldObjectLinkingLayer.h"
-#include "llvm/ExecutionEngine/SectionMemoryManager.h"
-#include "llvm/IR/DataLayout.h"
-#include "llvm/IR/LLVMContext.h"
-
+#include <functional>
 #include <memory>
 
 namespace SymbolicMath
@@ -64,32 +60,8 @@ protected:
   /// invalidate the JIT compiled function
   void invalidateJIT() override;
 
-  using JITFunction = double (*)();
-
 private:
-  decltype(llvm::orc::JITTargetMachineBuilder::detectHost()) _llvm_jtmb;
-  llvm::orc::ExecutionSession _llvm_es;
-  llvm::orc::RTDyldObjectLinkingLayer _llvm_object_layer;
-  llvm::orc::IRCompileLayer _llvm_compile_layer;
-  llvm::orc::IRTransformLayer _llvm_optimize_layer;
-
-  llvm::DataLayout _llvm_data_layout;
-  llvm::orc::MangleAndInterner _llvm_mangle;
-  llvm::orc::ThreadSafeContext _llvm_ctx;
-
-  static Expected<ThreadSafeModule> optimizeModule(ThreadSafeModule M,
-                                                   const MaterializationResponsibility & R);
-
-  // Optimize layer
-  // using OptimizeFunction =
-  //     std::function<std::shared_ptr<llvm::Module>(std::shared_ptr<llvm::Module>)>;
-  // llvm::IRTransformLayer<decltype(_llvm_compile_layer), OptimizeFunction> _llvm_optimize_layer;
-
-  /// LLVM module handle
-  // using ModuleHandle = decltype(_llvm_optimize_layer)::ModuleHandleT;
-  // ModuleHandle _module_handle;
+  LLJITHelper _lljit;
 };
 
 } // namespace SymbolicMath
-
-#endif // SYMBOLICMATHFUNCTIONLLVMIR_H

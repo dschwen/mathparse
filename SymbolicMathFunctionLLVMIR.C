@@ -2,7 +2,6 @@
 
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/ExecutionEngine/JITSymbol.h"
-#include "llvm/ExecutionEngine/Orc/IRCompileLayer.h"
 #include "llvm/ExecutionEngine/Orc/LambdaResolver.h"
 #include "llvm/ExecutionEngine/RTDyldMemoryManager.h"
 #include "llvm/ExecutionEngine/SectionMemoryManager.h"
@@ -25,6 +24,7 @@
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Transforms/Scalar.h"
 #include "llvm/Transforms/Scalar/GVN.h"
+#include "llvm/Transforms/InstCombine/InstCombine.h"
 
 #include <algorithm>
 #include <iostream>
@@ -42,37 +42,11 @@ FunctionJITInitialization::FunctionJITInitialization()
   llvm::InitializeNativeTarget();
   llvm::InitializeNativeTargetAsmPrinter();
   llvm::InitializeNativeTargetAsmParser();
-  llvm::sys::DynamicLibrary::LoadLibraryPermanently(nullptr);
 }
 
-Function::Function(const Node & root)
-  : FunctionBase((initialize(), root)),
-    _llvm_jtmb(JITTargetMachineBuilder::detectHost()),
-    _llvm_data_layout(std::move(_llvm_jtmb->getDefaultDataLayoutForTarget())),
-    _llvm_object_layer(_llvm_es, []() { return std::make_unique<llvm::SectionMemoryManager>(); }),
-    _llvm_compile_layer(
-        _llvm_es, _llvm_object_layer, llvm::orc::ConcurrentIRCompiler(std::move(_llvm_jtmb))),
-    _llvm_optimize_layer(_llvm_es, _llvm_compile_layer, optimizeModule),
-    _llvm_mangle(_llvm_es, this->_llvm_data_layout),
-    _llvm_ctx(std::make_unique<LLVMContext>())
-{
-  _llvm_es.getMainJITDylib().setGenerator(
-      cantFail(DynamicLibrarySearchGenerator::GetForCurrentProcess(_llvm_data_layout)));
-}
+Function::Function(const Node & root) : FunctionBase((initialize(), root)) {}
 
-Function::Function(const Function & F)
-  : FunctionBase(F._root),
-    _llvm_jtmb(JITTargetMachineBuilder::detectHost()),
-    _llvm_data_layout(std::move(_llvm_jtmb->getDefaultDataLayoutForTarget())),
-    _llvm_object_layer(_llvm_es, []() { return std::make_unique<llvm::SectionMemoryManager>(); }),
-    _llvm_compile_layer(
-        _llvm_es, _llvm_object_layer, llvm::orc::ConcurrentIRCompiler(std::move(_llvm_jtmb))),
-    _llvm_mangle(_llvm_es, this->_llvm_data_layout),
-    _llvm_ctx(std::make_unique<LLVMContext>())
-{
-  _llvm_es.getMainJITDylib().setGenerator(
-      cantFail(DynamicLibrarySearchGenerator::GetForCurrentProcess(_llvm_data_layout)));
-}
+Function::Function(const Function & F) : FunctionBase(F._root) {}
 
 Function::~Function() { invalidateJIT(); }
 
@@ -82,74 +56,45 @@ Function::compile()
   if (_jit_code)
     return;
 
-  // Build Function and basic block
-  std::unique_ptr<llvm::Module> M = llvm::make_unique<llvm::Module>("function", _llvm_ctx);
-  cantFail(_llvm_compile_layer.add(_llvm_optimize_layeres.getMainJITDylib(),
-                                   ThreadSafeModule(std::move(M), _llvm_ctx)));
-  // M->setDataLayout(_llvm_data_layout);
+  // std::cout << _lljit.getTargetTriple().normalize() << "\n\n";
 
-  llvm::Function * F =
-      llvm::cast<llvm::Function>(M->getOrInsertFunction("F", llvm::Type::getDoubleTy(context)));
+  auto C = llvm::make_unique<llvm::LLVMContext>();
+  auto M = llvm::make_unique<llvm::Module>("LLJIT", *C);
+  M->setDataLayout(_lljit.getDataLayout());
 
-  llvm::BasicBlock * BB = llvm::BasicBlock::Create(context, "EntryBlock", F);
+  auto & ctx = M->getContext();
+  auto * FT = llvm::FunctionType::get(llvm::Type::getDoubleTy(ctx), false);
+  auto * F = llvm::Function::Create(FT, llvm::Function::ExternalLinkage, "F", M.get());
+
+  auto * BB = llvm::BasicBlock::Create(ctx, "EntryBlock", F);
   JITStateValue state(BB, M.get());
 
   // return result
   state.builder.CreateRet(_root.jit(state));
 
-  // Build our symbol resolver:
-  // Lambda 1: Look back into the JIT itself to find symbols that are part of
-  //           the same "logical dylib".
-  // Lambda 2: Search for external symbols in the host process.
-  auto Resolver = llvm::orc::createLambdaResolver(
-      [&](const std::string & Name) {
-        if (auto Sym = _llvm_optimize_layer.findSymbol(Name, false))
-          return Sym;
-        return llvm::JITSymbol(nullptr);
-      },
-      [](const std::string & Name) {
-        if (auto SymAddr = llvm::RTDyldMemoryManager::getSymbolAddressInProcess(Name))
-          return llvm::JITSymbol(SymAddr, llvm::JITSymbolFlags::Exported);
-        return llvm::JITSymbol(nullptr);
-      });
+  std::string buffer;
+  llvm::raw_string_ostream es(buffer);
 
-  // Add the set to the JIT with the resolver we created above and a newly
-  // created SectionMemoryManager.
-  _module_handle =
-      llvm::cantFail(_llvm_optimize_layer.addModule(std::move(M), std::move(Resolver)));
+  if (verifyFunction(*F, &es))
+  {
+    std::cerr << "Function verification failed: %s" << es.str() << '\n';
+    std::exit(1);
+  }
 
-  std::string buf;
-  llvm::raw_string_ostream mangled(buf);
-  llvm::Mangler::getNameWithPrefix(mangled, "F", _llvm_data_layout);
+  if (verifyModule(*M, &es))
+  {
+    std::cerr << "Module verification failed: " << es.str() << '\n';
+    std::exit(1);
+  }
 
-  auto ExprSymbol = _llvm_optimize_layer.findSymbol(mangled.str(), false);
-  if (!ExprSymbol)
-    fatalError("Function not found\n");
+  if (_lljit.submitModule(std::move(M), std::move(C)))
+  {
+    std::cerr << "Greeeeeet saak-seeeesss!\n";
+  }
 
-  // Get the symbol's address and cast it to the right type (takes no
-  // arguments, returns a double) so we can call it as a native function.
-  _jit_code = reinterpret_cast<JITFunctionPtr>(llvm::cantFail(ExprSymbol.getAddress()));
-}
-
-static Expected<llvm::ThreadSafeModule>
-Function::optimizeModule(llvm::ThreadSafeModule M, const llvm::MaterializationResponsibility & R)
-{
-  // Create a function pass manager.
-  auto FPM = std::make_unique<llvm::legacy::FunctionPassManager>(M.get());
-
-  // Add some optimizations.
-  FPM->add(createInstructionCombiningPass());
-  FPM->add(createReassociatePass());
-  FPM->add(createGVNPass());
-  FPM->add(createCFGSimplificationPass());
-  FPM->doInitialization();
-
-  // Run the optimizations over all functions in the module being added to
-  // the JIT.
-  for (auto & F : *M)
-    FPM->run(F);
-
-  return M;
+  // Request function; this compiles to machine code and links.
+  // _jit_code = _lljit.getFunction<double *()>("F").get();
+  _jit_code = llvm::jitTargetAddressToPointer<JITFunctionPtr>(*(_lljit.getFunctionAddr("F")));
 }
 
 void
@@ -157,7 +102,7 @@ Function::invalidateJIT()
 {
   if (_jit_code)
   {
-    llvm::cantFail(_llvm_optimize_layer.removeModule(_module_handle));
+    // llvm::cantFail(_llvm_optimize_layer.removeModule(_module_handle));
     _jit_code = nullptr;
   }
 };
