@@ -1,3 +1,8 @@
+///
+/// SymbolicMath toolkit
+/// (c) 2017-2020 by Daniel Schwen
+///
+
 #ifdef SYMBOLICMATH_USE_CCODE
 
 #include "SymbolicMathNodeData.h"

@@ -1,5 +1,9 @@
-#ifndef SYMBOLICMATHFUNCTIONSLJIT_H
-#define SYMBOLICMATHFUNCTIONSLJIT_H
+///
+/// SymbolicMath toolkit
+/// (c) 2017-2020 by Daniel Schwen
+///
+
+#pragma once
 
 #include "SymbolicMathFunctionBase.h"
 
@@ -31,5 +35,3 @@ protected:
 };
 
 } // namespace SymbolicMath
-
-#endif // SYMBOLICMATHFUNCTIONSLJIT_H

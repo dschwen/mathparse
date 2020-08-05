@@ -1,5 +1,9 @@
-#ifndef SYMBOLICMATHSYMBOLS_H
-#define SYMBOLICMATHSYMBOLS_H
+///
+/// SymbolicMath toolkit
+/// (c) 2017-2020 by Daniel Schwen
+///
+
+#pragma once
 
 #include <string>
 #include <vector>
@@ -221,5 +225,3 @@ std::string stringify(BinaryFunctionType type);
 std::string stringify(ConditionalType type);
 
 } // namespace SymbolicMath
-
-#endif // SYMBOLICMATH_SYMBOLS_H

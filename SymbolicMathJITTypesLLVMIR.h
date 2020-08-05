@@ -1,5 +1,9 @@
-#ifndef SYMBOLICMATHTYPESLLVMIR_H
-#define SYMBOLICMATHTYPESLLVMIR_H
+///
+/// SymbolicMath toolkit
+/// (c) 2017-2020 by Daniel Schwen
+///
+
+#pragma once
 
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Type.h"
@@ -22,5 +26,3 @@ struct JITStateValue
 };
 
 } // namespace SymbolicMath
-
-#endif // SYMBOLICMATHTYPESLLVMIR_H

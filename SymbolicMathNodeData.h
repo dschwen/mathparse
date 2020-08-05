@@ -16,6 +16,7 @@ namespace SymbolicMath
 
 class Parser;
 class ValueProvider;
+class FunctionContext;
 
 /**
  * Node data base class. This class defines a common interface for all node data
@@ -209,7 +210,7 @@ public:
   LocalVariable(std::size_t id) : _id(id) {}
   Node getArg(unsigned int i) override { fatalError("Node has no arguments"); };
 
-  Real value() override { fatalError("Node cannot be evaluated"); }
+  Real value() override;
   JITReturnValue jit(JITStateValue & state) override { fatalError("Node cannot be compiled"); }
 
   std::string format() const override { return "{V" + stringify(_id) + "}"; }

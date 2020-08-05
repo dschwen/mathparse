@@ -1,5 +1,9 @@
-#ifndef SYMBOLICMATHTYPESGCCJIT_H
-#define SYMBOLICMATHTYPESGCCJIT_H
+///
+/// SymbolicMath toolkit
+/// (c) 2017-2020 by Daniel Schwen
+///
+
+#pragma once
 
 #include <libgccjit.h>
 
@@ -20,5 +24,3 @@ struct JITStateValue
 };
 
 } // namespace SymbolicMath
-
-#endif // SYMBOLICMATHTYPESGCCJIT_H

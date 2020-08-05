@@ -1,5 +1,9 @@
-#ifndef SYMBOLICMATHFUNCTION_H
-#define SYMBOLICMATHFUNCTION_H
+///
+/// SymbolicMath toolkit
+/// (c) 2017-2020 by Daniel Schwen
+///
+
+#pragma once
 
 #ifdef SYMBOLICMATH_USE_GCCJIT
 #include "SymbolicMathFunctionGCCJIT.h"
@@ -28,5 +32,3 @@
 #ifdef SYMBOLICMATH_USE_VM
 #include "SymbolicMathFunctionVM.h"
 #endif
-
-#endif // SYMBOLICMATHFUNCTION_H

@@ -27,6 +27,16 @@ SymbolData::D(const ValueProvider & vp)
 }
 
 /********************************************************
+ * Local Variable
+ ********************************************************/
+
+Real
+LocalVariable::value()
+{
+  fatalError("LocalVariable::value not yet implemented");
+}
+
+/********************************************************
  * Real Number reference value provider
  ********************************************************/
 

@@ -1,3 +1,8 @@
+///
+/// SymbolicMath toolkit
+/// (c) 2017-2020 by Daniel Schwen
+///
+
 #include "SymbolicMathUtils.h"
 
 #include <cmath>
@@ -10,12 +15,14 @@ namespace SymbolicMath
 
 // replace this with mooseError in the future
 [[noreturn]] void
-fatalError(const std::string & error) {
+fatalError(const std::string & error)
+{
   std::cerr << error << '\n';
   std::exit(1);
 }
 
-std::string stringify(Real number)
+std::string
+stringify(Real number)
 {
   if (number == std::round(number))
     return std::to_string(static_cast<int>(number));
@@ -29,11 +36,6 @@ std::string stringify(Real number)
     os << std::setprecision(max_digits10) << number;
     return os.str();
   }
-}
-
-std::string stringify(std::size_t number)
-{
-  return std::to_string(number);
 }
 
 } // namespace SymbolicMath

@@ -1,3 +1,8 @@
+///
+/// SymbolicMath toolkit
+/// (c) 2017-2020 by Daniel Schwen
+///
+
 #ifndef SYMBOLICMATHTYPESCCODE_H
 #define SYMBOLICMATHTYPESCCODE_H
 

@@ -1,5 +1,9 @@
-#ifndef SYMBOLICMATH_PARSER_H
-#define SYMBOLICMATH_PARSER_H
+///
+/// SymbolicMath toolkit
+/// (c) 2017-2020 by Daniel Schwen
+///
+
+#pragma once
 
 #include "SymbolicMathTokenizer.h"
 #include "SymbolicMathNode.h"
@@ -77,5 +81,3 @@ private:
 };
 
 } // namespace SymbolicMath
-
-#endif // SYMBOLICMATH_PARSER_H

@@ -3,6 +3,8 @@ mathparse
 *.d
 .jit_backend
 performance
+testbench
+unittests
 test?
 test
 fparser4.5.2.zip

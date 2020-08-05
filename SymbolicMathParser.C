@@ -1,3 +1,8 @@
+///
+/// SymbolicMath toolkit
+/// (c) 2017-2020 by Daniel Schwen
+///
+
 #include "SymbolicMathParser.h"
 #include "SymbolicMathNodeData.h"
 
@@ -162,7 +167,7 @@ Parser::parse(const std::string & expression)
 void
 Parser::pushToOutput(TokenPtr token)
 {
-  std::cout << "PUSHING " << formatToken(token) << '\n';
+  // std::cout << "PUSHING " << formatToken(token) << '\n';
 
   if (token->isNumber())
   {

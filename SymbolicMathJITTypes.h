@@ -1,5 +1,9 @@
-#ifndef SYMBOLICMATHJITTYPES_H
-#define SYMBOLICMATHJITTYPES_H
+///
+/// SymbolicMath toolkit
+/// (c) 2017-2020 by Daniel Schwen
+///
+
+#pragma once
 
 #ifdef SYMBOLICMATH_USE_GCCJIT
 #include "SymbolicMathJITTypesGCCJIT.h"
@@ -28,5 +32,3 @@
 #ifdef SYMBOLICMATH_USE_VM
 #include "SymbolicMathJITTypesVM.h"
 #endif
-
-#endif // SYMBOLICMATHJITTYPES_H

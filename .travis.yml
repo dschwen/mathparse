@@ -37,7 +37,7 @@ before_script:
 script:
   - make unittests JIT=sljit
   - ./unittests
-  - make test JIT=lightning LDFLAGS="-L$TRAVIS_BUILD_DIR/install/lib -llightning" CPPFLAGS=-I$TRAVIS_BUILD_DIR/install/include
+  - make unittests JIT=lightning LDFLAGS="-L$TRAVIS_BUILD_DIR/install/lib -llightning" CPPFLAGS=-I$TRAVIS_BUILD_DIR/install/include
   - ./unittests
   - make unittests JIT=libjit LDFLAGS="-L$TRAVIS_BUILD_DIR/install/lib -ljit" CPPFLAGS=-I$TRAVIS_BUILD_DIR/install/include
   - ./unittests
