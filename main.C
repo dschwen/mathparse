@@ -1,7 +1,7 @@
 #include "SymbolicMath.h"
-#include "SymbolicMathFunction.h"
-#include "SymbolicMathHelpers.h"
-#include "SymbolicMathJITTypes.h"
+#include "SMFunction.h"
+#include "SMHelpers.h"
+#include "SMJITTypes.h"
 
 #include <iostream>
 

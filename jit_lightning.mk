@@ -1,4 +1,4 @@
 # Lightning
-OBJS += SymbolicMathFunctionLightning.o SymbolicMathNodeDataLightning.o
+OBJS += SMFunctionLightning.o SMNodeDataLightning.o
 CONFIG := -DSYMBOLICMATH_USE_LIGHTNING
 LDFLAGS := -llightning
