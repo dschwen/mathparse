@@ -1,3 +1,8 @@
+///
+/// SymbolicMath toolkit
+/// (c) 2017-2020 by Daniel Schwen
+///
+
 #include "SymbolicMathSymbols.h"
 
 namespace SymbolicMath
@@ -33,6 +38,9 @@ stringify(MultinaryOperatorType type)
 
     case MultinaryOperatorType::MULTIPLICATION:
       return "*";
+
+    case MultinaryOperatorType::LIST:
+      return "; ";
 
     default:
       fatalError("Unknown operator");

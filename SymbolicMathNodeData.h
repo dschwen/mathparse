@@ -16,6 +16,7 @@ namespace SymbolicMath
 
 class Parser;
 class ValueProvider;
+class FunctionContext;
 
 /**
  * Node data base class. This class defines a common interface for all node data
@@ -31,7 +32,7 @@ public:
   virtual JITReturnValue jit(JITStateValue & state) = 0;
 
   virtual std::string format() const = 0;
-  virtual std::string formatTree(std::string indent) const = 0;
+  virtual std::string formatTree(std::string indent) const { return indent + format() + '\n'; };
 
   virtual NodeDataPtr clone() = 0;
 
@@ -166,7 +167,6 @@ public:
   Node getArg(unsigned int i) override { fatalError("Node has no arguments"); };
 
   std::string format() const override { return _name != "" ? _name : "{V}"; }
-  std::string formatTree(std::string indent) const override;
 
   // used to determine if two value providers are of the same type
   bool is(ValueProvider * a) const override { return getTypeID() == a->getTypeID(); }
@@ -202,7 +202,34 @@ template <class T>
 int ValueProviderDerived<T>::_vp_typeinfo_tag;
 
 /**
- * Purely symbolic node that cannot be evaluated or compiled by substitted and
+ * Local variable that is defined using the := operator
+ */
+class LocalVariable : public NodeData
+{
+public:
+  LocalVariable(std::size_t id) : _id(id) {}
+  Node getArg(unsigned int i) override { fatalError("Node has no arguments"); };
+
+  Real value() override;
+  JITReturnValue jit(JITStateValue & state) override { fatalError("Node cannot be compiled"); }
+
+  std::string format() const override { return "{V" + stringify(_id) + "}"; }
+
+  std::size_t id() { return _id; }
+
+  void stackDepth(std::pair<int, int> & current_max) override { current_max.first++; }
+
+  NodeDataPtr clone() override { fatalError("Cannot clone local variable"); };
+  std::size_t hash() const override { return std::hash<const void *>{}(this); }
+
+  Node D(const ValueProvider & vp) override { fatalError("Not implemented"); };
+
+protected:
+  std::size_t _id;
+};
+
+/**
+ * Purely symbolic node that cannot be evaluated or compiled by substituted and
  * derived w.r.t.
  */
 class SymbolData : public ValueProviderDerived<SymbolData>
@@ -303,7 +330,6 @@ public:
   JITReturnValue jit(JITStateValue & state) override;
 
   std::string format() const override { return stringify(_value); };
-  std::string formatTree(std::string indent) const override;
 
   NodeDataPtr clone() override { return std::make_shared<RealNumberData>(_value); };
   std::size_t hash() const override { return std::hash<Real>{}(_value); }

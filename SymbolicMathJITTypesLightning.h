@@ -1,5 +1,9 @@
-#ifndef SYMBOLICMATHTYPESLIGHTNING_H
-#define SYMBOLICMATHTYPESLIGHTNING_H
+///
+/// SymbolicMath toolkit
+/// (c) 2017-2020 by Daniel Schwen
+///
+
+#pragma once
 
 extern "C"
 {
@@ -28,5 +32,3 @@ struct JITStateValue
 };
 
 } // namespace SymbolicMath
-
-#endif // SYMBOLICMATHTYPESLIGHTNING_H

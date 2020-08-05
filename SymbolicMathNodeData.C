@@ -13,12 +13,6 @@ NodeData::stackDepth(std::pair<int, int> & current_max)
   fatalError("stackDepth not implemented");
 }
 
-std::string
-ValueProvider::formatTree(std::string indent) const
-{
-  return indent + (_name != "" ? _name : "{V}") + '\n';
-}
-
 Node
 SymbolData::D(const ValueProvider & vp)
 {
@@ -30,6 +24,16 @@ SymbolData::D(const ValueProvider & vp)
     fatalError("Cannot differentiate with respect to an anonymous value node");
 
   return _name == sd->_name ? Node(1.0) : Node(0.0);
+}
+
+/********************************************************
+ * Local Variable
+ ********************************************************/
+
+Real
+LocalVariable::value()
+{
+  fatalError("LocalVariable::value not yet implemented");
 }
 
 /********************************************************
@@ -71,12 +75,6 @@ RealArrayReferenceData::D(const ValueProvider & vp)
 /********************************************************
  * Real Number
  ********************************************************/
-
-std::string
-RealNumberData::formatTree(std::string indent) const
-{
-  return indent + stringify(_value) + '\n';
-}
 
 bool
 RealNumberData::is(NumberType type) const
@@ -201,6 +199,9 @@ BinaryOperatorData::value()
 
     case BinaryOperatorType::NOT_EQUAL:
       return A != B ? 1.0 : 0.0;
+
+    case BinaryOperatorType::LIST:
+      fatalError("Not implemented");
 
     default:
       fatalError("Unknown operator");
@@ -399,6 +400,15 @@ MultinaryOperatorData::value()
       return product;
     }
 
+    case MultinaryOperatorType::LIST:
+    {
+      Real res = 0.0;
+      // evaluate all arguments of the list, but return only the last
+      for (auto & arg : _args)
+        res = arg.value();
+      return res;
+    }
+
     default:
       fatalError("Unknown operator");
   }
@@ -511,6 +521,15 @@ MultinaryOperatorData::simplify()
       else
         return Node(MultinaryOperatorType::MULTIPLICATION, new_args);
 
+    case MultinaryOperatorType::LIST:
+      for (auto & arg : _args)
+        simplifyHelper(new_args, arg);
+
+      if (new_args.size() == 1)
+        return new_args[0];
+      else
+        return Node(MultinaryOperatorType::LIST, new_args);
+
     default:
       fatalError("Operator not implemented");
   }
@@ -553,17 +572,11 @@ MultinaryOperatorData::D(const ValueProvider & vp)
 unsigned short
 MultinaryOperatorData::precedence() const
 {
-  switch (_type)
-  {
-    case MultinaryOperatorType::ADDITION:
-      return 6;
+  auto it = _multinary_operators.find(_type);
+  if (it == _multinary_operators.end())
+    fatalError("Unknown operator");
 
-    case MultinaryOperatorType::MULTIPLICATION:
-      return 5;
-
-    default:
-      fatalError("Unknown operator");
-  }
+  return it->second._precedence;
 }
 
 /********************************************************

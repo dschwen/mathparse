@@ -1,5 +1,9 @@
-#ifndef SYMBOLICMATHUTILS_H
-#define SYMBOLICMATHUTILS_H
+///
+/// SymbolicMath toolkit
+/// (c) 2017-2020 by Daniel Schwen
+///
+
+#pragma once
 
 #include <string>
 #include <cmath>
@@ -30,5 +34,3 @@ const Real ln10 = std::log(10.0);
 std::string stringify(Real number);
 
 } // namespace SymbolicMath
-
-#endif // SYMBOLICMATHUTILS_H

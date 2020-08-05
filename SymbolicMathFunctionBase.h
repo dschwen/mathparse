@@ -1,5 +1,9 @@
-#ifndef SYMBOLICMATHFUNCTIONBASE_H
-#define SYMBOLICMATHFUNCTIONBASE_H
+///
+/// SymbolicMath toolkit
+/// (c) 2017-2020 by Daniel Schwen
+///
+
+#pragma once
 
 #include "SymbolicMathNode.h"
 #include "SymbolicMathJITTypes.h"
@@ -8,6 +12,7 @@ namespace SymbolicMath
 {
 
 using ValueProviderPtr = std::shared_ptr<ValueProvider>;
+using LocalVariables = std::vector<std::pair<Real, bool>>;
 
 /**
  * The Function class is the top level wrapper for a Node based expression tree.
@@ -29,7 +34,7 @@ public:
 
   ///@{ subtree output
   std::string format() const { return _root.format(); }
-  std::string formatTree(std::string indent) const { return _root.formatTree(); }
+  std::string formatTree() const { return _root.formatTree(); }
   ///@}
 
   /// Compile the expression tree for faster evaluation
@@ -53,8 +58,9 @@ protected:
 
   /// executable JIT code
   JITFunctionPtr _jit_code;
+
+  /// data for storing local variables
+  LocalVariables _local_variables;
 };
 
 } // namespace SymbolicMath
-
-#endif // SYMBOLICMATHFUNCTIONBASE_H

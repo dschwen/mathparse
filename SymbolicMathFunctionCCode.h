@@ -1,5 +1,9 @@
-#ifndef SYMBOLICMATHFUNCTIONCCODE_H
-#define SYMBOLICMATHFUNCTIONCCODE_H
+///
+/// SymbolicMath toolkit
+/// (c) 2017-2020 by Daniel Schwen
+///
+
+#pragma once
 
 #include "SymbolicMathFunctionBase.h"
 
@@ -31,5 +35,3 @@ protected:
 };
 
 } // namespace SymbolicMath
-
-#endif // SYMBOLICMATHFUNCTIONCCODE_H

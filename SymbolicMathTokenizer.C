@@ -1,3 +1,8 @@
+///
+/// SymbolicMath toolkit
+/// (c) 2017-2020 by Daniel Schwen
+///
+
 #include "SymbolicMathTokenizer.h"
 
 #include <vector>
@@ -23,7 +28,7 @@ Tokenizer::isDigit()
 bool
 Tokenizer::isOperator()
 {
-  const std::string operator_char("+-*/^!%<>=?:&|");
+  const std::string operator_char("+-*/^!%<>=?:&|;");
   return operator_char.find_first_of(*_c) != std::string::npos;
 }
 

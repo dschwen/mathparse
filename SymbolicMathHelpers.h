@@ -1,5 +1,9 @@
-#ifndef SYMBOLICMATHHELPERS_H
-#define SYMBOLICMATHHELPERS_H
+///
+/// SymbolicMath toolkit
+/// (c) 2017-2020 by Daniel Schwen
+///
+
+#pragma once
 
 #include <memory>
 
@@ -55,5 +59,3 @@ symbol(const std::string & name)
 }
 
 } // namespace SymbolicMath
-
-#endif // SYMBOLICMATHHELPERS_H

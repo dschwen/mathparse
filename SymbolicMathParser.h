@@ -1,5 +1,9 @@
-#ifndef SYMBOLICMATH_PARSER_H
-#define SYMBOLICMATH_PARSER_H
+///
+/// SymbolicMath toolkit
+/// (c) 2017-2020 by Daniel Schwen
+///
+
+#pragma once
 
 #include "SymbolicMathTokenizer.h"
 #include "SymbolicMathNode.h"
@@ -54,6 +58,9 @@ private:
   /// value provider ID map
   std::map<std::string, std::shared_ptr<ValueProvider>> _value_providers;
 
+  /// local variable ID map
+  std::map<std::string, std::shared_ptr<LocalVariable>> _local_variables;
+
   /// pointer to the quadrature point index (_qp)
   const unsigned int * _qp_ptr;
 
@@ -74,5 +81,3 @@ private:
 };
 
 } // namespace SymbolicMath
-
-#endif // SYMBOLICMATH_PARSER_H

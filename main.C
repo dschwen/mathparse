@@ -30,10 +30,10 @@ main(int argc, char * argv[])
   parser.registerValueProvider(c_var);
 
   auto func = SymbolicMath::Function(parser.parse(argv[1]));
-  std::cout << func.format() << '\n' << func.formatTree("\t") << '\n';
+  std::cout << func.format() << '\n' << func.formatTree() << '\n';
 
   func.simplify();
-  std::cout << " = " << func.format() << '\n'; // << func->formatTree("\t") << '\n';
+  std::cout << " = " << func.format() << '\n'; // << func->formatTree() << '\n';
 
   // evaluate for various values of c
   std::vector<SymbolicMath::Real> reference;
@@ -61,10 +61,10 @@ main(int argc, char * argv[])
   std::cout << '\n' << "norm = " << norm << '\n';
 
   auto deriv = func.D(c_var);
-  std::cout << "D(F) = " << deriv.format() << '\n'; // << deriv->formatTree("\t") << '\n';
+  std::cout << "D(F) = " << deriv.format() << '\n'; // << deriv->formatTree() << '\n';
 
   deriv.simplify();
-  std::cout << "D(F) = " << deriv.format() << '\n'; // << deriv->formatTree("\t") << '\n';
+  std::cout << "D(F) = " << deriv.format() << '\n'; // << deriv->formatTree() << '\n';
 
   // evaluate for various values of c
   for (c = -1.0; c <= 1.0; c += 0.3)

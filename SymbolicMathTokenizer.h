@@ -1,5 +1,9 @@
-#ifndef SYMBOLICMATHTOKENIZER_H
-#define SYMBOLICMATHTOKENIZER_H
+///
+/// SymbolicMath toolkit
+/// (c) 2017-2020 by Daniel Schwen
+///
+
+#pragma once
 
 #include "SymbolicMathToken.h"
 
@@ -44,5 +48,3 @@ private:
 };
 
 } // namespace SymbolicMath
-
-#endif // SYMBOLICMATHTOKENIZER_H

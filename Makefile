@@ -2,7 +2,7 @@ CXX ?= clang++
 CPPFLAGS ?= -O2
 
 # (lightning,sljit,libjit)
-JIT ?= lightning
+JIT ?= sljit
 
 OBJS := SymbolicMathToken.o SymbolicMathTokenizer.o \
 			  SymbolicMathParser.o SymbolicMathSymbols.o \
@@ -20,11 +20,14 @@ endif
 mathparse: main.C $(OBJS)
 	$(CXX) -std=c++11 $(CONFIG) $(CPPFLAGS) $(CXXFLAGS) -o mathparse main.C $(OBJS) $(LDFLAGS)
 
-performance: performance.C $(OBJS)
+performance: Performance.C $(OBJS)
 	$(CXX) -std=c++11 $(CONFIG) $(CPPFLAGS) $(CXXFLAGS) -o performance performance.C $(OBJS) $(LDFLAGS)
 
-test: test.C $(OBJS)
-	$(CXX) -std=c++11 $(CONFIG) $(CPPFLAGS) $(CXXFLAGS) -o test test.C $(OBJS) $(LDFLAGS)
+unittests: UnitTests.C $(OBJS)
+	$(CXX) -std=c++11 $(CONFIG) $(CPPFLAGS) $(CXXFLAGS) -o unittests UnitTests.C $(OBJS) $(LDFLAGS)
+
+testbench: TestBench.C $(OBJS)
+	$(CXX) -std=c++11 $(CONFIG) $(CPPFLAGS) $(CXXFLAGS) -o testbench TestBench.C $(OBJS) $(LDFLAGS)
 
 -include $(OBJS:.o=.d)
 

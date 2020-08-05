@@ -1,5 +1,9 @@
-#ifndef SYMBOLICMATHTYPESVM_H
-#define SYMBOLICMATHTYPESVM_H
+///
+/// SymbolicMath toolkit
+/// (c) 2017-2020 by Daniel Schwen
+///
+
+#pragma once
 
 #include "SymbolicMathSymbols.h"
 #include <utility>
@@ -56,5 +60,3 @@ using JITReturnValue = void;
 using JITStateValue = ByteCode;
 
 } // namespace SymbolicMath
-
-#endif // SYMBOLICMATHTYPESVM_H

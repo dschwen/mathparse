@@ -1,5 +1,9 @@
-#ifndef SYMBOLICMATHTYPESSLJIT_H
-#define SYMBOLICMATHTYPESSLJIT_H
+///
+/// SymbolicMath toolkit
+/// (c) 2017-2020 by Daniel Schwen
+///
+
+#pragma once
 
 #include "contrib/sljit_src/sljitLir.h"
 
@@ -22,5 +26,3 @@ struct JITStateValue
 };
 
 } // namespace SymbolicMath
-
-#endif // SYMBOLICMATHTYPESSLJIT_H

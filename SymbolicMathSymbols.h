@@ -1,5 +1,9 @@
-#ifndef SYMBOLICMATHSYMBOLS_H
-#define SYMBOLICMATHSYMBOLS_H
+///
+/// SymbolicMath toolkit
+/// (c) 2017-2020 by Daniel Schwen
+///
+
+#pragma once
 
 #include <string>
 #include <vector>
@@ -58,6 +62,8 @@ enum class BinaryOperatorType
   GREATER_EQUAL,
   EQUAL,
   NOT_EQUAL,
+  ASSIGNMENT,
+  LIST,
   _ANY,
   _INVALID
 };
@@ -74,20 +80,24 @@ const std::map<BinaryOperatorType, OperatorProperties> _binary_operators = {
     {BinaryOperatorType::LESS_EQUAL, {8, true, "<="}},
     {BinaryOperatorType::GREATER_EQUAL, {8, true, ">="}},
     {BinaryOperatorType::EQUAL, {9, true, "=="}},
-    {BinaryOperatorType::NOT_EQUAL, {9, true, "!="}}};
+    {BinaryOperatorType::NOT_EQUAL, {9, true, "!="}},
+    {BinaryOperatorType::ASSIGNMENT, {9, true, ":="}},
+    {BinaryOperatorType::LIST, {15, true, ";"}}};
 
 enum class MultinaryOperatorType
 {
   ADDITION,
   MULTIPLICATION,
   COMPONENT,
+  LIST,
   _ANY,
   _INVALID
 };
 
 const std::map<MultinaryOperatorType, OperatorProperties> _multinary_operators = {
     {MultinaryOperatorType::ADDITION, {6, true, "+"}},
-    {MultinaryOperatorType::MULTIPLICATION, {5, true, "*"}}};
+    {MultinaryOperatorType::MULTIPLICATION, {5, true, "*"}},
+    {MultinaryOperatorType::LIST, {15, true, ";"}}};
 
 enum class UnaryFunctionType
 {
@@ -215,5 +225,3 @@ std::string stringify(BinaryFunctionType type);
 std::string stringify(ConditionalType type);
 
 } // namespace SymbolicMath
-
-#endif // SYMBOLICMATH_SYMBOLS_H

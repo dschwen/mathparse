@@ -1,5 +1,9 @@
-#ifndef SYMBOLICMATHNODE_H
-#define SYMBOLICMATHNODE_H
+///
+/// SymbolicMath toolkit
+/// (c) 2017-2020 by Daniel Schwen
+///
+
+#pragma once
 
 #include <vector>
 #include <memory>
@@ -114,5 +118,3 @@ protected:
 };
 
 } // namespace SymbolicMath
-
-#endif // SYMBOLICMATHNODE_H
