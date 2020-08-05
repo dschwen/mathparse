@@ -28,6 +28,7 @@ const Real ln10 = std::log(10.0);
 [[noreturn]] void fatalError(const std::string & error);
 
 std::string stringify(Real number);
+std::string stringify(std::size_t number);
 
 } // namespace SymbolicMath
 

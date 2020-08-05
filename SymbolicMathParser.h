@@ -54,6 +54,9 @@ private:
   /// value provider ID map
   std::map<std::string, std::shared_ptr<ValueProvider>> _value_providers;
 
+  /// local variable ID map
+  std::map<std::string, std::shared_ptr<LocalVariable>> _local_variables;
+
   /// pointer to the quadrature point index (_qp)
   const unsigned int * _qp_ptr;
 

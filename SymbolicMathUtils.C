@@ -31,4 +31,9 @@ std::string stringify(Real number)
   }
 }
 
+std::string stringify(std::size_t number)
+{
+  return std::to_string(number);
+}
+
 } // namespace SymbolicMath

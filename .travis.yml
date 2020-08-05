@@ -35,15 +35,15 @@ before_script:
   - cd $TRAVIS_BUILD_DIR
 
 script:
-  - make test JIT=sljit
-  - ./test
+  - make unittests JIT=sljit
+  - ./unittests
   - make test JIT=lightning LDFLAGS="-L$TRAVIS_BUILD_DIR/install/lib -llightning" CPPFLAGS=-I$TRAVIS_BUILD_DIR/install/include
-  - ./test
-  - make test JIT=libjit LDFLAGS="-L$TRAVIS_BUILD_DIR/install/lib -ljit" CPPFLAGS=-I$TRAVIS_BUILD_DIR/install/include
-  - ./test
-  - make test JIT=gccjit
-  - ./test
-  - make test JIT=ccode
-  - ./test
-  - make test JIT=vm
-  - ./test
+  - ./unittests
+  - make unittests JIT=libjit LDFLAGS="-L$TRAVIS_BUILD_DIR/install/lib -ljit" CPPFLAGS=-I$TRAVIS_BUILD_DIR/install/include
+  - ./unittests
+  - make unittests JIT=gccjit
+  - ./unittests
+  - make unittests JIT=ccode
+  - ./unittests
+  - make unittests JIT=vm
+  - ./unittests

@@ -29,7 +29,7 @@ public:
 
   ///@{ subtree output
   std::string format() const { return _root.format(); }
-  std::string formatTree(std::string indent) const { return _root.formatTree(); }
+  std::string formatTree() const { return _root.formatTree(); }
   ///@}
 
   /// Compile the expression tree for faster evaluation

@@ -34,6 +34,9 @@ stringify(MultinaryOperatorType type)
     case MultinaryOperatorType::MULTIPLICATION:
       return "*";
 
+    case MultinaryOperatorType::LIST:
+      return "; ";
+
     default:
       fatalError("Unknown operator");
   }

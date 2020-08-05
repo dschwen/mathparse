@@ -23,7 +23,7 @@ Tokenizer::isDigit()
 bool
 Tokenizer::isOperator()
 {
-  const std::string operator_char("+-*/^!%<>=?:&|");
+  const std::string operator_char("+-*/^!%<>=?:&|;");
   return operator_char.find_first_of(*_c) != std::string::npos;
 }
 

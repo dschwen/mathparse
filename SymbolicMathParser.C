@@ -162,7 +162,7 @@ Parser::parse(const std::string & expression)
 void
 Parser::pushToOutput(TokenPtr token)
 {
-  // std::cout << "PUSHING " << formatToken(token) << '\n';
+  std::cout << "PUSHING " << formatToken(token) << '\n';
 
   if (token->isNumber())
   {
@@ -193,7 +193,17 @@ Parser::pushToOutput(TokenPtr token)
       return;
     }
 
-    fatalError(formatError(token->pos(), "Unknown value provider or constant name"));
+    // local variable
+    auto lv = _local_variables.find(token->asString());
+    if (lv == _local_variables.end())
+    {
+      auto ret = _local_variables.insert(std::make_pair(
+          token->asString(), std::make_shared<LocalVariable>(_local_variables.size())));
+      if (!ret.second)
+        fatalError("unable to create local variable");
+      lv = ret.first;
+    }
+    _output_stack.push(Node(lv->second));
   }
 
   else
