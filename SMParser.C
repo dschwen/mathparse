@@ -203,7 +203,7 @@ Parser::pushToOutput(TokenPtr token)
     if (lv == _local_variables.end())
     {
       auto ret = _local_variables.insert(std::make_pair(
-          token->asString(), std::make_shared<LocalVariable>(_local_variables.size())));
+          token->asString(), std::make_shared<LocalVariableData>(_local_variables.size())));
       if (!ret.second)
         fatalError("unable to create local variable");
       lv = ret.first;

@@ -5,6 +5,7 @@
 
 #include "SMNodeData.h"
 #include "SMUtils.h"
+#include "SMTransform.h"
 
 #include <cmath>
 #include <iostream> // debug
@@ -17,6 +18,20 @@ NodeData::stackDepth(std::pair<int, int> & current_max)
 {
   fatalError("stackDepth not implemented");
 }
+
+/********************************************************
+ * Empty Data
+ ********************************************************/
+
+void
+EmptyData::apply(Transform & transform)
+{
+  fatalError("Cannot apply transform to an empty / invalid node");
+}
+
+/********************************************************
+ * Unspecified Symbol
+ ********************************************************/
 
 Node
 SymbolData::D(const ValueProvider & vp)
@@ -31,14 +46,26 @@ SymbolData::D(const ValueProvider & vp)
   return _name == sd->_name ? Node(1.0) : Node(0.0);
 }
 
+void
+SymbolData::apply(Transform & transform)
+{
+  transform(this);
+}
+
 /********************************************************
  * Local Variable
  ********************************************************/
 
 Real
-LocalVariable::value()
+LocalVariableData::value()
 {
   fatalError("LocalVariable::value not yet implemented");
+}
+
+void
+LocalVariableData::apply(Transform & transform)
+{
+  transform(this);
 }
 
 /********************************************************
@@ -60,6 +87,12 @@ RealReferenceData::D(const ValueProvider & vp)
   return (rrd && &(rrd->_ref) == &_ref) ? Node(1.0) : Node(0.0);
 }
 
+void
+RealReferenceData::apply(Transform & transform)
+{
+  transform(this);
+}
+
 /********************************************************
  * Real Number Array reference value provider
  ********************************************************/
@@ -77,6 +110,12 @@ RealArrayReferenceData::D(const ValueProvider & vp)
   return (rard && &(rard->_ref) == &_ref) && &(rard->_index) == &_index ? Node(1.0) : Node(0.0);
 }
 
+void
+RealArrayReferenceData::apply(Transform & transform)
+{
+  transform(this);
+}
+
 /********************************************************
  * Real Number
  ********************************************************/
@@ -85,6 +124,12 @@ bool
 RealNumberData::is(NumberType type) const
 {
   return _type == NumberType::REAL || _type == NumberType::_ANY;
+}
+
+void
+RealNumberData::apply(Transform & transform)
+{
+  transform(this);
 }
 
 /********************************************************
@@ -155,6 +200,12 @@ UnaryOperatorData::D(const ValueProvider & vp)
     default:
       fatalError("Unknown operator");
   }
+}
+
+void
+UnaryOperatorData::apply(Transform & transform)
+{
+  transform(this);
 }
 
 /********************************************************
@@ -380,6 +431,12 @@ BinaryOperatorData::precedence() const
   return it->second._precedence;
 }
 
+void
+BinaryOperatorData::apply(Transform & transform)
+{
+  transform(this);
+}
+
 /********************************************************
  * Multinary Operator Node
  ********************************************************/
@@ -582,6 +639,12 @@ MultinaryOperatorData::precedence() const
     fatalError("Unknown operator");
 
   return it->second._precedence;
+}
+
+void
+MultinaryOperatorData::apply(Transform & transform)
+{
+  transform(this);
 }
 
 /********************************************************
@@ -831,6 +894,12 @@ UnaryFunctionData::D(const ValueProvider & vp)
   }
 }
 
+void
+UnaryFunctionData::apply(Transform & transform)
+{
+  transform(this);
+}
+
 /********************************************************
  * Binary Function Node
  ********************************************************/
@@ -979,6 +1048,12 @@ BinaryFunctionData::D(const ValueProvider & vp)
   }
 }
 
+void
+BinaryFunctionData::apply(Transform & transform)
+{
+  transform(this);
+}
+
 /********************************************************
  * Conditional Node
  ********************************************************/
@@ -1071,6 +1146,12 @@ ConditionalData::stackDepth(std::pair<int, int> & current_max)
     current_max.second = false_branch.second;
 }
 
+void
+ConditionalData::apply(Transform & transform)
+{
+  transform(this);
+}
+
 /********************************************************
  * Integer power Node
  ********************************************************/
@@ -1127,6 +1208,12 @@ IntegerPowerData::D(const ValueProvider & vp)
   auto & A = _arg;
   auto dA = _arg.D(vp);
   return dA * Node(_exponent) * Node(IntegerPowerType::_ANY, A, _exponent - 1);
+}
+
+void
+IntegerPowerData::apply(Transform & transform)
+{
+  transform(this);
 }
 
 } // namespace SymbolicMath

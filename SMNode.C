@@ -6,6 +6,7 @@
 #include "SMNode.h"
 #include "SMNodeData.h"
 #include "SMUtils.h"
+#include "SMTransform.h"
 
 #include <cmath>
 #include <iostream> // debug
@@ -23,7 +24,7 @@ Node::clone()
   return Node(_data->clone());
 }
 
-Node::Node(Real val) : _data(new RealNumberData(val)) {}
+Node::Node(Real val) : _data(std::make_shared<RealNumberData>(val)) {}
 
 Node::Node(UnaryOperatorType type, Node arg) : _data(std::make_shared<UnaryOperatorData>(type, arg))
 {
@@ -248,17 +249,12 @@ Node::stackDepth(std::pair<int, int> & current_max)
     current_max.second = current_max.first;
 }
 
-// void
-// Node::checkIndex(const std::vector<unsigned int> & index)
-// {
-//   auto s = shape();
-//
-//   if (index.size() > s.size())
-//     fatalError("Index exceeds object dimensions");
-//
-//   for (std::size_t i = 0; i < index.size(); ++i)
-//     if (index[i] >= s[i])
-//       fatalError("Index out of range");
-// }
+void
+Node::apply(Transform & transform)
+{
+  transform.pushNode(this);
+  _data->apply(transform);
+  transform.popNode();
+}
 
 } // namespace SymbolicMath

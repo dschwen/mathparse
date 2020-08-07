@@ -11,6 +11,8 @@
 namespace SymbolicMath
 {
 
+class Transform;
+
 using ValueProviderPtr = std::shared_ptr<ValueProvider>;
 using LocalVariables = std::vector<std::pair<Real, bool>>;
 
@@ -48,6 +50,9 @@ public:
 
   /// Perform one time system initialization (must be called outside a threaded region!)
   static void initialize() {}
+
+  // apply a transform visitor
+  virtual void apply(Transform & transform);
 
 protected:
   /// invalidate the JIT compiled function

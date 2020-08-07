@@ -1,5 +1,9 @@
-#ifndef SYMBOLICMATHNODEDATA_H
-#define SYMBOLICMATHNODEDATA_H
+///
+/// SymbolicMath toolkit
+/// (c) 2017-2020 by Daniel Schwen
+///
+
+#pragma once
 
 #include <vector>
 #include <memory>
@@ -15,6 +19,7 @@ namespace SymbolicMath
 {
 
 class Parser;
+class Transform;
 class ValueProvider;
 class FunctionContext;
 
@@ -58,6 +63,9 @@ public:
 
   // virtual void checkIndex(const std::vector<unsigned int> & index);
 
+  // apply a transform visitor
+  virtual void apply(Transform & transform) = 0;
+
   virtual Node simplify() { return Node(); };
   virtual Node D(const ValueProvider & vp) = 0;
 
@@ -88,6 +96,8 @@ public:
   NodeDataPtr clone() override { fatalError("invalid node"); };
   Node getArg(unsigned int i) override { fatalError("invalid node"); }
   Node D(const ValueProvider & vp) override { fatalError("invalid node"); }
+
+  void apply(Transform & transform) override;
 };
 
 /**
@@ -120,7 +130,6 @@ public:
     current_max.first -= N - 1;
   }
 
-protected:
   Enum _type;
   std::array<Node, N> _args;
 };
@@ -152,7 +161,6 @@ public:
     current_max.first -= _args.size() - 1;
   }
 
-protected:
   Enum _type;
   std::vector<Node> _args;
 };
@@ -204,10 +212,10 @@ int ValueProviderDerived<T>::_vp_typeinfo_tag;
 /**
  * Local variable that is defined using the := operator
  */
-class LocalVariable : public NodeData
+class LocalVariableData : public NodeData
 {
 public:
-  LocalVariable(std::size_t id) : _id(id) {}
+  LocalVariableData(std::size_t id) : _id(id) {}
   Node getArg(unsigned int i) override { fatalError("Node has no arguments"); };
 
   Real value() override;
@@ -223,8 +231,8 @@ public:
   std::size_t hash() const override { return std::hash<const void *>{}(this); }
 
   Node D(const ValueProvider & vp) override { fatalError("Not implemented"); };
+  void apply(Transform & transform) override;
 
-protected:
   std::size_t _id;
 };
 
@@ -244,6 +252,7 @@ public:
   std::size_t hash() const override { return std::hash<std::string>{}(_name); }
 
   Node D(const ValueProvider & vp) override;
+  void apply(Transform & transform) override;
 };
 
 /**
@@ -264,8 +273,8 @@ public:
   std::size_t hash() const override { return std::hash<const Real *>{}(&_ref); }
 
   Node D(const ValueProvider & vp) override;
+  void apply(Transform & transform) override;
 
-protected:
   const Real & _ref;
 };
 
@@ -294,8 +303,8 @@ public:
   }
 
   Node D(const ValueProvider & vp) override;
+  void apply(Transform & transform) override;
 
-protected:
   const Real & _ref;
   const int & _index;
 };
@@ -314,7 +323,6 @@ public:
 
   void stackDepth(std::pair<int, int> & current_max) override { current_max.first++; }
 
-protected:
   NumberType _type;
 };
 
@@ -338,8 +346,8 @@ public:
   bool is(Real value) const override { return value == _value; };
 
   void setValue(Real value) { _value = value; }
+  void apply(Transform & transform) override;
 
-protected:
   Real _value;
 };
 
@@ -361,6 +369,7 @@ public:
 
   Node simplify() override;
   Node D(const ValueProvider &) override;
+  void apply(Transform & transform) override;
 
   unsigned short precedence() const override { return 3; }
 };
@@ -383,6 +392,7 @@ public:
 
   Node simplify() override;
   Node D(const ValueProvider &) override;
+  void apply(Transform & transform) override;
 
   unsigned short precedence() const override;
 };
@@ -407,6 +417,7 @@ public:
   Node D(const ValueProvider & vp) override;
 
   unsigned short precedence() const override;
+  void apply(Transform & transform) override;
 
 private:
   void simplifyHelper(std::vector<Node> & new_args, Node arg);
@@ -432,6 +443,7 @@ public:
   Node D(const ValueProvider &) override;
 
   unsigned short precedence() const override { return 3; }
+  void apply(Transform & transform) override;
 };
 
 /**
@@ -452,6 +464,7 @@ public:
 
   Node simplify() override;
   Node D(const ValueProvider &) override;
+  void apply(Transform & transform) override;
 };
 
 /**
@@ -475,6 +488,7 @@ public:
   Node D(const ValueProvider &) override;
 
   void stackDepth(std::pair<int, int> & current_max) override;
+  void apply(Transform & transform) override;
 };
 
 /**
@@ -503,12 +517,10 @@ public:
   Node D(const ValueProvider &) override;
 
   void stackDepth(std::pair<int, int> & current_max) override { _arg.stackDepth(current_max); }
+  void apply(Transform & transform) override;
 
-protected:
   Node _arg;
   int _exponent;
 };
 
 } // namespace SymbolicMath
-
-#endif // SYMBOLICMATHNODEDATA_H
