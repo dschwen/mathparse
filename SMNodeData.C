@@ -176,16 +176,6 @@ UnaryOperatorData::clone()
 }
 
 Node
-UnaryOperatorData::simplify()
-{
-  _args[0].simplify();
-  if (_args[0].is(NumberType::_ANY))
-    return Node(value());
-
-  return Node();
-}
-
-Node
 UnaryOperatorData::D(const ValueProvider & vp)
 {
   auto dA = _args[0].D(vp);
@@ -298,87 +288,6 @@ NodeDataPtr
 BinaryOperatorData::clone()
 {
   return std::make_shared<BinaryOperatorData>(_type, _args[0], _args[1]);
-}
-
-Node
-BinaryOperatorData::simplify()
-{
-  // constant folding
-  _args[0].simplify();
-  _args[1].simplify();
-  if (_args[0].is(NumberType::_ANY) && _args[1].is(NumberType::_ANY))
-    return Node(value());
-
-  switch (_type)
-  {
-    case BinaryOperatorType::SUBTRACTION:
-      // 0 - b = -b
-      if (_args[0].is(0.0))
-        return Node(UnaryOperatorType::MINUS, _args[1]);
-
-      // a - 0 = a
-      else if (_args[1].is(0.0))
-        return _args[0];
-
-      return Node();
-
-    case BinaryOperatorType::DIVISION:
-      // a/1 = a
-      if (_args[1].is(1.0))
-        return _args[0];
-
-      // 0/b = 0
-      if (_args[0].is(0.0))
-        return Node(0.0);
-
-      return Node();
-
-    case BinaryOperatorType::POWER:
-    {
-      // turn operator into function and simplify
-      auto pfunc = Node(BinaryFunctionType::POW, _args[0], _args[1]);
-      pfunc.simplify();
-      return pfunc;
-    }
-
-      // for this to be an optimization we'll need to make those operators multinary and only
-      // replace size>2 instances
-      //
-      // case BinaryOperatorType::LOGICAL_OR:
-      //   if (_args[0].is(NumberType::_ANY))
-      //   {
-      //     if (_args[0].value() != 0)
-      //       return Node(1.0);
-      //     else
-      //       return _args[1] != Node(0.0);
-      //   }
-      //   else if (_args[1].is(NumberType::_ANY))
-      //   {
-      //     if (_args[1].value() != 0)
-      //       return Node(1.0);
-      //     else
-      //       return _args[0] != Node(0.0);
-      //   }
-      //
-      // case BinaryOperatorType::LOGICAL_AND:
-      //   if (_args[0].is(NumberType::_ANY))
-      //   {
-      //     if (_args[0].value() != 0)
-      //       return _args[1] != Node(0.0);
-      //     else
-      //       return Node(0.0);
-      //   }
-      //   else if (_args[1].is(NumberType::_ANY))
-      //   {
-      //     if (_args[1].value() != 0)
-      //       return _args[0] != Node(0.0);
-      //     else
-      //       return Node(0.0);
-      //   }
-
-    default:
-      return Node();
-  }
 }
 
 Node
@@ -512,91 +421,6 @@ MultinaryOperatorData::clone()
   for (auto & arg : _args)
     cloned_args.push_back(arg);
   return std::make_shared<MultinaryOperatorData>(_type, cloned_args);
-}
-
-void
-MultinaryOperatorData::simplifyHelper(std::vector<Node> & new_args, Node arg)
-{
-  if (arg.is(NumberType::_ANY))
-  {
-    if (new_args.empty() || !new_args[0].is(NumberType::_ANY))
-      new_args.insert(new_args.begin(), arg);
-    else
-    {
-      auto val = new_args[0].value();
-      switch (_type)
-      {
-        case MultinaryOperatorType::ADDITION:
-          val += arg.value();
-          break;
-
-        case MultinaryOperatorType::MULTIPLICATION:
-          val *= arg.value();
-          break;
-
-        default:
-          fatalError("Unknown multinary operator");
-      }
-      new_args[0] = Node(val);
-    }
-  }
-  else if (arg.is(_type))
-  {
-    for (std::size_t i = 0; i < arg.size(); ++i)
-      simplifyHelper(new_args, arg[i]);
-  }
-  else
-    new_args.push_back(arg);
-}
-
-Node
-MultinaryOperatorData::simplify()
-{
-  for (auto & arg : _args)
-    arg.simplify();
-
-  std::vector<Node> new_args;
-
-  switch (_type)
-  {
-    case MultinaryOperatorType::ADDITION:
-      for (auto & arg : _args)
-        simplifyHelper(new_args, arg);
-
-      if (new_args.size() > 1 && new_args[0].is(0.0))
-        new_args.erase(new_args.begin());
-
-      if (new_args.size() == 1)
-        return new_args[0];
-      else
-        return Node(MultinaryOperatorType::ADDITION, new_args);
-
-    case MultinaryOperatorType::MULTIPLICATION:
-      for (auto & arg : _args)
-        simplifyHelper(new_args, arg);
-
-      if (new_args.size() > 1 && new_args[0].is(1.0))
-        new_args.erase(new_args.begin());
-
-      if (new_args.size() == 1 || (new_args.size() > 1 && new_args[0].is(0.0)))
-        return new_args[0];
-      else
-        return Node(MultinaryOperatorType::MULTIPLICATION, new_args);
-
-    case MultinaryOperatorType::LIST:
-      for (auto & arg : _args)
-        simplifyHelper(new_args, arg);
-
-      if (new_args.size() == 1)
-        return new_args[0];
-      else
-        return Node(MultinaryOperatorType::LIST, new_args);
-
-    default:
-      fatalError("Operator not implemented");
-  }
-
-  return Node();
 }
 
 Node
@@ -763,20 +587,6 @@ NodeDataPtr
 UnaryFunctionData::clone()
 {
   return std::make_shared<UnaryFunctionData>(_type, _args[0]);
-}
-
-Node
-UnaryFunctionData::simplify()
-{
-  _args[0].simplify();
-  if (_args[0].is(NumberType::_ANY))
-    return Node(value());
-
-  switch (_type)
-  {
-    default:
-      return Node();
-  }
 }
 
 Node
@@ -958,51 +768,6 @@ BinaryFunctionData::clone()
 }
 
 Node
-BinaryFunctionData::simplify()
-{
-  _args[0].simplify();
-  _args[1].simplify();
-  if (_args[0].is(NumberType::_ANY) && _args[1].is(NumberType::_ANY))
-    return Node(value());
-
-  switch (_type)
-  {
-    case BinaryFunctionType::POW:
-      //(a^b)^c = a^(b*c) (c00^c01) ^ c1 = c00 ^ (c01*c1)
-      if (_args[0].is(_type))
-      {
-        auto p = Node(_type,
-                      _args[0][0],
-                      Node(MultinaryOperatorType::MULTIPLICATION, {_args[0][1], _args[1]}));
-        p.simplify();
-        return p;
-      }
-
-      if (_args[1].is(NumberType::_ANY))
-      { // a^0 = 1
-        if (_args[1].is(0.0))
-          return Node(1.0);
-
-        // a^1 = a
-        else if (_args[1].is(1.0))
-          return _args[0];
-
-        // the exponent is an integer number
-        else
-        {
-          auto e = _args[1].value();
-          if (e == std::round(e))
-            return Node(IntegerPowerType::_ANY, _args[0], static_cast<int>(e));
-        }
-      }
-      return Node();
-
-    default:
-      return Node();
-  }
-}
-
-Node
 BinaryFunctionData::D(const ValueProvider & vp)
 {
   auto & A = _args[0];
@@ -1094,28 +859,6 @@ ConditionalData::clone()
 }
 
 Node
-ConditionalData::simplify()
-{
-  if (_type != ConditionalType::IF)
-    fatalError("Conditional not implemented");
-
-  _args[0].simplify();
-  _args[1].simplify();
-  _args[2].simplify();
-
-  // if the conditional is constant we can drop a branch
-  if (_args[0].is(NumberType::_ANY))
-  {
-    if (_args[0].value() != 0.0)
-      return _args[1];
-    else
-      return _args[2];
-  }
-
-  return Node();
-}
-
-Node
 ConditionalData::D(const ValueProvider & vp)
 {
   if (_type != ConditionalType::IF)
@@ -1177,29 +920,6 @@ IntegerPowerData::getArg(unsigned int i)
   if (i == 1)
     return Node(_exponent);
   fatalError("Requesting invalid argument");
-}
-
-Node
-IntegerPowerData::simplify()
-{
-  //(a^b)^c = a^(b*c) (c00^c01) ^ c1 = c00 ^ (c01*c1)
-  if (_arg.is(IntegerPowerType::_ANY))
-  {
-    auto p = Node(IntegerPowerType::_ANY, _arg[0], _arg[1].value() * _exponent);
-    p.simplify();
-    return p;
-  }
-
-  if (_arg.is(NumberType::_ANY))
-    return Node(value());
-
-  if (_exponent == 1)
-    return _arg;
-
-  if (_exponent == 0)
-    return Node(1.0);
-
-  return Node();
 }
 
 Node

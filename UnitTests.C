@@ -7,6 +7,7 @@
 #include "SMFunction.h"
 #include "SMHelpers.h"
 #include "SMJITTypes.h"
+#include "SMTransformSimplify.h"
 
 #include <iostream>
 #include <functional>
@@ -165,7 +166,8 @@ main(int argc, char * argv[])
       fail++;
     }
 
-    func.simplify();
+    auto simplify = SymbolicMath::Simplify(func);
+    func.apply(simplify);
 
     // evaluate for various values of c
     norm = 0.0;
@@ -211,11 +213,16 @@ main(int argc, char * argv[])
     parser.registerValueProvider(c_var);
 
     auto func = parser.parse(test.expression);
-    func.simplify();
+    auto simplify1 = SymbolicMath::Simplify(func);
+    func.apply(simplify1);
+
     func.compile();
 
     auto diff = func.D(c_var);
-    diff.simplify();
+
+    auto simplify2 = SymbolicMath::Simplify(diff);
+    diff.apply(simplify2);
+
     diff.compile();
     if (!diff.isCompiled())
     {

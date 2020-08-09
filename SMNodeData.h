@@ -66,7 +66,6 @@ public:
   // apply a transform visitor
   virtual void apply(Transform & transform) = 0;
 
-  virtual Node simplify() { return Node(); };
   virtual Node D(const ValueProvider & vp) = 0;
 
   virtual unsigned short precedence() const { return 0; }
@@ -79,8 +78,7 @@ public:
 
 /**
  * Data class for empty invalid nodes that are constructed using the Node()
- * default constructor. Invalid nodes are returned by NodeData::simplify()
- * when no simplification can be performed.
+ * default constructor.
  */
 class EmptyData : public NodeData
 {
@@ -367,7 +365,6 @@ public:
 
   NodeDataPtr clone() override;
 
-  Node simplify() override;
   Node D(const ValueProvider &) override;
   void apply(Transform & transform) override;
 
@@ -390,7 +387,6 @@ public:
 
   NodeDataPtr clone() override;
 
-  Node simplify() override;
   Node D(const ValueProvider &) override;
   void apply(Transform & transform) override;
 
@@ -413,14 +409,10 @@ public:
 
   NodeDataPtr clone() override;
 
-  Node simplify() override;
   Node D(const ValueProvider & vp) override;
 
   unsigned short precedence() const override;
   void apply(Transform & transform) override;
-
-private:
-  void simplifyHelper(std::vector<Node> & new_args, Node arg);
 };
 
 /**
@@ -439,7 +431,6 @@ public:
 
   NodeDataPtr clone() override;
 
-  Node simplify() override;
   Node D(const ValueProvider &) override;
 
   unsigned short precedence() const override { return 3; }
@@ -462,7 +453,6 @@ public:
 
   NodeDataPtr clone() override;
 
-  Node simplify() override;
   Node D(const ValueProvider &) override;
   void apply(Transform & transform) override;
 };
@@ -484,7 +474,6 @@ public:
 
   NodeDataPtr clone() override;
 
-  Node simplify() override;
   Node D(const ValueProvider &) override;
 
   void stackDepth(std::pair<int, int> & current_max) override;
@@ -513,7 +502,6 @@ public:
 
   bool is(IntegerPowerType) const override { return true; };
 
-  Node simplify() override;
   Node D(const ValueProvider &) override;
 
   void stackDepth(std::pair<int, int> & current_max) override { _arg.stackDepth(current_max); }

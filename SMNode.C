@@ -225,14 +225,6 @@ Node::D(const ValueProvider & vp) const
   return Node(_data->D(vp));
 }
 
-void
-Node::simplify()
-{
-  auto simplified = _data->simplify();
-  if (simplified.isValid())
-    _data = simplified._data;
-}
-
 unsigned short
 Node::precedence() const
 {

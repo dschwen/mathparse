@@ -104,9 +104,6 @@ public:
   /// Returns the derivative of the subtree at the node w.r.t. value provider id
   Node D(const ValueProvider &) const;
 
-  /// Simplify the subtree at the node in place
-  void simplify();
-
   /// Returns the precedence of the node for output purposes (bracket placement)
   unsigned short precedence() const;
 

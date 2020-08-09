@@ -27,13 +27,6 @@ public:
   FunctionBase(const Node & root) : _root(root), _jit_code(nullptr) {}
   virtual ~FunctionBase() {}
 
-  /// Simplify the subtree at the node in place
-  void simplify()
-  {
-    _root.simplify();
-    invalidateJIT();
-  }
-
   ///@{ subtree output
   std::string format() const { return _root.format(); }
   std::string formatTree() const { return _root.formatTree(); }
