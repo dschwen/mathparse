@@ -1,4 +1,4 @@
 # LibJIT
-OBJS += SymbolicMathFunctionLibJIT.o SymbolicMathNodeDataLibJIT.o
+OBJS += SMFunctionLibJIT.o SMNodeDataLibJIT.o
 CONFIG := -DSYMBOLICMATH_USE_LIBJIT
 LDFLAGS := -ljit

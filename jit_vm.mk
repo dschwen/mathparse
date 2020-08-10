@@ -1,3 +1,3 @@
 # byte code VM
-OBJS += SymbolicMathFunctionVM.o SymbolicMathNodeDataVM.o
+OBJS += SMFunctionVM.o SMNodeDataVM.o
 CONFIG := -DSYMBOLICMATH_USE_VM

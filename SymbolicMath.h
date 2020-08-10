@@ -5,4 +5,4 @@
 
 #pragma once
 
-#include "SymbolicMathParser.h"
+#include "SMParser.h"

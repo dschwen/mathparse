@@ -4,10 +4,9 @@ CPPFLAGS ?= -O2
 # (lightning,sljit,libjit)
 JIT ?= sljit
 
-OBJS := SymbolicMathToken.o SymbolicMathTokenizer.o \
-			  SymbolicMathParser.o SymbolicMathSymbols.o \
-				SymbolicMathNode.o SymbolicMathNodeData.o \
-				SymbolicMathUtils.o SymbolicMathFunctionBase.o
+OBJS := SMToken.o SMTokenizer.o SMParser.o SMSymbols.o \
+				SMNode.o SMNodeData.o SMUtils.o SMFunctionBase.o \
+				SMTransform.o SMTransformSimplify.o
 
 # include configuration for the selected JIT backend
 include jit_$(JIT).mk

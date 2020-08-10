@@ -1,5 +1,5 @@
 # LLVM IR
-OBJS += SymbolicMathFunctionLLVMIR.o SymbolicMathNodeDataLLVMIR.o LLJITHelper.o
+OBJS += SMFunctionLLVMIR.o SMNodeDataLLVMIR.o LLJITHelper.o
 CONFIG := -DSYMBOLICMATH_USE_LLVMIR
 LLVM_CONFIG ?= llvm-config
 
