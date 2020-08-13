@@ -26,12 +26,14 @@ main(int argc, char * argv[])
   // func.simplify();
 
   // auto func = parser.parse("(c + 2) / 1 - 0 / (c -2)");
-  // auto func = parser.parse("1 *c*2*3*sin(4)");
-  auto func = parser.parse("sin(4+c)");
+  auto func = parser.parse("1 *c*2*3*sin(4)");
+  // auto func = parser.parse("sin(c/4)");
   std::cout << func.format() << '\n';
 
-  SymbolicMath::CompiledCCode::Source source(func);
-  std::cout << '{' << source() << "}\n";
+  {
+    SymbolicMath::CompiledCCode::Source source(func);
+    std::cout << '{' << source() << "}\n";
+  }
 
   std::cout << func.formatTree() << '\n';
 
@@ -39,6 +41,11 @@ main(int argc, char * argv[])
 
   std::cout << func.format() << '\n';
   std::cout << func.formatTree() << '\n';
+
+  {
+    SymbolicMath::CompiledCCode::Source source(func);
+    std::cout << '{' << source() << "}\n";
+  }
 
   c = 2.0;
   std::cout << "c = " << c << "; Value = " << func() << '\n';

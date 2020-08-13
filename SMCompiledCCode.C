@@ -190,19 +190,20 @@ CompiledCCode::Source::operator()(MultinaryOperatorData * n)
       fatalError("Unknown operator");
   }
 
-  if (nargs)
+  if (nargs == 1)
     n->_args[0].apply(*this);
   else
   {
     std::string out;
     for (std::size_t i = 0; i < nargs; ++i)
     {
-      n->_args[0].apply(*this);
+      n->_args[i].apply(*this);
       if (i)
         out += op;
-      out += _source;
+      out += '(' + _source + ')';
       _source = "";
     }
+    _source = out;
   }
 }
 
