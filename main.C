@@ -32,14 +32,14 @@ main(int argc, char * argv[])
   auto func = SymbolicMath::Function(parser.parse(argv[1]));
   std::cout << func.format() << '\n' << func.formatTree() << '\n';
 
-  func.simplify();
+  // func.simplify();
   std::cout << " = " << func.format() << '\n'; // << func->formatTree() << '\n';
 
   // evaluate for various values of c
   std::vector<SymbolicMath::Real> reference;
   for (c = -1.0; c <= 1.0; c += 0.3)
   {
-    auto val = func.value();
+    auto val = func();
     reference.push_back(val);
     std::cout << val << ' ';
   }
@@ -52,7 +52,7 @@ main(int argc, char * argv[])
   SymbolicMath::Real norm = 0;
   for (c = -1.0; c <= 1.0; c += 0.3)
   {
-    auto val = func.value();
+    auto val = func();
     std::cout << val << ' ';
     auto diff = reference[index++] - val;
     // auto diff = c + std::sin(1.1) - val;
@@ -63,28 +63,28 @@ main(int argc, char * argv[])
   auto deriv = func.D(c_var);
   std::cout << "D(F) = " << deriv.format() << '\n'; // << deriv->formatTree() << '\n';
 
-  deriv.simplify();
+  // deriv.simplify();
   std::cout << "D(F) = " << deriv.format() << '\n'; // << deriv->formatTree() << '\n';
 
   // evaluate for various values of c
   for (c = -1.0; c <= 1.0; c += 0.3)
-    std::cout << deriv.value() << ' ';
+    std::cout << deriv() << ' ';
   std::cout << '\n';
 
   deriv.compile();
 
   // evaluate for various values of c
   for (c = -1.0; c <= 1.0; c += 0.3)
-    std::cout << deriv.value() << ' ';
+    std::cout << deriv() << ' ';
   std::cout << '\n';
 
   // finite differencing
   auto dc = 0.00001;
   for (c = -1.0; c <= 1.0; c += 0.3)
   {
-    auto a = func.value();
+    auto a = func();
     c += dc;
-    auto b = func.value();
+    auto b = func();
     c -= dc;
     std::cout << (b - a) / dc << ' ';
   }

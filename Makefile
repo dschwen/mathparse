@@ -16,18 +16,19 @@ include jit_$(JIT).mk
 ifneq (,$(findstring armv,$(shell uname -m)))
   LDFLAGS += -latomic
 endif
+# ADDDITIONAL_LDFLAGS
 
 mathparse: main.C $(OBJS)
-	$(CXX) -std=c++11 $(CONFIG) $(CPPFLAGS) $(CXXFLAGS) -o mathparse main.C $(OBJS) $(LDFLAGS)
+	$(CXX) -std=c++11 $(CONFIG) $(CPPFLAGS) $(CXXFLAGS) -o mathparse main.C $(OBJS) $(LDFLAGS) -ldl
 
 performance: Performance.C $(OBJS)
-	$(CXX) -std=c++11 $(CONFIG) $(CPPFLAGS) $(CXXFLAGS) -o performance performance.C $(OBJS) $(LDFLAGS)
+	$(CXX) -std=c++11 $(CONFIG) $(CPPFLAGS) $(CXXFLAGS) -o performance performance.C $(OBJS) $(LDFLAGS) -ldl
 
 unittests: UnitTests.C $(OBJS)
-	$(CXX) -std=c++11 $(CONFIG) $(CPPFLAGS) $(CXXFLAGS) -o unittests UnitTests.C $(OBJS) $(LDFLAGS)
+	$(CXX) -std=c++11 $(CONFIG) $(CPPFLAGS) $(CXXFLAGS) -o unittests UnitTests.C $(OBJS) $(LDFLAGS) -ldl
 
 testbench: TestBench.C $(OBJS)
-	$(CXX) -std=c++11 $(CONFIG) $(CPPFLAGS) $(CXXFLAGS) -o testbench TestBench.C $(OBJS) $(LDFLAGS)
+	$(CXX) -std=c++11 $(CONFIG) $(CPPFLAGS) $(CXXFLAGS) -o testbench TestBench.C $(OBJS) $(LDFLAGS) -ldl
 
 -include $(OBJS:.o=.d)
 
