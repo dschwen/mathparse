@@ -53,6 +53,9 @@ main(int argc, char * argv[])
   SymbolicMath::CompiledByteCode vm(func);
   std::cout << "vm value = " << vm() << '\n';
 
+  SymbolicMath::CompiledCCode ccode(func);
+  std::cout << "ccode value = " << ccode() << '\n';
+
   // func.compile();
   //
   // auto diff = func.D(c_var);

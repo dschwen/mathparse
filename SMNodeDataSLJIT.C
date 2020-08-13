@@ -278,25 +278,24 @@ MultinaryOperatorData::jit(JITStateValue & state)
 
   _args[0].jit(state);
 
-  if (_args.size() > 1)
-    for (std::size_t i = 1; i < _args.size(); ++i)
+  for (std::size_t i = 1; i < _args.size(); ++i)
+  {
+    _args[i].jit(state);
+    stack_pop(state, SLJIT_FR1);
+    switch (_type)
     {
-      _args[i].jit(state);
-      stack_pop(state, SLJIT_FR1);
-      switch (_type)
-      {
-        case MultinaryOperatorType::ADDITION:
-          sljit_emit_fop2(state.C, SLJIT_ADD_F64, SLJIT_FR0, 0, SLJIT_FR0, 0, SLJIT_FR1, 0);
-          break;
+      case MultinaryOperatorType::ADDITION:
+        sljit_emit_fop2(state.C, SLJIT_ADD_F64, SLJIT_FR0, 0, SLJIT_FR0, 0, SLJIT_FR1, 0);
+        break;
 
-        case MultinaryOperatorType::MULTIPLICATION:
-          sljit_emit_fop2(state.C, SLJIT_MUL_F64, SLJIT_FR0, 0, SLJIT_FR0, 0, SLJIT_FR1, 0);
-          break;
+      case MultinaryOperatorType::MULTIPLICATION:
+        sljit_emit_fop2(state.C, SLJIT_MUL_F64, SLJIT_FR0, 0, SLJIT_FR0, 0, SLJIT_FR1, 0);
+        break;
 
-        default:
-          fatalError("Unknown operator");
-      }
+      default:
+        fatalError("Unknown operator");
     }
+  }
 }
 
 /********************************************************

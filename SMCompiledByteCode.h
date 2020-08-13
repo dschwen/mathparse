@@ -5,7 +5,8 @@
 
 #pragma once
 
-#include "SMCompiler.h"
+#include "SMTransform.h"
+#include "SMEvaluable.h"
 
 namespace SymbolicMath
 {
@@ -13,10 +14,11 @@ namespace SymbolicMath
 /**
  * Stack based bytecode machine translation and evaluation
  */
-class CompiledByteCode : public Compiler
+template <typename T>
+class CompiledByteCodeTempl : public Transform, public Evaluable<T>
 {
 public:
-  CompiledByteCode(FunctionBase &);
+  CompiledByteCodeTempl(FunctionBase &);
 
   void operator()(SymbolData *) override;
 
@@ -35,7 +37,7 @@ public:
   void operator()(ConditionalData *) override;
   void operator()(IntegerPowerData *) override;
 
-  Real operator()() override;
+  T operator()() override;
 
 protected:
   enum class VMInstruction
@@ -57,8 +59,8 @@ protected:
   struct VMData
   {
     VMData(int value) : _int_value(value) {}
-    VMData(Real value) : _value(value) {}
-    VMData(const Real * variable) : _variable(variable) {}
+    VMData(T value) : _value(value) {}
+    VMData(const T * variable) : _variable(variable) {}
     VMData(UnaryOperatorType unary_operator) : _unary_operator(unary_operator) {}
     VMData(BinaryOperatorType binary_operator) : _binary_operator(binary_operator) {}
     VMData(UnaryFunctionType unary_function) : _unary_function(unary_function) {}
@@ -66,8 +68,8 @@ protected:
 
     union {
       int _int_value;
-      Real _value;
-      const Real * _variable;
+      T _value;
+      const T * _variable;
       UnaryOperatorType _unary_operator;
       BinaryOperatorType _binary_operator;
       UnaryFunctionType _unary_function;
@@ -82,7 +84,9 @@ protected:
   ByteCode _byte_code;
 
   /// execution stack (not thread safe)
-  std::vector<Real> _stack;
+  std::vector<T> _stack;
 };
+
+using CompiledByteCode = CompiledByteCodeTempl<Real>;
 
 } // namespace SymbolicMath

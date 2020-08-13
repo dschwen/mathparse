@@ -22,6 +22,7 @@ class Transform
 {
 public:
   Transform(FunctionBase & fb) : _fb(fb) { _current_node = nullptr; }
+  virtual ~Transform() {}
 
   virtual void operator()(SymbolData *) = 0;
 

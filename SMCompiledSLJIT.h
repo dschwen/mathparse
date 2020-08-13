@@ -5,39 +5,23 @@
 
 #pragma once
 
-#include <stack>
-
 #include "SMTransform.h"
 #include "SMEvaluable.h"
+
+#include <list>
 
 namespace SymbolicMath
 {
 
 /**
- * C source code generation
+ * SLJIT compiler transform
  */
-/**
- * C source code compilation, dynamic object laoding, evaluation
- */
-class CompiledCCode : public Evaluable<Real>
+template <typename T>
+class CompiledSLJITTempl : public Transform, public Evaluable<T>
 {
 public:
-  class Source;
-
-  CompiledCCode(FunctionBase &);
-
-  Real operator()() override { return _jit_function(); }
-
-protected:
-  typedef Real (*JITFunctionPtr)();
-
-  JITFunctionPtr _jit_function;
-};
-
-class CompiledCCode::Source : public Transform
-{
-public:
-  Source(FunctionBase &);
+  CompiledSLJITTempl(FunctionBase &);
+  ~CompiledSLJITTempl() override;
 
   void operator()(SymbolData *) override;
 
@@ -56,10 +40,33 @@ public:
   void operator()(ConditionalData *) override;
   void operator()(IntegerPowerData *) override;
 
-  const std::string & operator()() const { return _source; };
+  T operator()() override { return _jit_function(); }
 
 protected:
-  std::string _source;
+  void stackPush();
+  void stackPop(sljit_s32);
+
+  void unaryFunctionCall(T (*func)(T));
+  void binaryFunctionCall(T (*func)(T, T));
+
+  void emitFcmp(sljit_s32);
+
+  static T truncWrapper(T);
+
+  /// current stack entry (as array index)
+  int _sp;
+
+  /// SLJIT compiler context
+  struct sljit_compiler * _ctx;
+
+  /// store immediates in a "pointer stable" way
+  std::list<T> _immediate;
+
+  /// compiled function
+  using JITFunctionPtr = T SLJIT_FUNC (*)();
+  JITFunctionPtr _jit_function;
 };
+
+using CompiledSLJIT = CompiledSLJITTempl<Real>;
 
 } // namespace SymbolicMath

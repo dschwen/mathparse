@@ -18,13 +18,13 @@
 namespace SymbolicMath
 {
 
-CompiledCCode::CompiledCCode(FunctionBase & fb) : Compiler(fb)
+CompiledCCode::CompiledCCode(FunctionBase & fb)
 {
   // build and lock context
   std::string ccode = "#include <cmath>\nextern \"C\" double F()\n{\n  return ";
 
   // generate source
-  Source source(_fb);
+  Source source(fb);
   ccode += source() + ";\n}";
 
   // save to a temporary name and rename only when the file is fully written
@@ -54,7 +54,7 @@ CompiledCCode::CompiledCCode(FunctionBase & fb) : Compiler(fb)
 #endif
   command += std::string(ctmpname) + " -o " + std::string(otmpname);
 
-  if (!system(command.c_str()))
+  if (system(command.c_str()) == -1)
     fatalError("Error launching compiler command  " + command);
 
   std::remove(ctmpname);

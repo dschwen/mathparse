@@ -9,7 +9,8 @@
 namespace SymbolicMath
 {
 
-CompiledByteCode::CompiledByteCode(FunctionBase & fb) : Compiler(fb)
+template <typename T>
+CompiledByteCodeTempl<T>::CompiledByteCodeTempl(FunctionBase & fb) : Transform(fb)
 {
   // determine required stack size
   auto current_max = std::make_pair(0, 0);
@@ -19,29 +20,33 @@ CompiledByteCode::CompiledByteCode(FunctionBase & fb) : Compiler(fb)
   apply();
 }
 
+template <typename T>
 void
-CompiledByteCode::operator()(SymbolData * n)
+CompiledByteCodeTempl<T>::operator()(SymbolData * n)
 {
   fatalError("Symbol in compiled function");
 }
 
+template <typename T>
 void
-CompiledByteCode::operator()(UnaryOperatorData * n)
+CompiledByteCodeTempl<T>::operator()(UnaryOperatorData * n)
 {
   n->_args[0].apply(*this);
   _byte_code.emplace_back(VMInstruction::UNARY_OPERATOR, n->_type);
 }
 
+template <typename T>
 void
-CompiledByteCode::operator()(BinaryOperatorData * n)
+CompiledByteCodeTempl<T>::operator()(BinaryOperatorData * n)
 {
   n->_args[0].apply(*this);
   n->_args[1].apply(*this);
   _byte_code.emplace_back(VMInstruction::BINARY_OPERATOR, n->_type);
 }
 
+template <typename T>
 void
-CompiledByteCode::operator()(MultinaryOperatorData * n)
+CompiledByteCodeTempl<T>::operator()(MultinaryOperatorData * n)
 {
   const int nargs = static_cast<int>(n->_args.size());
   for (auto arg : n->_args)
@@ -65,47 +70,54 @@ CompiledByteCode::operator()(MultinaryOperatorData * n)
   }
 }
 
+template <typename T>
 void
-CompiledByteCode::operator()(UnaryFunctionData * n)
+CompiledByteCodeTempl<T>::operator()(UnaryFunctionData * n)
 {
   n->_args[0].apply(*this);
   _byte_code.emplace_back(VMInstruction::UNARY_FUNCTION, n->_type);
 }
 
+template <typename T>
 void
-CompiledByteCode::operator()(BinaryFunctionData * n)
+CompiledByteCodeTempl<T>::operator()(BinaryFunctionData * n)
 {
   n->_args[0].apply(*this);
   n->_args[1].apply(*this);
   _byte_code.emplace_back(VMInstruction::BINARY_FUNCTION, n->_type);
 }
 
+template <typename T>
 void
-CompiledByteCode::operator()(RealNumberData * n)
+CompiledByteCodeTempl<T>::operator()(RealNumberData * n)
 {
   _byte_code.emplace_back(VMInstruction::LOAD_IMMEDIATE_REAL, n->_value);
 }
 
+template <typename T>
 void
-CompiledByteCode::operator()(RealReferenceData * n)
+CompiledByteCodeTempl<T>::operator()(RealReferenceData * n)
 {
   _byte_code.emplace_back(VMInstruction::LOAD_VARIABLE_REAL, &n->_ref);
 }
 
+template <typename T>
 void
-CompiledByteCode::operator()(RealArrayReferenceData * n)
+CompiledByteCodeTempl<T>::operator()(RealArrayReferenceData * n)
 {
   fatalError("Not implemented");
 }
 
+template <typename T>
 void
-CompiledByteCode::operator()(LocalVariableData * n)
+CompiledByteCodeTempl<T>::operator()(LocalVariableData * n)
 {
   fatalError("Not implemented");
 }
 
+template <typename T>
 void
-CompiledByteCode::operator()(ConditionalData * n)
+CompiledByteCodeTempl<T>::operator()(ConditionalData * n)
 {
   n->_args[0].apply(*this);
   const auto conditional_ip = _byte_code.size();
@@ -123,15 +135,17 @@ CompiledByteCode::operator()(ConditionalData * n)
   _byte_code[jump_past_false_ip].second._int_value = _byte_code.size();
 }
 
+template <typename T>
 void
-CompiledByteCode::operator()(IntegerPowerData * n)
+CompiledByteCodeTempl<T>::operator()(IntegerPowerData * n)
 {
   n->_arg.apply(*this);
   _byte_code.emplace_back(VMInstruction::INTEGER_POWER, n->_exponent);
 }
 
-Real
-CompiledByteCode::operator()()
+template <typename T>
+T
+CompiledByteCodeTempl<T>::operator()()
 {
   // initialize instruction and stack pointer and loop over byte code
   std::size_t ip = 0, sp = 0;
@@ -165,7 +179,7 @@ CompiledByteCode::operator()()
       {
         // take one summand off the stack and loop over remaining summands
         const auto & num = cur.second._int_value - 1;
-        Real sum = _stack[--sp];
+        auto sum = _stack[--sp];
         for (std::size_t i = sp - num; i < sp; ++i)
           sum += _stack[i];
         sp -= num;
@@ -179,7 +193,7 @@ CompiledByteCode::operator()()
       {
         // take one factor off the stack and loop over remaining factors
         const auto & num = cur.second._int_value - 1;
-        Real prod = _stack[--sp];
+        auto prod = _stack[--sp];
         for (std::size_t i = sp - num; i < sp; ++i)
           prod *= _stack[i];
         sp -= num;
@@ -429,7 +443,7 @@ CompiledByteCode::operator()()
       {
         auto & a = _stack[sp - 1];
         bool neg = false;
-        Real x = a;
+        auto x = a;
         a = 1.0;
         int e = cur.second._int_value;
 
@@ -462,5 +476,7 @@ CompiledByteCode::operator()()
   // return result from top of stack
   return _stack[--sp];
 }
+
+template class CompiledByteCodeTempl<Real>;
 
 } // namespace SymbolicMath
