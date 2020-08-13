@@ -159,7 +159,7 @@ main(int argc, char * argv[])
     // evaluate for various values of c
     norm = 0.0;
     for (c = -1.0; c <= 1.0; c += 0.3)
-      norm += std::abs(func.value() - test.native(c));
+      norm += std::abs(func() - test.native(c));
     if (norm > 1e-9)
     {
       std::cerr << "Error evaluating unsimplified expression '" << test.expression << "'\n";
@@ -167,12 +167,11 @@ main(int argc, char * argv[])
     }
 
     auto simplify = SymbolicMath::Simplify(func);
-    func.apply(simplify);
 
     // evaluate for various values of c
     norm = 0.0;
     for (c = -1.0; c <= 1.0; c += 0.3)
-      norm += std::abs(func.value() - test.native(c));
+      norm += std::abs(func() - test.native(c));
     if (norm > 1e-9)
     {
       std::cerr << "Error evaluating expression '" << test.expression << "' simplified to '"
@@ -192,7 +191,7 @@ main(int argc, char * argv[])
     // evaluate for various values of c
     norm = 0.0;
     for (c = -1.0; c <= 1.0; c += 0.3)
-      norm += std::abs(func.value() - test.native(c));
+      norm += std::abs(func() - test.native(c));
     if (norm > 1e-9)
     {
       std::cerr << "Error " << norm << "evaluating compiled expression '" << test.expression
@@ -214,14 +213,12 @@ main(int argc, char * argv[])
 
     auto func = parser.parse(test.expression);
     auto simplify1 = SymbolicMath::Simplify(func);
-    func.apply(simplify1);
 
     func.compile();
 
     auto diff = func.D(c_var);
 
     auto simplify2 = SymbolicMath::Simplify(diff);
-    diff.apply(simplify2);
 
     diff.compile();
     if (!diff.isCompiled())
@@ -236,12 +233,12 @@ main(int argc, char * argv[])
     SymbolicMath::Real abssum = 0.0;
     for (c = test.cmin; c <= test.cmax; c += test.dc)
     {
-      auto a = func.value();
+      auto a = func();
       c += test.epsilon;
-      auto b = func.value();
+      auto b = func();
       c -= test.epsilon;
 
-      auto d = diff.value();
+      auto d = diff();
       abssum += std::abs(d);
 
       norm += std::abs(d - (b - a) / test.epsilon);
