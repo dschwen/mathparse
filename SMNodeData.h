@@ -71,7 +71,7 @@ public:
   virtual unsigned short precedence() const { return 0; }
 
   /// amount of net stack pointer movement of this operator
-  virtual void stackDepth(std::pair<int, int> & current_max);
+  virtual void stackDepth(std::pair<int, int> & current_max) const;
 
   friend Node;
 };
@@ -121,7 +121,7 @@ public:
   }
 
   bool is(Enum type) const override { return _type == type || type == Enum::_ANY; }
-  void stackDepth(std::pair<int, int> & current_max) override
+  void stackDepth(std::pair<int, int> & current_max) const override
   {
     for (auto & arg : _args)
       arg.stackDepth(current_max);
@@ -152,7 +152,7 @@ public:
   }
 
   bool is(Enum type) const override { return _type == type || type == Enum::_ANY; }
-  void stackDepth(std::pair<int, int> & current_max) override
+  void stackDepth(std::pair<int, int> & current_max) const override
   {
     for (auto & arg : _args)
       arg.stackDepth(current_max);
@@ -177,7 +177,7 @@ public:
   // used to determine if two value providers are of the same type
   bool is(ValueProvider * a) const override { return getTypeID() == a->getTypeID(); }
 
-  void stackDepth(std::pair<int, int> & current_max) override { current_max.first++; }
+  void stackDepth(std::pair<int, int> & current_max) const override { current_max.first++; }
 
 protected:
   std::string _name;
@@ -223,7 +223,7 @@ public:
 
   std::size_t id() { return _id; }
 
-  void stackDepth(std::pair<int, int> & current_max) override { current_max.first++; }
+  void stackDepth(std::pair<int, int> & current_max) const override { current_max.first++; }
 
   NodeDataPtr clone() override { fatalError("Cannot clone local variable"); };
   std::size_t hash() const override { return std::hash<const void *>{}(this); }
@@ -319,7 +319,7 @@ public:
 
   Node D(const ValueProvider &) override { return Node(0.0); }
 
-  void stackDepth(std::pair<int, int> & current_max) override { current_max.first++; }
+  void stackDepth(std::pair<int, int> & current_max) const override { current_max.first++; }
 
   NumberType _type;
 };
@@ -476,7 +476,7 @@ public:
 
   Node D(const ValueProvider &) override;
 
-  void stackDepth(std::pair<int, int> & current_max) override;
+  void stackDepth(std::pair<int, int> & current_max) const override;
   void apply(Transform & transform) override;
 };
 
@@ -504,7 +504,10 @@ public:
 
   Node D(const ValueProvider &) override;
 
-  void stackDepth(std::pair<int, int> & current_max) override { _arg.stackDepth(current_max); }
+  void stackDepth(std::pair<int, int> & current_max) const override
+  {
+    _arg.stackDepth(current_max);
+  }
   void apply(Transform & transform) override;
 
   Node _arg;

@@ -13,6 +13,8 @@
 namespace SymbolicMath
 {
 
+Simplify::Simplify(FunctionBase & fb) : Transform(fb) { apply(); }
+
 void
 Simplify::operator()(UnaryOperatorData * n)
 {

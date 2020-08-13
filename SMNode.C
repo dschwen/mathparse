@@ -232,7 +232,7 @@ Node::precedence() const
 }
 
 void
-Node::stackDepth(std::pair<int, int> & current_max)
+Node::stackDepth(std::pair<int, int> & current_max) const
 {
   _data->stackDepth(current_max);
 

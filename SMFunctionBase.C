@@ -21,10 +21,4 @@ FunctionBase::value()
     return _root.value();
 }
 
-void
-FunctionBase::apply(Transform & transform)
-{
-  _root.apply(transform);
-}
-
 } // namespace SymbolicMath

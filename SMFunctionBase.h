@@ -6,6 +6,7 @@
 #pragma once
 
 #include "SMNode.h"
+#include "SMEvaluable.h"
 #include "SMJITTypes.h"
 
 namespace SymbolicMath
@@ -20,7 +21,7 @@ using LocalVariables = std::vector<std::pair<Real, bool>>;
  * The Function class is the top level wrapper for a Node based expression tree.
  * It manages the active value providers and the just in time compilation.
  */
-class FunctionBase
+class FunctionBase : public Evaluable<Real>
 {
 public:
   /// Construct form given node
@@ -39,19 +40,20 @@ public:
   virtual bool isCompiled() { return _jit_code; }
 
   /// Evaluate the node (using JIT if available)
-  virtual Real value();
+  virtual Real value(); // TODO: move everything to operator()
+  Real operator()() { return value(); }
 
   /// Perform one time system initialization (must be called outside a threaded region!)
   static void initialize() {}
 
-  // apply a transform visitor
-  virtual void apply(Transform & transform);
+  /// reference to the root node
+  virtual const Node & root() const { return _root; }
 
 protected:
   /// invalidate the JIT compiled function
   virtual void invalidateJIT() = 0;
 
-  /// root node of the exprssion tree managed by this function
+  /// root node of the expression tree managed by this function
   Node _root;
 
   /// executable JIT code
@@ -59,6 +61,8 @@ protected:
 
   /// data for storing local variables
   LocalVariables _local_variables;
+
+  friend class Transform;
 };
 
 } // namespace SymbolicMath
