@@ -32,7 +32,10 @@ CompiledCCode::CompiledCCode(FunctionBase & fb) : Compiler(fb)
   int ctmpfile = mkstemps(ctmpname, 2);
   if (ctmpfile == -1)
     fatalError("Error creating tmp file " + std::string(ctmpname));
-  write(ctmpfile, ccode.data(), ccode.length());
+
+  if (!write(ctmpfile, ccode.data(), ccode.length()))
+    fatalError("Error writing source to tmp file " + std::string(ctmpname));
+
   close(ctmpfile);
 
   // compile code file
@@ -40,7 +43,9 @@ CompiledCCode::CompiledCCode(FunctionBase & fb) : Compiler(fb)
   int otmpfile = mkstemps(otmpname, 3);
   if (otmpfile == -1)
     fatalError("Error creating tmp file " + std::string(otmpname));
+
   close(otmpfile);
+
 #if defined(__GNUC__) && defined(__APPLE__) && !defined(__INTEL_COMPILER)
   // gcc on OSX does neither need nor accept the  -rdynamic switch
   std::string command = CCODE_JIT_COMPILER " -std=c++11 -O2 -shared -fPIC ";
@@ -48,7 +53,10 @@ CompiledCCode::CompiledCCode(FunctionBase & fb) : Compiler(fb)
   std::string command = CCODE_JIT_COMPILER " -std=c++11 -O2 -shared -rdynamic -fPIC ";
 #endif
   command += std::string(ctmpname) + " -o " + std::string(otmpname);
-  system(command.c_str());
+
+  if (!system(command.c_str()))
+    fatalError("Error launching compiler command  " + command);
+
   std::remove(ctmpname);
 
   // load object file in
@@ -56,9 +64,8 @@ CompiledCCode::CompiledCCode(FunctionBase & fb) : Compiler(fb)
   if (!lib)
   {
     // TODO: throw!
-    std::cerr << "JIT object load failed.\n";
     std::remove(otmpname);
-    return;
+    fatalError("JIT object load failed.");
   }
 
   // fetch function pointer
@@ -67,10 +74,8 @@ CompiledCCode::CompiledCCode(FunctionBase & fb) : Compiler(fb)
   if (error)
   {
     // TODO: throw!
-    std::cerr << "Error binding JIT compiled function\n" << error << '\n';
-    _jit_function = nullptr;
     std::remove(otmpname);
-    return;
+    fatalError("Error binding JIT compiled function\n" + std::string(error));
   }
 
   std::remove(otmpname);
