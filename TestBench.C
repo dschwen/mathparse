@@ -7,9 +7,12 @@
 #include "SMFunction.h"
 #include "SMHelpers.h"
 #include "SMJITTypes.h"
+
 #include "SMTransformSimplify.h"
-#include "SMCompiledCCode.h"
+
 #include "SMCompiledByteCode.h"
+#include "SMCompiledCCode.h"
+#include "SMCompiledSLJIT.h"
 
 #include <iostream>
 
@@ -55,6 +58,9 @@ main(int argc, char * argv[])
 
   SymbolicMath::CompiledCCode ccode(func);
   std::cout << "ccode value = " << ccode() << '\n';
+
+  SymbolicMath::CompiledSLJIT sljit(func);
+  std::cout << "sljit value = " << sljit() << '\n';
 
   // func.compile();
   //

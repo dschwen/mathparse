@@ -22,7 +22,8 @@ CompiledSLJITTempl<T>::CompiledSLJITTempl(FunctionBase & fb) : Transform(fb), _j
     fatalError("Stack depleted at function end");
 
   // build function
-  sljit_emit_enter(_ctx, 0, 0, 4, 0, 4, 0, current_max.second * sizeof(double));
+  _ctx = sljit_create_compiler(NULL);
+  sljit_emit_enter(_ctx, 0, 0, 4, 0, 4, 0, current_max.second * sizeof(T));
 
   // initialize stack pointer
   _sp = -1;
