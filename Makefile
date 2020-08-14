@@ -2,9 +2,10 @@ CXX ?= clang++
 CPPFLAGS ?= -O2
 
 # (lightning,sljit,libjit)
-JIT ?= sljit
+JIT ?= vm
 
-OBJS := SMToken.o SMTokenizer.o SMParser.o SMSymbols.o \
+OBJS := contrib/sljit_src/sljitLir.o \
+				SMToken.o SMTokenizer.o SMParser.o SMSymbols.o \
 				SMNode.o SMNodeData.o SMUtils.o SMFunctionBase.o \
 				SMTransform.o SMTransformSimplify.o SMCompiledByteCode.o \
 				SMCompiledCCode.o SMCompiledSLJIT.o
@@ -16,19 +17,21 @@ include jit_$(JIT).mk
 ifneq (,$(findstring armv,$(shell uname -m)))
   LDFLAGS += -latomic
 endif
-# ADDDITIONAL_LDFLAGS
+
+ADDITIONAL_LDFLAGS := -ldl
+CONFIG += -DSLJIT_CONFIG_AUTO=1
 
 mathparse: main.C $(OBJS)
-	$(CXX) -std=c++11 $(CONFIG) $(CPPFLAGS) $(CXXFLAGS) -o mathparse main.C $(OBJS) $(LDFLAGS) -ldl
+	$(CXX) -std=c++11 $(CONFIG) $(CPPFLAGS) $(CXXFLAGS) -o mathparse main.C $(OBJS) $(LDFLAGS) $(ADDITIONAL_LDFLAGS)
 
 performance: Performance.C $(OBJS)
-	$(CXX) -std=c++11 $(CONFIG) $(CPPFLAGS) $(CXXFLAGS) -o performance performance.C $(OBJS) $(LDFLAGS) -ldl
+	$(CXX) -std=c++11 $(CONFIG) $(CPPFLAGS) $(CXXFLAGS) -o performance performance.C $(OBJS) $(LDFLAGS) $(ADDITIONAL_LDFLAGS)
 
 unittests: UnitTests.C $(OBJS)
-	$(CXX) -std=c++11 $(CONFIG) $(CPPFLAGS) $(CXXFLAGS) -o unittests UnitTests.C $(OBJS) $(LDFLAGS) -ldl
+	$(CXX) -std=c++11 $(CONFIG) $(CPPFLAGS) $(CXXFLAGS) -o unittests UnitTests.C $(OBJS) $(LDFLAGS) $(ADDITIONAL_LDFLAGS)
 
 testbench: TestBench.C $(OBJS)
-	$(CXX) -std=c++11 $(CONFIG) $(CPPFLAGS) $(CXXFLAGS) -o testbench TestBench.C $(OBJS) $(LDFLAGS) -ldl
+	$(CXX) -std=c++11 $(CONFIG) $(CPPFLAGS) $(CXXFLAGS) -o testbench TestBench.C $(OBJS) $(LDFLAGS) $(ADDITIONAL_LDFLAGS)
 
 -include $(OBJS:.o=.d)
 

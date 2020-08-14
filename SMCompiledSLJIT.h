@@ -8,6 +8,8 @@
 #include "SMTransform.h"
 #include "SMEvaluable.h"
 
+#include "contrib/sljit_src/sljitLir.h"
+
 #include <list>
 
 namespace SymbolicMath
