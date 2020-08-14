@@ -81,7 +81,7 @@ extern "C" {
 
    Other macros:
      SLJIT_FUNC : calling convention attribute for both calling JIT from C and C calling back from JIT
-     SLJIT_W(number) : defining 64 bit constants on 64 bit architectures (compiler independent helper)
+     SLJIT_W(number) : defining 64 bit constants on 64 bit architectures (platform independent helper)
 */
 
 /*****************/
@@ -210,18 +210,16 @@ extern "C" {
 /***********************************************************/
 
 #ifdef SLJIT_CONFIG_X86
-#if defined(__CET__)
+
+#if defined(__CET__) && !(defined SLJIT_CONFIG_X86_CET && SLJIT_CONFIG_X86_CET)
 #define SLJIT_CONFIG_X86_CET 1
 #endif
-#if (defined SLJIT_CONFIG_X86_CET && SLJIT_CONFIG_X86_CET)
-#if defined(__GNUC__)
-#if !defined (__SHSTK__)
-#error "-mshstk is needed to compile with -fcf-protection"
-#endif
+
+#if (defined SLJIT_CONFIG_X86_CET && SLJIT_CONFIG_X86_CET) && defined(__GNUC__)
 #include <x86intrin.h>
 #endif
-#endif
-#endif
+
+#endif /* SLJIT_CONFIG_X86 */
 
 /**********************************/
 /* External function definitions. */
@@ -297,6 +295,7 @@ extern "C" {
 /* Type of public API functions. */
 /*********************************/
 
+#ifndef SLJIT_API_FUNC_ATTRIBUTE 
 #if (defined SLJIT_CONFIG_STATIC && SLJIT_CONFIG_STATIC)
 /* Static ABI functions. For all-in-one programs. */
 
@@ -310,6 +309,7 @@ extern "C" {
 #else
 #define SLJIT_API_FUNC_ATTRIBUTE
 #endif /* (defined SLJIT_CONFIG_STATIC && SLJIT_CONFIG_STATIC) */
+#endif /* defined SLJIT_API_FUNC_ATTRIBUTE */
 
 /****************************/
 /* Instruction cache flush. */
@@ -451,10 +451,14 @@ typedef double sljit_f64;
 #if (defined SLJIT_CONFIG_UNSUPPORTED && SLJIT_CONFIG_UNSUPPORTED)
 #define SLJIT_W(w)	(w##l)
 #elif (defined SLJIT_64BIT_ARCHITECTURE && SLJIT_64BIT_ARCHITECTURE)
+#ifdef _WIN64
 #define SLJIT_W(w)	(w##ll)
-#else
+#else /* !windows */
+#define SLJIT_W(w)	(w##l)
+#endif /* windows */
+#else /* 32 bit */
 #define SLJIT_W(w)	(w)
-#endif
+#endif /* unknown */
 
 #endif /* !SLJIT_W */
 
@@ -547,17 +551,19 @@ typedef double sljit_f64;
 
 #ifndef SLJIT_FUNC
 
-#if (defined SLJIT_USE_CDECL_CALLING_CONVENTION && SLJIT_USE_CDECL_CALLING_CONVENTION)
+#if (defined SLJIT_USE_CDECL_CALLING_CONVENTION && SLJIT_USE_CDECL_CALLING_CONVENTION) \
+	|| !(defined SLJIT_CONFIG_X86_32 && SLJIT_CONFIG_X86_32)
 
-/* Force cdecl. */
 #define SLJIT_FUNC
 
-#elif (defined SLJIT_CONFIG_X86_32 && SLJIT_CONFIG_X86_32)
+#elif defined(__GNUC__) && !defined(__APPLE__)
 
-#if defined(__GNUC__) && !defined(__APPLE__)
-
+#if __GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 4)
 #define SLJIT_FUNC __attribute__ ((fastcall))
 #define SLJIT_X86_32_FASTCALL 1
+#else
+#define SLJIT_FUNC
+#endif /* gcc >= 3.4 */
 
 #elif defined(_MSC_VER)
 
@@ -571,16 +577,10 @@ typedef double sljit_f64;
 
 #else /* Unknown compiler. */
 
-/* The cdecl attribute is the default. */
+/* The cdecl calling convention is usually the x86 default. */
 #define SLJIT_FUNC
 
-#endif
-
-#else /* Non x86-32 architectures. */
-
-#define SLJIT_FUNC
-
-#endif /* SLJIT_CONFIG_X86_32 */
+#endif /* SLJIT_USE_CDECL_CALLING_CONVENTION */
 
 #endif /* !SLJIT_FUNC */
 
