@@ -22,7 +22,7 @@ OBJS += contrib/sljit_src/sljitLir.o
 CONFIG += -DSLJIT_CONFIG_AUTO=1
 
 # CCode
-LDFLAGS := -ldl
+override LDFLAGS += -ldl
 
 mathparse: main.C $(OBJS)
 	$(CXX) -std=c++11 $(CONFIG) $(CPPFLAGS) $(CXXFLAGS) -o mathparse main.C $(OBJS) $(LDFLAGS)
