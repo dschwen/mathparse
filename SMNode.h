@@ -108,7 +108,7 @@ public:
   unsigned short precedence() const;
 
   // returns the maximum stack depth of the current subtree
-  void stackDepth(std::pair<int, int> & current_max);
+  void stackDepth(std::pair<int, int> & current_max) const;
 
   // apply a transform to the current subtree
   void apply(Transform &);

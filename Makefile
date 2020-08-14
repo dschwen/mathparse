@@ -2,11 +2,12 @@ CXX ?= clang++
 CPPFLAGS ?= -O2
 
 # (lightning,sljit,libjit)
-JIT ?= sljit
+JIT ?= vm
 
 OBJS := SMToken.o SMTokenizer.o SMParser.o SMSymbols.o \
 				SMNode.o SMNodeData.o SMUtils.o SMFunctionBase.o \
-				SMTransform.o SMTransformSimplify.o
+				SMTransform.o SMTransformSimplify.o SMCompiledByteCode.o \
+				SMCompiledCCode.o SMCompiledSLJIT.o
 
 # include configuration for the selected JIT backend
 include jit_$(JIT).mk
@@ -15,6 +16,13 @@ include jit_$(JIT).mk
 ifneq (,$(findstring armv,$(shell uname -m)))
   LDFLAGS += -latomic
 endif
+
+# SLJIT
+OBJS += contrib/sljit_src/sljitLir.o
+CONFIG += -DSLJIT_CONFIG_AUTO=1
+
+# CCode
+override LDFLAGS += -ldl
 
 mathparse: main.C $(OBJS)
 	$(CXX) -std=c++11 $(CONFIG) $(CPPFLAGS) $(CXXFLAGS) -o mathparse main.C $(OBJS) $(LDFLAGS)

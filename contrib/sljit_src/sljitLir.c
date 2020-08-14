@@ -28,7 +28,6 @@
 
 #ifdef _WIN32
 
-/* For SLJIT_CACHE_FLUSH, which can expand to FlushInstructionCache. */
 #include <windows.h>
 
 #endif /* _WIN32 */
@@ -274,6 +273,8 @@
 
 #if (defined SLJIT_PROT_EXECUTABLE_ALLOCATOR && SLJIT_PROT_EXECUTABLE_ALLOCATOR)
 #include "sljitProtExecAllocator.c"
+#elif (defined SLJIT_WX_EXECUTABLE_ALLOCATOR && SLJIT_WX_EXECUTABLE_ALLOCATOR)
+#include "sljitWXExecAllocator.c"
 #else
 #include "sljitExecAllocator.c"
 #endif
@@ -284,6 +285,10 @@
 #define SLJIT_ADD_EXEC_OFFSET(ptr, exec_offset) ((sljit_u8 *)(ptr) + (exec_offset))
 #else
 #define SLJIT_ADD_EXEC_OFFSET(ptr, exec_offset) ((sljit_u8 *)(ptr))
+#endif
+
+#ifndef SLJIT_UPDATE_WX_FLAGS
+#define SLJIT_UPDATE_WX_FLAGS(from, to, enable_exec)
 #endif
 
 /* Argument checking features. */

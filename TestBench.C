@@ -7,7 +7,12 @@
 #include "SMFunction.h"
 #include "SMHelpers.h"
 #include "SMJITTypes.h"
+
 #include "SMTransformSimplify.h"
+
+#include "SMCompiledByteCode.h"
+#include "SMCompiledCCode.h"
+#include "SMCompiledSLJIT.h"
 
 #include <iostream>
 
@@ -25,16 +30,37 @@ main(int argc, char * argv[])
 
   // auto func = parser.parse("(c + 2) / 1 - 0 / (c -2)");
   auto func = parser.parse("1 *c*2*3*sin(4)");
+  // auto func = parser.parse("sin(c/4)");
   std::cout << func.format() << '\n';
 
-  auto simplify = SymbolicMath::Simplify(func);
-  func.apply(simplify);
+  {
+    SymbolicMath::CompiledCCode::Source source(func);
+    std::cout << '{' << source() << "}\n";
+  }
+
+  std::cout << func.formatTree() << '\n';
+
+  SymbolicMath::Simplify simplify(func);
 
   std::cout << func.format() << '\n';
   std::cout << func.formatTree() << '\n';
 
+  {
+    SymbolicMath::CompiledCCode::Source source(func);
+    std::cout << '{' << source() << "}\n";
+  }
+
   c = 2.0;
-  std::cout << "c = " << c << "; Value = " << func.value() << '\n';
+  std::cout << "c = " << c << "; Value = " << func() << '\n';
+
+  SymbolicMath::CompiledByteCode vm(func);
+  std::cout << "vm value = " << vm() << '\n';
+
+  SymbolicMath::CompiledCCode ccode(func);
+  std::cout << "ccode value = " << ccode() << '\n';
+
+  SymbolicMath::CompiledSLJIT sljit(func);
+  std::cout << "sljit value = " << sljit() << '\n';
 
   // func.compile();
   //

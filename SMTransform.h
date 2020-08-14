@@ -21,7 +21,8 @@ class FunctionBase;
 class Transform
 {
 public:
-  Transform(FunctionBase &) { _current_node = nullptr; }
+  Transform(FunctionBase & fb) : _fb(fb) { _current_node = nullptr; }
+  virtual ~Transform() {}
 
   virtual void operator()(SymbolData *) = 0;
 
@@ -45,6 +46,10 @@ public:
   void popNode();
 
 protected:
+  FunctionBase & _fb;
+
+  void apply();
+
   void set(Real val);
   void set(UnaryOperatorType type, Node arg);
   void set(BinaryOperatorType type, Node arg0, Node arg1);

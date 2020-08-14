@@ -4,6 +4,7 @@
 ///
 
 #include "SMTransform.h"
+#include "SMFunctionBase.h"
 
 namespace SymbolicMath
 {
@@ -20,6 +21,13 @@ Transform::popNode()
 {
   _current_node = _node_stack.top();
   _node_stack.pop();
+}
+
+void
+Transform::apply()
+{
+  // apply self to root
+  _fb._root.apply(*this);
 }
 
 void

@@ -571,12 +571,14 @@ static SLJIT_INLINE sljit_uw sljit_get_generated_code_size(struct sljit_compiler
 #define SLJIT_HAS_FPU			0
 /* [Limitation] Some registers are virtual registers. */
 #define SLJIT_HAS_VIRTUAL_REGISTERS	1
+/* [Emulated] Has zero register (setting a memory location to zero is efficient). */
+#define SLJIT_HAS_ZERO_REGISTER		2
 /* [Emulated] Count leading zero is supported. */
-#define SLJIT_HAS_CLZ			2
+#define SLJIT_HAS_CLZ			3
 /* [Emulated] Conditional move is supported. */
-#define SLJIT_HAS_CMOV			3
+#define SLJIT_HAS_CMOV			4
 /* [Emulated] Conditional move is supported. */
-#define SLJIT_HAS_PREFETCH		4
+#define SLJIT_HAS_PREFETCH		5
 
 #if (defined SLJIT_CONFIG_X86 && SLJIT_CONFIG_X86)
 /* [Not emulated] SSE2 support is available on x86. */
@@ -697,7 +699,7 @@ SLJIT_API_FUNC_ATTRIBUTE sljit_s32 sljit_emit_fast_enter(struct sljit_compiler *
 */
 
 /*
-   IMPORATNT NOTE: memory access MUST be naturally aligned except
+   IMPORTANT NOTE: memory access MUST be naturally aligned unless
                    SLJIT_UNALIGNED macro is defined and its value is 1.
 
      length | alignment

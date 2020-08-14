@@ -14,7 +14,7 @@ namespace SymbolicMath
 {
 
 void
-NodeData::stackDepth(std::pair<int, int> & current_max)
+NodeData::stackDepth(std::pair<int, int> & current_max) const
 {
   fatalError("stackDepth not implemented");
 }
@@ -868,7 +868,7 @@ ConditionalData::D(const ValueProvider & vp)
 }
 
 void
-ConditionalData::stackDepth(std::pair<int, int> & current_max)
+ConditionalData::stackDepth(std::pair<int, int> & current_max) const
 {
   // condition
   _args[0].stackDepth(current_max);
