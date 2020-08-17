@@ -24,6 +24,10 @@ CONFIG += -DSLJIT_CONFIG_AUTO=1
 # CCode
 override LDFLAGS += -ldl
 
+# Lightning
+#override LDFLAGS += -llightning
+
+
 mathparse: main.C $(OBJS)
 	$(CXX) -std=c++11 $(CONFIG) $(CPPFLAGS) $(CXXFLAGS) -o mathparse main.C $(OBJS) $(LDFLAGS)
 
