@@ -13,6 +13,7 @@
 #include "SMCompiledByteCode.h"
 #include "SMCompiledCCode.h"
 #include "SMCompiledSLJIT.h"
+#include "SMCompiledLibJIT.h"
 
 #include <iostream>
 
@@ -61,6 +62,9 @@ main(int argc, char * argv[])
 
   SymbolicMath::CompiledSLJIT sljit(func);
   std::cout << "sljit value = " << sljit() << '\n';
+
+  SymbolicMath::CompiledLibJIT libjit(func);
+  std::cout << "libjit value = " << libjit() << '\n';
 
   // func.compile();
   //
