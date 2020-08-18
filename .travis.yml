@@ -32,14 +32,14 @@ before_script:
   - tar xzf libjit-0.1.4.tar.gz
   - cd libjit-0.1.4 && ./bootstrap && ./configure --prefix=$TRAVIS_BUILD_DIR/install
   - make && make install
+  - export LIBJIT_DIR=$TRAVIS_BUILD_DIR/install
+  # done
   - cd $TRAVIS_BUILD_DIR
 
 script:
   - make unittests
   - ./unittests
   - make unittests JIT=lightning LDFLAGS="-L$TRAVIS_BUILD_DIR/install/lib -llightning" CPPFLAGS=-I$TRAVIS_BUILD_DIR/install/include
-  - ./unittests
-  - make unittests JIT=libjit LDFLAGS="-L$TRAVIS_BUILD_DIR/install/lib -ljit" CPPFLAGS=-I$TRAVIS_BUILD_DIR/install/include
   - ./unittests
   - make unittests JIT=gccjit
   - ./unittests
