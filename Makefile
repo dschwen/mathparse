@@ -7,7 +7,8 @@ JIT ?= vm
 OBJS := SMToken.o SMTokenizer.o SMParser.o SMSymbols.o \
 				SMNode.o SMNodeData.o SMUtils.o SMFunctionBase.o \
 				SMTransform.o SMTransformSimplify.o SMCompiledByteCode.o \
-				SMCompiledCCode.o SMCompiledSLJIT.o SMCompiledLibJIT.o
+				SMCompiledCCode.o SMCompiledSLJIT.o SMCompiledLibJIT.o \
+				SMCompiledLightning.o
 
 # include configuration for the selected JIT backend
 include jit_$(JIT).mk
@@ -30,7 +31,7 @@ override CPPFLAGS += -I$(LIBJIT_DIR)/include
 override LDFLAGS += -L$(LIBJIT_DIR)/lib -ljit
 
 # Lightning
-#override LDFLAGS += -llightning
+override LDFLAGS += -llightning
 
 
 mathparse: main.C $(OBJS)

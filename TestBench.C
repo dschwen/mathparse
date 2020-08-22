@@ -14,6 +14,7 @@
 #include "SMCompiledCCode.h"
 #include "SMCompiledSLJIT.h"
 #include "SMCompiledLibJIT.h"
+#include "SMCompiledLightning.h"
 
 #include <iostream>
 
@@ -65,6 +66,9 @@ main(int argc, char * argv[])
 
   SymbolicMath::CompiledLibJIT libjit(func);
   std::cout << "libjit value = " << libjit() << '\n';
+
+  SymbolicMath::CompiledLightning lightning(func);
+  std::cout << "lightning value = " << lightning() << '\n';
 
   // func.compile();
   //
