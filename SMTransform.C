@@ -4,78 +4,91 @@
 ///
 
 #include "SMTransform.h"
-#include "SMFunctionBase.h"
+#include "SMFunction.h"
 
 namespace SymbolicMath
 {
 
+template <typename T>
 void
-Transform::pushNode(Node * node)
+Transform<T>::pushNode(Node * node)
 {
   _node_stack.push(_current_node);
   _current_node = node;
 }
 
+template <typename T>
 void
-Transform::popNode()
+Transform<T>::popNode()
 {
   _current_node = _node_stack.top();
   _node_stack.pop();
 }
 
+template <typename T>
 void
-Transform::apply()
+Transform<T>::apply()
 {
   // apply self to root
   _fb._root.apply(*this);
 }
 
+template <typename T>
 void
-Transform::set(Real val)
+Transform<T>::set(Real val)
 {
-  _current_node->_data = std::make_shared<RealNumberData>(val);
+  _current_node->_data = std::make_shared<RealNumberData<T>>(val);
 }
 
+template <typename T>
 void
-Transform::set(UnaryOperatorType type, Node arg)
+Transform<T>::set(UnaryOperatorType type, Node arg)
 {
-  _current_node->_data = std::make_shared<UnaryOperatorData>(type, arg);
+  _current_node->_data = std::make_shared<UnaryOperatorData<T>>(type, arg);
 }
 
+template <typename T>
 void
-Transform::set(BinaryOperatorType type, Node arg0, Node arg1)
+Transform<T>::set(BinaryOperatorType type, Node arg0, Node arg1)
 {
-  _current_node->_data = std::make_shared<BinaryOperatorData>(type, arg0, arg1);
+  _current_node->_data = std::make_shared<BinaryOperatorData<T>>(type, arg0, arg1);
 }
 
+template <typename T>
 void
-Transform::set(MultinaryOperatorType type, std::vector<Node> args)
+Transform<T>::set(MultinaryOperatorType type, std::vector<Node> args)
 {
-  _current_node->_data = std::make_shared<MultinaryOperatorData>(type, args);
+  _current_node->_data = std::make_shared<MultinaryOperatorData<T>>(type, args);
 }
 
+template <typename T>
 void
-Transform::set(UnaryFunctionType type, Node arg)
+Transform<T>::set(UnaryFunctionType type, Node arg)
 {
-  _current_node->_data = std::make_shared<UnaryFunctionData>(type, arg);
+  _current_node->_data = std::make_shared<UnaryFunctionData<T>>(type, arg);
 }
 
+template <typename T>
 void
-Transform::set(BinaryFunctionType type, Node arg0, Node arg1)
+Transform<T>::set(BinaryFunctionType type, Node arg0, Node arg1)
 {
-  _current_node->_data = std::make_shared<BinaryFunctionData>(type, arg0, arg1);
+  _current_node->_data = std::make_shared<BinaryFunctionData<T>>(type, arg0, arg1);
 }
 
+template <typename T>
 void
-Transform::set(ConditionalType type, Node arg0, Node arg1, Node arg2)
+Transform<T>::set(ConditionalType type, Node arg0, Node arg1, Node arg2)
 {
-  _current_node->_data = std::make_shared<ConditionalData>(type, arg0, arg1, arg2);
+  _current_node->_data = std::make_shared<ConditionalData<T>>(type, arg0, arg1, arg2);
 }
 
+template <typename T>
 void
-Transform::set(IntegerPowerType, Node arg, int exponent)
+Transform<T>::set(IntegerPowerType, Node arg, int exponent)
 {
-  _current_node->_data = std::make_shared<IntegerPowerData>(arg, exponent);
+  _current_node->_data = std::make_shared<IntegerPowerData<T>>(arg, exponent);
 }
+
+template class Transform<Real>;
 
 } // namespace SymbolicMath

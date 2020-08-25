@@ -14,30 +14,32 @@ namespace SymbolicMath
 {
 
 /**
- * C source code generation
- */
-/**
  * C source code compilation, dynamic object laoding, evaluation
  */
-class CompiledCCode : public Evaluable<Real>
+template <typename T>
+class CompiledCCode : public Evaluable<T>
 {
 public:
   class Source;
 
-  CompiledCCode(FunctionBase &);
+  CompiledCCode(Function &);
 
   Real operator()() override { return _jit_function(); }
 
 protected:
   typedef Real (*JITFunctionPtr)();
 
+  const std::string typeName();
+  const std::string typeHeader();
+
   JITFunctionPtr _jit_function;
 };
 
-class CompiledCCode::Source : public Transform
+template <typename T>
+class CompiledCCode<T>::Source : public Transform<T>
 {
 public:
-  Source(FunctionBase &);
+  Source(Function &);
 
   void operator()(SymbolData *) override;
 

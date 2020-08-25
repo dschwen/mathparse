@@ -16,7 +16,7 @@ namespace SymbolicMath
 class Simplify : public Transform
 {
 public:
-  Simplify(FunctionBase & fb);
+  Simplify(Function & fb);
 
   void operator()(SymbolData *) override {}
 

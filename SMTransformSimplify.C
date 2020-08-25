@@ -7,13 +7,13 @@
 #include <algorithm>
 
 #include "SMNodeData.h"
-#include "SMFunctionBase.h"
+#include "SMFunction.h"
 #include "SMTransformSimplify.h"
 
 namespace SymbolicMath
 {
 
-Simplify::Simplify(FunctionBase & fb) : Transform(fb) { apply(); }
+Simplify::Simplify(Function & fb) : Transform(fb) { apply(); }
 
 void
 Simplify::operator()(UnaryOperatorData * n)

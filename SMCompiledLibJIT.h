@@ -19,11 +19,11 @@ namespace SymbolicMath
  * LibJIT compiler transform
  */
 template <typename T>
-class CompiledLibJITTempl : public Transform, public Evaluable<T>
+class CompiledLibJIT : public Transform<T>, public Evaluable<T>
 {
 public:
-  CompiledLibJITTempl(FunctionBase &);
-  ~CompiledLibJITTempl() override;
+  CompiledLibJIT(Function &);
+  ~CompiledLibJIT() override;
 
   void operator()(SymbolData *) override;
 
@@ -63,7 +63,5 @@ protected:
   typedef Real (*JITFunctionPtr)();
   JITFunctionPtr _jit_function;
 };
-
-using CompiledLibJIT = CompiledLibJITTempl<Real>;
 
 } // namespace SymbolicMath

@@ -3,7 +3,7 @@
 /// (c) 2017-2020 by Daniel Schwen
 ///
 
-#include "SMFunctionBase.h"
+#include "SMFunction.h"
 #include "SMCompiledLightning.h"
 
 extern "C"
@@ -18,8 +18,7 @@ namespace SymbolicMath
 //#define _jit _ctx
 
 template <typename T>
-CompiledLightningTempl<T>::CompiledLightningTempl(FunctionBase & fb)
-  : Transform(fb), _jit_function(nullptr)
+CompiledLightning<T>::CompiledLightning(Function & fb) : Transform(fb), _jit_function(nullptr)
 {
   // global shit (TODO: move into singleton)
   init_jit(nullptr);
@@ -56,7 +55,7 @@ CompiledLightningTempl<T>::CompiledLightningTempl(FunctionBase & fb)
 }
 
 template <typename T>
-CompiledLightningTempl<T>::~CompiledLightningTempl()
+CompiledLightning<T>::~CompiledLightning()
 {
   if (_jit_function)
     jit_destroy_state();
@@ -65,13 +64,13 @@ CompiledLightningTempl<T>::~CompiledLightningTempl()
 // Helper methods
 
 template <typename T>
-void CompiledLightningTempl<T>::unaryFunctionCall(T (*func)(T))
+void CompiledLightning<T>::unaryFunctionCall(T (*func)(T))
 {
   jit_finishi(reinterpret_cast<void *>(func));
   jit_retval_d(JIT_F0);
 }
 template <typename T>
-void CompiledLightningTempl<T>::binaryFunctionCall(T (*func)(T, T))
+void CompiledLightning<T>::binaryFunctionCall(T (*func)(T, T))
 {
   jit_finishi(reinterpret_cast<void *>(func));
   jit_retval_d(JIT_F0);
@@ -79,7 +78,7 @@ void CompiledLightningTempl<T>::binaryFunctionCall(T (*func)(T, T))
 
 template <typename T>
 void
-CompiledLightningTempl<T>::stackPush()
+CompiledLightning<T>::stackPush()
 {
   if (_sp >= 0)
     jit_stxi_d(_sp * sizeof(T) + _stack_base, JIT_FP, JIT_F0);
@@ -88,7 +87,7 @@ CompiledLightningTempl<T>::stackPush()
 
 template <typename T>
 void
-CompiledLightningTempl<T>::stackPop(int reg)
+CompiledLightning<T>::stackPop(int reg)
 {
   if (_sp == 0)
     fatalError("Stack exhausted in stackPop");
@@ -98,14 +97,14 @@ CompiledLightningTempl<T>::stackPop(int reg)
 
 template <typename T>
 T
-CompiledLightningTempl<T>::wrapMin(T a, T b)
+CompiledLightning<T>::wrapMin(T a, T b)
 {
   return std::min(a, b);
 }
 
 template <typename T>
 T
-CompiledLightningTempl<T>::wrapMax(T a, T b)
+CompiledLightning<T>::wrapMax(T a, T b)
 {
   return std::max(a, b);
 }
@@ -114,14 +113,14 @@ CompiledLightningTempl<T>::wrapMax(T a, T b)
 
 template <typename T>
 void
-CompiledLightningTempl<T>::operator()(SymbolData * n)
+CompiledLightning<T>::operator()(SymbolData * n)
 {
   fatalError("Symbol in compiled function");
 }
 
 template <typename T>
 void
-CompiledLightningTempl<T>::operator()(UnaryOperatorData * n)
+CompiledLightning<T>::operator()(UnaryOperatorData * n)
 {
   n->_args[0].apply(*this);
 
@@ -141,7 +140,7 @@ CompiledLightningTempl<T>::operator()(UnaryOperatorData * n)
 
 template <typename T>
 void
-CompiledLightningTempl<T>::operator()(BinaryOperatorData * n)
+CompiledLightning<T>::operator()(BinaryOperatorData * n)
 {
   n->_args[0].apply(*this);
   n->_args[1].apply(*this);
@@ -230,7 +229,7 @@ CompiledLightningTempl<T>::operator()(BinaryOperatorData * n)
 
 template <typename T>
 void
-CompiledLightningTempl<T>::operator()(MultinaryOperatorData * n)
+CompiledLightning<T>::operator()(MultinaryOperatorData * n)
 {
   if (n->_args.size() == 0)
     fatalError("No child nodes in multinary operator");
@@ -261,7 +260,7 @@ CompiledLightningTempl<T>::operator()(MultinaryOperatorData * n)
 
 template <typename T>
 void
-CompiledLightningTempl<T>::operator()(UnaryFunctionData * n)
+CompiledLightning<T>::operator()(UnaryFunctionData * n)
 {
   n->_args[0].apply(*this);
   jit_prepare();
@@ -410,7 +409,7 @@ CompiledLightningTempl<T>::operator()(UnaryFunctionData * n)
 
 template <typename T>
 void
-CompiledLightningTempl<T>::operator()(BinaryFunctionData * n)
+CompiledLightning<T>::operator()(BinaryFunctionData * n)
 {
   n->_args[0].apply(*this);
   n->_args[1].apply(*this);
@@ -449,17 +448,17 @@ CompiledLightningTempl<T>::operator()(BinaryFunctionData * n)
   }
 }
 
-template <typename T>
+template <>
 void
-CompiledLightningTempl<T>::operator()(RealNumberData * n)
+CompiledLightning<Real>::operator()(RealNumberData * n)
 {
   stackPush();
   jit_movi_d(JIT_F0, n->_value);
 }
 
-template <typename T>
+template <>
 void
-CompiledLightningTempl<T>::operator()(RealReferenceData * n)
+CompiledLightning<Real>::operator()(RealReferenceData * n)
 {
   stackPush();
   jit_ldi_d(JIT_F0, const_cast<void *>(reinterpret_cast<const void *>(&n->_ref)));
@@ -467,21 +466,21 @@ CompiledLightningTempl<T>::operator()(RealReferenceData * n)
 
 template <typename T>
 void
-CompiledLightningTempl<T>::operator()(RealArrayReferenceData * n)
+CompiledLightning<T>::operator()(RealArrayReferenceData * n)
 {
   fatalError("Not implemented");
 }
 
 template <typename T>
 void
-CompiledLightningTempl<T>::operator()(LocalVariableData * n)
+CompiledLightning<T>::operator()(LocalVariableData * n)
 {
   fatalError("Not implemented");
 }
 
 template <typename T>
 void
-CompiledLightningTempl<T>::operator()(ConditionalData * n)
+CompiledLightning<T>::operator()(ConditionalData * n)
 {
   if (n->_type != ConditionalType::IF)
     fatalError("Conditional not implemented");
@@ -506,7 +505,7 @@ CompiledLightningTempl<T>::operator()(ConditionalData * n)
 
 template <typename T>
 void
-CompiledLightningTempl<T>::operator()(IntegerPowerData * n)
+CompiledLightning<T>::operator()(IntegerPowerData * n)
 {
   if (n->_exponent == 0)
     jit_movi_d(JIT_F0, 1.0);
@@ -537,7 +536,7 @@ CompiledLightningTempl<T>::operator()(IntegerPowerData * n)
   }
 }
 
-template class CompiledLightningTempl<Real>;
+template class CompiledLightning<Real>;
 
 // undefine the lightning helper macro
 //#undef _jit

@@ -49,9 +49,9 @@ FunctionJITInitialization::FunctionJITInitialization()
   llvm::InitializeNativeTargetAsmParser();
 }
 
-Function::Function(const Node & root) : FunctionBase((initialize(), root)) {}
+Function::Function(const Node & root) : Function((initialize(), root)) {}
 
-Function::Function(const Function & F) : FunctionBase(F._root) {}
+Function::Function(const Function & F) : Function(F._root) {}
 
 Function::~Function() { invalidateJIT(); }
 

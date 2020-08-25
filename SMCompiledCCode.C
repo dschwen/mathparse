@@ -18,10 +18,25 @@
 namespace SymbolicMath
 {
 
-CompiledCCode::CompiledCCode(FunctionBase & fb)
+template <>
+const std::string
+CompiledCCode<Real>::typeName()
 {
-  // build and lock context
-  std::string ccode = "#include <cmath>\nextern \"C\" double F()\n{\n  return ";
+  return "double";
+}
+
+template <>
+const std::string
+CompiledCCode<Real>::typeHeader()
+{
+  return "#include <cmath>";
+}
+
+template <typename T>
+CompiledCCode<T>::CompiledCCode(Function & fb)
+{
+  // build and lock context (TODO: return by reference to support complex types)
+  std::string ccode = typeHeader() + "\nextern \"C\" " + typeName() + " F()\n{\n  return ";
 
   // generate source
   Source source(fb);
@@ -81,16 +96,22 @@ CompiledCCode::CompiledCCode(FunctionBase & fb)
   std::remove(otmpname);
 }
 
-CompiledCCode::Source::Source(FunctionBase & fb) : Transform(fb) { apply(); }
+template <typename T>
+CompiledCCode<T>::Source::Source(Function & fb) : Transform(fb)
+{
+  apply();
+}
 
+template <typename T>
 void
-CompiledCCode::Source::operator()(SymbolData * n)
+CompiledCCode<T>::Source::operator()(SymbolData * n)
 {
   fatalError("Symbol in compiled function");
 }
 
+template <typename T>
 void
-CompiledCCode::Source::operator()(UnaryOperatorData * n)
+CompiledCCode<T>::Source::operator()(UnaryOperatorData * n)
 {
   n->_args[0].apply(*this);
 
@@ -108,8 +129,9 @@ CompiledCCode::Source::operator()(UnaryOperatorData * n)
   }
 }
 
+template <typename T>
 void
-CompiledCCode::Source::operator()(BinaryOperatorData * n)
+CompiledCCode<T>::Source::operator()(BinaryOperatorData * n)
 {
   n->_args[0].apply(*this);
   std::string A;
@@ -137,35 +159,35 @@ CompiledCCode::Source::operator()(BinaryOperatorData * n)
       return;
 
     case BinaryOperatorType::LOGICAL_OR:
-      _source = "static_cast<double>(bool(" + A + ") || bool(" + B + "))";
+      _source = "static_cast<" + typeName() + ">(bool(" + A + ") || bool(" + B + "))";
       return;
 
     case BinaryOperatorType::LOGICAL_AND:
-      _source = "static_cast<double>(bool(" + A + ") && bool(" + B + "))";
+      _source = "static_cast<" + typeName() + ">(bool(" + A + ") && bool(" + B + "))";
       return;
 
     case BinaryOperatorType::LESS_THAN:
-      _source = "static_cast<double>((" + A + ") < (" + B + "))";
+      _source = "static_cast<" + typeName() + ">((" + A + ") < (" + B + "))";
       return;
 
     case BinaryOperatorType::GREATER_THAN:
-      _source = "static_cast<double>((" + A + ") > (" + B + "))";
+      _source = "static_cast<" + typeName() + ">((" + A + ") > (" + B + "))";
       return;
 
     case BinaryOperatorType::LESS_EQUAL:
-      _source = "static_cast<double>((" + A + ") <= (" + B + "))";
+      _source = "static_cast<" + typeName() + ">((" + A + ") <= (" + B + "))";
       return;
 
     case BinaryOperatorType::GREATER_EQUAL:
-      _source = "static_cast<double>((" + A + ") >= (" + B + "))";
+      _source = "static_cast<" + typeName() + ">((" + A + ") >= (" + B + "))";
       return;
 
     case BinaryOperatorType::EQUAL:
-      _source = "static_cast<double>((" + A + ") == (" + B + "))";
+      _source = "static_cast<" + typeName() + ">((" + A + ") == (" + B + "))";
       return;
 
     case BinaryOperatorType::NOT_EQUAL:
-      _source = "static_cast<double>((" + A + ") != (" + B + "))";
+      _source = "static_cast<" + typeName() + ">((" + A + ") != (" + B + "))";
       return;
 
     default:
@@ -173,8 +195,9 @@ CompiledCCode::Source::operator()(BinaryOperatorData * n)
   }
 }
 
+template <typename T>
 void
-CompiledCCode::Source::operator()(MultinaryOperatorData * n)
+CompiledCCode<T>::Source::operator()(MultinaryOperatorData * n)
 {
   auto nargs = n->_args.size();
   if (nargs == 0)
@@ -212,8 +235,9 @@ CompiledCCode::Source::operator()(MultinaryOperatorData * n)
   }
 }
 
+template <typename T>
 void
-CompiledCCode::Source::operator()(UnaryFunctionData * n)
+CompiledCCode<T>::Source::operator()(UnaryFunctionData * n)
 {
   n->_args[0].apply(*this);
   const auto & A = _source;
@@ -352,8 +376,9 @@ CompiledCCode::Source::operator()(UnaryFunctionData * n)
   }
 }
 
+template <typename T>
 void
-CompiledCCode::Source::operator()(BinaryFunctionData * n)
+CompiledCCode<T>::Source::operator()(BinaryFunctionData * n)
 {
   n->_args[0].apply(*this);
   std::string A;
@@ -399,34 +424,39 @@ CompiledCCode::Source::operator()(BinaryFunctionData * n)
   }
 }
 
+template <typename T>
 void
-CompiledCCode::Source::operator()(RealNumberData * n)
+CompiledCCode<T>::Source::operator()(RealNumberData * n)
 {
   _source = stringify(n->_value);
 }
 
+template <typename T>
 void
-CompiledCCode::Source::operator()(RealReferenceData * n)
+CompiledCCode<T>::Source::operator()(RealReferenceData * n)
 {
   // will need template specializations
-  _source =
-      "*(reinterpret_cast<double *>(" + std::to_string(reinterpret_cast<long>(&n->_ref)) + "))";
+  _source = "*(reinterpret_cast<" + typeName() + " *>(" +
+            std::to_string(reinterpret_cast<long>(&n->_ref)) + "))";
 }
 
+template <typename T>
 void
-CompiledCCode::Source::operator()(RealArrayReferenceData * n)
+CompiledCCode<T>::Source::operator()(RealArrayReferenceData * n)
 {
   fatalError("Not implemented");
 }
 
+template <typename T>
 void
-CompiledCCode::Source::operator()(LocalVariableData * n)
+CompiledCCode<T>::Source::operator()(LocalVariableData * n)
 {
   fatalError("Not implemented");
 }
 
+template <typename T>
 void
-CompiledCCode::Source::operator()(ConditionalData * n)
+CompiledCCode<T>::Source::operator()(ConditionalData * n)
 {
   n->_args[0].apply(*this);
   std::string A;
@@ -442,12 +472,15 @@ CompiledCCode::Source::operator()(ConditionalData * n)
   _source = "((" + A + ") ? (" + B + ") : (" + C + "))";
 }
 
+template <typename T>
 void
-CompiledCCode::Source::operator()(IntegerPowerData * n)
+CompiledCCode<T>::Source::operator()(IntegerPowerData * n)
 {
   // replace this with a template
   n->_arg.apply(*this);
   _source = "std::pow(" + _source + ", " + stringify(n->_exponent) + ")";
 }
+
+template class CompileCCode<Real>;
 
 } // namespace SymbolicMath

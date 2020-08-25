@@ -15,10 +15,10 @@ namespace SymbolicMath
  * Stack based bytecode machine translation and evaluation
  */
 template <typename T>
-class CompiledByteCodeTempl : public Transform, public Evaluable<T>
+class CompiledByteCode : public Transform<T>, public Evaluable<T>
 {
 public:
-  CompiledByteCodeTempl(FunctionBase &);
+  CompiledByteCode(Function &);
 
   void operator()(SymbolData *) override;
 
@@ -86,7 +86,5 @@ protected:
   /// execution stack (not thread safe)
   std::vector<T> _stack;
 };
-
-using CompiledByteCode = CompiledByteCodeTempl<Real>;
 
 } // namespace SymbolicMath

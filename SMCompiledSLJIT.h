@@ -19,11 +19,11 @@ namespace SymbolicMath
  * SLJIT compiler transform
  */
 template <typename T>
-class CompiledSLJITTempl : public Transform, public Evaluable<T>
+class CompiledSLJIT : public Transform, public Evaluable<T>
 {
 public:
-  CompiledSLJITTempl(FunctionBase &);
-  ~CompiledSLJITTempl() override;
+  CompiledSLJIT(Function &);
+  ~CompiledSLJIT() override;
 
   void operator()(SymbolData *) override;
 
@@ -64,11 +64,9 @@ protected:
   /// store immediates in a "pointer stable" way
   std::list<T> _immediate;
 
-  /// compiled function
+  /// compiled function (TODO: pass result by reference)
   using JITFunctionPtr = T SLJIT_FUNC (*)();
   JITFunctionPtr _jit_function;
 };
-
-using CompiledSLJIT = CompiledSLJITTempl<Real>;
 
 } // namespace SymbolicMath

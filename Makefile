@@ -1,9 +1,6 @@
 CXX ?= clang++
 CXXFLAGS ?= -O2
 
-# (lightning,sljit,libjit)
-JIT ?= vm
-
 OBJS := SMToken.o SMTokenizer.o SMParser.o SMSymbols.o \
 				SMNode.o SMNodeData.o SMUtils.o SMFunctionBase.o \
 				SMTransform.o SMTransformSimplify.o SMCompiledByteCode.o \
@@ -11,7 +8,9 @@ OBJS := SMToken.o SMTokenizer.o SMParser.o SMSymbols.o \
 				SMCompiledLightning.o
 
 # include configuration for the selected JIT backend
+ifneq ($(JIT)x, x)
 include jit_$(JIT).mk
+endif
 
 # add machine specific stuff
 ifneq (,$(findstring armv,$(shell uname -m)))

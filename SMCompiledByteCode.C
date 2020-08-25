@@ -3,14 +3,14 @@
 /// (c) 2017-2020 by Daniel Schwen
 ///
 
-#include "SMFunctionBase.h"
+#include "SMFunction.h"
 #include "SMCompiledByteCode.h"
 
 namespace SymbolicMath
 {
 
 template <typename T>
-CompiledByteCodeTempl<T>::CompiledByteCodeTempl(FunctionBase & fb) : Transform(fb)
+CompiledByteCodeTempl<T>::CompiledByteCodeTempl(Function & fb) : Transform(fb)
 {
   // determine required stack size
   auto current_max = std::make_pair(0, 0);

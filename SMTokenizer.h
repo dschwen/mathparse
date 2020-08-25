@@ -16,13 +16,14 @@ typedef double Real;
 /**
  * Tokenizer that parses an expression string
  */
+template <typename T>
 class Tokenizer
 {
 public:
   Tokenizer(const std::string expression);
 
   /// gets the next complete token from the expression
-  Token * getToken();
+  TokenPtr<T> getToken();
 
 private:
   const std::string _mpt_expression;

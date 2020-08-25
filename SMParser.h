@@ -22,44 +22,45 @@ namespace SymbolicMath
 /**
  * Builds the abstract syntax tree of an expression string using the SymbolicMathTokenizer
  */
+template <typename T>
 class Parser
 {
 public:
   Parser();
 
-  Function parse(const std::string & expression);
+  Function<T> parse(const std::string & expression);
 
-  std::shared_ptr<ValueProvider> registerValueProvider(std::string name);
-  void registerValueProvider(std::shared_ptr<ValueProvider> vp);
-  void registerConstant(const std::string & name, Real value);
+  std::shared_ptr<ValueProvider<T>> registerValueProvider(std::string name);
+  void registerValueProvider(std::shared_ptr<ValueProvider<T>> vp);
+  void registerConstant(const std::string & name, T value);
 
   void registerQPIndex(const unsigned int & qp) { _qp_ptr = &qp; }
 
 protected:
-  void pushToOutput(TokenPtr token);
-  void pushFunctionToOutput(TokenPtr token, unsigned int num_arguments);
+  void pushToOutput(TokenPtr<T> token);
+  void pushFunctionToOutput(TokenPtr<T> token, unsigned int num_arguments);
 
   void preprocessToken();
   void validateToken();
 
 private:
   /// current token
-  TokenPtr _token;
+  TokenPtr<T> _token;
 
   /// previous token (no ownership, this token may be on the stack)
-  TokenPtr _last_token;
+  TokenPtr<T> _last_token;
 
   /// output stack where the Tree is formed
-  std::stack<Node> _output_stack;
+  std::stack<Node<T>> _output_stack;
 
   /// constants map
-  std::map<std::string, Real> _constants;
+  std::map<std::string, T> _constants;
 
   /// value provider ID map
-  std::map<std::string, std::shared_ptr<ValueProvider>> _value_providers;
+  std::map<std::string, std::shared_ptr<ValueProvider<T>>> _value_providers;
 
   /// local variable ID map
-  std::map<std::string, std::shared_ptr<LocalVariableData>> _local_variables;
+  std::map<std::string, std::shared_ptr<LocalVariableData<T>>> _local_variables;
 
   /// pointer to the quadrature point index (_qp)
   const unsigned int * _qp_ptr;
@@ -71,7 +72,7 @@ private:
   std::string formatToken();
 
   /// format a given token for debugging purposes
-  std::string formatToken(TokenPtr token);
+  std::string formatToken(TokenPtr<T> token);
 
   /// format a given error message with an expression excerpt and a visual pointer to the current token
   std::string formatError(const std::string & message, std::size_t width = 80);

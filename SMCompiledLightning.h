@@ -22,11 +22,11 @@ namespace SymbolicMath
  * LibJIT compiler transform
  */
 template <typename T>
-class CompiledLightningTempl : public Transform, public Evaluable<T>
+class CompiledLightning : public Transform<T>, public Evaluable<T>
 {
 public:
-  CompiledLightningTempl(FunctionBase &);
-  ~CompiledLightningTempl() override;
+  CompiledLightning(Function &);
+  ~CompiledLightning() override;
 
   void operator()(SymbolData *) override;
 
@@ -70,10 +70,8 @@ protected:
   std::list<T> _immediate;
 
   /// compiled function
-  typedef Real (*JITFunctionPtr)();
+  typedef T (*JITFunctionPtr)();
   JITFunctionPtr _jit_function;
 };
-
-using CompiledLightning = CompiledLightningTempl<Real>;
 
 } // namespace SymbolicMath

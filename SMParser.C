@@ -13,22 +13,26 @@
 namespace SymbolicMath
 {
 
-Parser::Parser() : _qp_ptr(nullptr) {}
-
-Function
-Parser::parse(const std::string & expression)
+template <typename T>
+Parser<T>::Parser() : _qp_ptr(nullptr)
 {
-  Tokenizer tokenizer(expression);
-  _expression = expression;
-  _last_token.reset(new InvalidToken(0));
+}
 
-  std::stack<TokenPtr> operator_stack;
+template <typename T>
+Function<T>
+Parser<T>::parse(const std::string & expression)
+{
+  Tokenizer<T> tokenizer(expression);
+  _expression = expression;
+  _last_token = TokenPtr<T>(new InvalidToken<T>(0));
+
+  std::stack<TokenPtr<T>> operator_stack;
   std::stack<unsigned short> argument_count_stack;
 
   // process tokens
   do
   {
-    _token.reset(tokenizer.getToken());
+    _token = tokenizer.getToken();
     preprocessToken();
     validateToken();
 
@@ -148,12 +152,12 @@ Parser::parse(const std::string & expression)
 
     // needed to discriminate unary plus and minus
     _last_token = _token;
-  } while (!_token->isEnd());
+  } while (!_last_token->isEnd());
 
   // unwind operator stack
   while (!operator_stack.empty())
   {
-    auto _token = operator_stack.top();
+    auto & _token = operator_stack.top();
     if (_token->isOpeningBracket())
       fatalError(formatError("Unmatched opening bracket"));
 
@@ -161,22 +165,23 @@ Parser::parse(const std::string & expression)
     operator_stack.pop();
   }
 
-  return Function(_output_stack.top());
+  return Function<T>(_output_stack.top());
 }
 
+template <typename T>
 void
-Parser::pushToOutput(TokenPtr token)
+Parser<T>::pushToOutput(TokenPtr<T> token)
 {
   // std::cout << "PUSHING " << formatToken(token) << '\n';
 
   if (token->isNumber())
   {
-    _output_stack.push(Node(token->asNumber()));
+    _output_stack.push(Node<T>(token->asNumber()));
     return;
   }
   else if (token->isOperator())
   {
-    _output_stack.push(Node(token->node(_output_stack)));
+    _output_stack.push(Node<T>(token->node(_output_stack)));
     return;
   }
 
@@ -186,7 +191,7 @@ Parser::pushToOutput(TokenPtr token)
     auto vp = _value_providers.find(token->asString());
     if (vp != _value_providers.end())
     {
-      _output_stack.push(Node(vp->second->clone()));
+      _output_stack.push(Node<T>(vp->second->clone()));
       return;
     }
 
@@ -194,7 +199,7 @@ Parser::pushToOutput(TokenPtr token)
     auto co = _constants.find(token->asString());
     if (co != _constants.end())
     {
-      _output_stack.push(Node(co->second));
+      _output_stack.push(Node<T>(co->second));
       return;
     }
 
@@ -203,37 +208,40 @@ Parser::pushToOutput(TokenPtr token)
     if (lv == _local_variables.end())
     {
       auto ret = _local_variables.insert(std::make_pair(
-          token->asString(), std::make_shared<LocalVariableData>(_local_variables.size())));
+          token->asString(), std::make_shared<LocalVariableData<T>>(_local_variables.size())));
       if (!ret.second)
         fatalError("unable to create local variable");
       lv = ret.first;
     }
-    _output_stack.push(Node(lv->second));
+    _output_stack.push(Node<T>(lv->second));
   }
 
   else
     fatalError("invalid_token");
 }
 
+template <typename T>
 void
-Parser::pushFunctionToOutput(TokenPtr token, unsigned int num_arguments)
+Parser<T>::pushFunctionToOutput(TokenPtr<T> token, unsigned int num_arguments)
 {
   if (!token->isFunction())
     fatalError("invalid_token");
 
-  _output_stack.push(Node(token->node(_output_stack)));
+  _output_stack.push(Node<T>(token->node(_output_stack)));
 }
 
-std::shared_ptr<ValueProvider>
-Parser::registerValueProvider(std::string name)
+template <typename T>
+std::shared_ptr<ValueProvider<T>>
+Parser<T>::registerValueProvider(std::string name)
 {
-  auto vp = std::make_shared<SymbolData>(name);
+  auto vp = std::make_shared<SymbolData<T>>(name);
   registerValueProvider(vp);
   return vp;
 }
 
+template <typename T>
 void
-Parser::registerValueProvider(std::shared_ptr<ValueProvider> vp)
+Parser<T>::registerValueProvider(std::shared_ptr<ValueProvider<T>> vp)
 {
   if (vp->_name == "")
     fatalError("Value provider has an empty name.");
@@ -245,8 +253,9 @@ Parser::registerValueProvider(std::shared_ptr<ValueProvider> vp)
   _value_providers[vp->_name] = vp;
 }
 
+template <typename T>
 void
-Parser::registerConstant(const std::string & name, Real value)
+Parser<T>::registerConstant(const std::string & name, T value)
 {
   if (name == "")
     fatalError("Constant has an empty name.");
@@ -258,8 +267,9 @@ Parser::registerConstant(const std::string & name, Real value)
   _constants[name] = value;
 }
 
+template <typename T>
 void
-Parser::preprocessToken()
+Parser<T>::preprocessToken()
 {
   // operator preprocessing
   if (_token->isOperator())
@@ -273,17 +283,18 @@ Parser::preprocessToken()
     {
       // turn addition into unary plus and subtraction into unary minus
       if (_token->is(MultinaryOperatorType::ADDITION))
-        _token.reset(UnaryOperatorToken::build(UnaryOperatorType::PLUS, _token->pos()));
+        _token = UnaryOperatorToken<T>::build(UnaryOperatorType::PLUS, _token->pos());
       else if (_token->is(BinaryOperatorType::SUBTRACTION))
-        _token.reset(UnaryOperatorToken::build(UnaryOperatorType::MINUS, _token->pos()));
+        _token = UnaryOperatorToken<T>::build(UnaryOperatorType::MINUS, _token->pos());
       else
         fatalError(formatError("Did not expect operator here"));
     }
   }
 }
 
+template <typename T>
 void
-Parser::validateToken()
+Parser<T>::validateToken()
 {
   // invalid function checking
   if (_token->isFunction() && _token->isInvalid())
@@ -303,14 +314,16 @@ Parser::validateToken()
     fatalError(formatError("Parse error"));
 }
 
+template <typename T>
 std::string
-Parser::formatToken()
+Parser<T>::formatToken()
 {
   return formatToken(_token);
 }
 
+template <typename T>
 std::string
-Parser::formatToken(TokenPtr token)
+Parser<T>::formatToken(TokenPtr<T> token)
 {
   if (token->isOperator())
     return "OPERATOR    \t" + token->asString() + " (" + std::to_string(token->precedence()) + ')';
@@ -334,14 +347,16 @@ Parser::formatToken(TokenPtr token)
     return "???";
 }
 
+template <typename T>
 std::string
-Parser::formatError(const std::string & message, std::size_t width)
+Parser<T>::formatError(const std::string & message, std::size_t width)
 {
   return formatError(_token->pos(), message, width);
 }
 
+template <typename T>
 std::string
-Parser::formatError(std::size_t pos, const std::string & message, std::size_t width)
+Parser<T>::formatError(std::size_t pos, const std::string & message, std::size_t width)
 {
   // pad the expression to allow displaying pos 0 error markers
   const std::string padded = "  " + _expression;
@@ -363,5 +378,7 @@ Parser::formatError(std::size_t pos, const std::string & message, std::size_t wi
 
   return error;
 }
+
+template class Parser<Real>;
 
 } // namespace SymbolicMath

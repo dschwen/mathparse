@@ -5,30 +5,51 @@
 
 #pragma once
 
-#ifdef SYMBOLICMATH_USE_GCCJIT
-#include "SMFunctionGCCJIT.h"
-#endif
+#include "SMNode.h"
+#include "SMEvaluable.h"
 
-#ifdef SYMBOLICMATH_USE_SLJIT
-#include "SMFunctionSLJIT.h"
-#endif
+namespace SymbolicMath
+{
 
-#ifdef SYMBOLICMATH_USE_LIBJIT
-#include "SMFunctionLibJIT.h"
-#endif
+template <typename T>
+class Transform;
 
-#ifdef SYMBOLICMATH_USE_LIGHTNING
-#include "SMFunctionLightning.h"
-#endif
+template <typename T>
+using ValueProviderPtr = std::shared_ptr<ValueProvider<T>>;
 
-#ifdef SYMBOLICMATH_USE_CCODE
-#include "SMFunctionCCode.h"
-#endif
+/**
+ * The Function class is the top level wrapper for a Node based expression tree.
+ * It manages the active value providers and the just in time compilation.
+ */
+template <typename T>
+class Function : public Evaluable<T>
+{
+public:
+  /// Construct form given node
+  Function(const Node<T> & root) : _root(root) {}
+  virtual ~Function() {}
 
-#ifdef SYMBOLICMATH_USE_LLVMIR
-#include "SMFunctionLLVMIR.h"
-#endif
+  ///@{ subtree output
+  std::string format() const { return _root.format(); }
+  std::string formatTree() const { return _root.formatTree(); }
+  ///@}
 
-#ifdef SYMBOLICMATH_USE_VM
-#include "SMFunctionVM.h"
-#endif
+  /// Evaluate the node (using JIT if available)
+  T operator()() { return _root.value(); }
+
+  /// reference to the root node
+  virtual const Node<T> & root() const { return _root; }
+
+  using LocalVariables = std::vector<std::pair<T, bool>>;
+
+protected:
+  /// root node of the expression tree managed by this function
+  Node<T> _root;
+
+  /// data for storing local variables
+  LocalVariables _local_variables;
+
+  friend class Transform<T>;
+};
+
+} // namespace SymbolicMath
