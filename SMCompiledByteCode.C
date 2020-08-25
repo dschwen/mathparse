@@ -10,7 +10,7 @@ namespace SymbolicMath
 {
 
 template <typename T>
-CompiledByteCodeTempl<T>::CompiledByteCodeTempl(Function & fb) : Transform(fb)
+CompiledByteCode<T>::CompiledByteCode(Function<T> & fb) : Transform<T>(fb)
 {
   // determine required stack size
   auto current_max = std::make_pair(0, 0);
@@ -22,14 +22,14 @@ CompiledByteCodeTempl<T>::CompiledByteCodeTempl(Function & fb) : Transform(fb)
 
 template <typename T>
 void
-CompiledByteCodeTempl<T>::operator()(SymbolData * n)
+CompiledByteCode<T>::operator()(SymbolData<T> * n)
 {
   fatalError("Symbol in compiled function");
 }
 
 template <typename T>
 void
-CompiledByteCodeTempl<T>::operator()(UnaryOperatorData * n)
+CompiledByteCode<T>::operator()(UnaryOperatorData<T> * n)
 {
   n->_args[0].apply(*this);
   _byte_code.emplace_back(VMInstruction::UNARY_OPERATOR, n->_type);
@@ -37,7 +37,7 @@ CompiledByteCodeTempl<T>::operator()(UnaryOperatorData * n)
 
 template <typename T>
 void
-CompiledByteCodeTempl<T>::operator()(BinaryOperatorData * n)
+CompiledByteCode<T>::operator()(BinaryOperatorData<T> * n)
 {
   n->_args[0].apply(*this);
   n->_args[1].apply(*this);
@@ -46,7 +46,7 @@ CompiledByteCodeTempl<T>::operator()(BinaryOperatorData * n)
 
 template <typename T>
 void
-CompiledByteCodeTempl<T>::operator()(MultinaryOperatorData * n)
+CompiledByteCode<T>::operator()(MultinaryOperatorData<T> * n)
 {
   const int nargs = static_cast<int>(n->_args.size());
   for (auto arg : n->_args)
@@ -72,7 +72,7 @@ CompiledByteCodeTempl<T>::operator()(MultinaryOperatorData * n)
 
 template <typename T>
 void
-CompiledByteCodeTempl<T>::operator()(UnaryFunctionData * n)
+CompiledByteCode<T>::operator()(UnaryFunctionData<T> * n)
 {
   n->_args[0].apply(*this);
   _byte_code.emplace_back(VMInstruction::UNARY_FUNCTION, n->_type);
@@ -80,7 +80,7 @@ CompiledByteCodeTempl<T>::operator()(UnaryFunctionData * n)
 
 template <typename T>
 void
-CompiledByteCodeTempl<T>::operator()(BinaryFunctionData * n)
+CompiledByteCode<T>::operator()(BinaryFunctionData<T> * n)
 {
   n->_args[0].apply(*this);
   n->_args[1].apply(*this);
@@ -89,35 +89,35 @@ CompiledByteCodeTempl<T>::operator()(BinaryFunctionData * n)
 
 template <typename T>
 void
-CompiledByteCodeTempl<T>::operator()(RealNumberData * n)
+CompiledByteCode<T>::operator()(RealNumberData<T> * n)
 {
   _byte_code.emplace_back(VMInstruction::LOAD_IMMEDIATE_REAL, n->_value);
 }
 
 template <typename T>
 void
-CompiledByteCodeTempl<T>::operator()(RealReferenceData * n)
+CompiledByteCode<T>::operator()(RealReferenceData<T> * n)
 {
   _byte_code.emplace_back(VMInstruction::LOAD_VARIABLE_REAL, &n->_ref);
 }
 
 template <typename T>
 void
-CompiledByteCodeTempl<T>::operator()(RealArrayReferenceData * n)
+CompiledByteCode<T>::operator()(RealArrayReferenceData<T> * n)
 {
   fatalError("Not implemented");
 }
 
 template <typename T>
 void
-CompiledByteCodeTempl<T>::operator()(LocalVariableData * n)
+CompiledByteCode<T>::operator()(LocalVariableData<T> * n)
 {
   fatalError("Not implemented");
 }
 
 template <typename T>
 void
-CompiledByteCodeTempl<T>::operator()(ConditionalData * n)
+CompiledByteCode<T>::operator()(ConditionalData<T> * n)
 {
   n->_args[0].apply(*this);
   const auto conditional_ip = _byte_code.size();
@@ -137,7 +137,7 @@ CompiledByteCodeTempl<T>::operator()(ConditionalData * n)
 
 template <typename T>
 void
-CompiledByteCodeTempl<T>::operator()(IntegerPowerData * n)
+CompiledByteCode<T>::operator()(IntegerPowerData<T> * n)
 {
   n->_arg.apply(*this);
   _byte_code.emplace_back(VMInstruction::INTEGER_POWER, n->_exponent);
@@ -145,7 +145,7 @@ CompiledByteCodeTempl<T>::operator()(IntegerPowerData * n)
 
 template <typename T>
 T
-CompiledByteCodeTempl<T>::operator()()
+CompiledByteCode<T>::operator()()
 {
   // initialize instruction and stack pointer and loop over byte code
   std::size_t ip = 0, sp = 0;
@@ -477,6 +477,6 @@ CompiledByteCodeTempl<T>::operator()()
   return _stack[--sp];
 }
 
-template class CompiledByteCodeTempl<Real>;
+template class CompiledByteCode<Real>;
 
 } // namespace SymbolicMath

@@ -13,49 +13,51 @@ namespace SymbolicMath
 {
 
 // clang-format off
-Node abs(Node a) { return Node(UnaryFunctionType::ABS, a); }
-Node acos(Node a) { return Node(UnaryFunctionType::ACOS, a); }
-Node acosh(Node a) { return Node(UnaryFunctionType::ACOSH, a); }
-Node asin(Node a) { return Node(UnaryFunctionType::ASIN, a); }
-Node asinh(Node a) { return Node(UnaryFunctionType::ASINH, a); }
-Node atan(Node a) { return Node(UnaryFunctionType::ATAN, a); }
-Node atanh(Node a) { return Node(UnaryFunctionType::ATANH, a); }
-Node ceil(Node a) { return Node(UnaryFunctionType::CEIL, a); }
-Node cos(Node a) { return Node(UnaryFunctionType::COS, a); }
-Node cosh(Node a) { return Node(UnaryFunctionType::COSH, a); }
-Node cot(Node a) { return Node(UnaryFunctionType::COT, a); }
-Node csc(Node a) { return Node(UnaryFunctionType::CSC, a); }
-Node erf(Node a) { return Node(UnaryFunctionType::ERF, a); }
-Node exp(Node a) { return Node(UnaryFunctionType::EXP, a); }
-Node exp2(Node a) { return Node(UnaryFunctionType::EXP2, a); }
-Node floor(Node a) { return Node(UnaryFunctionType::FLOOR, a); }
-Node log(Node a) { return Node(UnaryFunctionType::LOG, a); }
-Node log2(Node a) { return Node(UnaryFunctionType::LOG2, a); }
-Node sec(Node a) { return Node(UnaryFunctionType::SEC, a); }
-Node sin(Node a) { return Node(UnaryFunctionType::SIN, a); }
-Node sinh(Node a) { return Node(UnaryFunctionType::SINH, a); }
-Node tan(Node a) { return Node(UnaryFunctionType::TAN, a); }
-Node tanh(Node a) { return Node(UnaryFunctionType::TANH, a); }
+template <typename T> Node<T> abs(Node<T> a) { return Node<T>(UnaryFunctionType::ABS, a); }
+template <typename T> Node<T> acos(Node<T> a) { return Node<T>(UnaryFunctionType::ACOS, a); }
+template <typename T> Node<T> acosh(Node<T> a) { return Node<T>(UnaryFunctionType::ACOSH, a); }
+template <typename T> Node<T> asin(Node<T> a) { return Node<T>(UnaryFunctionType::ASIN, a); }
+template <typename T> Node<T> asinh(Node<T> a) { return Node<T>(UnaryFunctionType::ASINH, a); }
+template <typename T> Node<T> atan(Node<T> a) { return Node<T>(UnaryFunctionType::ATAN, a); }
+template <typename T> Node<T> atanh(Node<T> a) { return Node<T>(UnaryFunctionType::ATANH, a); }
+template <typename T> Node<T> ceil(Node<T> a) { return Node<T>(UnaryFunctionType::CEIL, a); }
+template <typename T> Node<T> cos(Node<T> a) { return Node<T>(UnaryFunctionType::COS, a); }
+template <typename T> Node<T> cosh(Node<T> a) { return Node<T>(UnaryFunctionType::COSH, a); }
+template <typename T> Node<T> cot(Node<T> a) { return Node<T>(UnaryFunctionType::COT, a); }
+template <typename T> Node<T> csc(Node<T> a) { return Node<T>(UnaryFunctionType::CSC, a); }
+template <typename T> Node<T> erf(Node<T> a) { return Node<T>(UnaryFunctionType::ERF, a); }
+template <typename T> Node<T> exp(Node<T> a) { return Node<T>(UnaryFunctionType::EXP, a); }
+template <typename T> Node<T> exp2(Node<T> a) { return Node<T>(UnaryFunctionType::EXP2, a); }
+template <typename T> Node<T> floor(Node<T> a) { return Node<T>(UnaryFunctionType::FLOOR, a); }
+template <typename T> Node<T> log(Node<T> a) { return Node<T>(UnaryFunctionType::LOG, a); }
+template <typename T> Node<T> log2(Node<T> a) { return Node<T>(UnaryFunctionType::LOG2, a); }
+template <typename T> Node<T> sec(Node<T> a) { return Node<T>(UnaryFunctionType::SEC, a); }
+template <typename T> Node<T> sin(Node<T> a) { return Node<T>(UnaryFunctionType::SIN, a); }
+template <typename T> Node<T> sinh(Node<T> a) { return Node<T>(UnaryFunctionType::SINH, a); }
+template <typename T> Node<T> tan(Node<T> a) { return Node<T>(UnaryFunctionType::TAN, a); }
+template <typename T> Node<T> tanh(Node<T> a) { return Node<T>(UnaryFunctionType::TANH, a); }
 // clang-format on
 
 // clang-format off
-Node atan2(Node a, Node b) { return Node(BinaryFunctionType::ATAN2, a, b); }
-Node max(Node a, Node b) { return Node(BinaryFunctionType::MAX, a, b); }
-Node min(Node a, Node b) { return Node(BinaryFunctionType::MIN, a, b); }
-Node plog(Node a, Node b) { return Node(BinaryFunctionType::PLOG, a, b); }
-Node pow(Node a, Node b) { return Node(BinaryFunctionType::POW, a, b); }
+template <typename T> Node<T> atan2(Node<T> a, Node<T> b) { return Node<T>(BinaryFunctionType::ATAN2, a, b); }
+template <typename T> Node<T> max(Node<T> a, Node<T> b) { return Node<T>(BinaryFunctionType::MAX, a, b); }
+template <typename T> Node<T> min(Node<T> a, Node<T> b) { return Node<T>(BinaryFunctionType::MIN, a, b); }
+template <typename T> Node<T> plog(Node<T> a, Node<T> b) { return Node<T>(BinaryFunctionType::PLOG, a, b); }
+template <typename T> Node<T> pow(Node<T> a, Node<T> b) { return Node<T>(BinaryFunctionType::POW, a, b); }
 // clang-format on
 
-Node
-conditional(Node a, Node b, Node c)
+template <typename T>
+Node<T>
+conditional(Node<T> a, Node<T> b, Node<T> c)
 {
-  return Node(ConditionalType::IF, a, b, c);
+  return Node<T>(ConditionalType::IF, a, b, c);
 }
 
-std::shared_ptr<ValueProvider>
+template <typename T>
+std::shared_ptr<ValueProvider<T>>
 symbol(const std::string & name)
 {
-  return std::make_shared<SymbolicMath::SymbolData>(name);
+  return std::make_shared<SymbolicMath::SymbolData<T>>(name);
 }
 
 } // namespace SymbolicMath

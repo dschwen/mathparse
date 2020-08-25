@@ -1,7 +1,6 @@
 #include "SymbolicMath.h"
 #include "SMFunction.h"
 #include "SMHelpers.h"
-#include "SMJITTypes.h"
 
 #include <iostream>
 
@@ -14,10 +13,9 @@ main(int argc, char * argv[])
     return 100;
   }
 
-  std::cout << "SymbolicMath with backend " << SymbolicMath::jit_backend_name << '\n';
-  SymbolicMath::Parser parser;
+  SymbolicMath::Parser<SymbolicMath::Real> parser;
 
-  auto a_var = SymbolicMath::symbol("a");
+  auto a_var = SymbolicMath::symbol<SymbolicMath::Real>("a");
   parser.registerValueProvider(a_var);
 
   // auto b_var = parser.registerValueProvider("b");
@@ -26,10 +24,10 @@ main(int argc, char * argv[])
   // parser.registerValueProvider(c_var);
 
   SymbolicMath::Real c;
-  auto c_var = std::make_shared<SymbolicMath::RealReferenceData>(c, "c");
+  auto c_var = std::make_shared<SymbolicMath::RealReferenceData<SymbolicMath::Real>>(c, "c");
   parser.registerValueProvider(c_var);
 
-  auto func = SymbolicMath::Function(parser.parse(argv[1]));
+  auto func = SymbolicMath::Function<SymbolicMath::Real>(parser.parse(argv[1]));
   std::cout << func.format() << '\n' << func.formatTree() << '\n';
 
   // func.simplify();
@@ -45,7 +43,7 @@ main(int argc, char * argv[])
   }
   std::cout << '\n';
 
-  func.compile();
+  // func.compile();
 
   // evaluate for various values of c
   unsigned int index = 0;
@@ -71,7 +69,7 @@ main(int argc, char * argv[])
     std::cout << deriv() << ' ';
   std::cout << '\n';
 
-  deriv.compile();
+  // deriv.compile();
 
   // evaluate for various values of c
   for (c = -1.0; c <= 1.0; c += 0.3)

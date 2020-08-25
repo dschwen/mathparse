@@ -447,7 +447,7 @@ template <typename T>
 NodeDataPtr<T>
 MultinaryOperatorData<T>::clone()
 {
-  std::vector<Node> cloned_args;
+  std::vector<Node<T>> cloned_args;
   for (auto & arg : _args)
     cloned_args.push_back(arg);
   return std::make_shared<MultinaryOperatorData>(_type, cloned_args);
@@ -469,10 +469,10 @@ MultinaryOperatorData<T>::D(const ValueProvider<T> & vp)
     case MultinaryOperatorType::MULTIPLICATION:
     {
       const auto nargs = _args.size();
-      std::vector<Node> summands;
+      std::vector<Node<T>> summands;
       for (std::size_t i = 0; i < nargs; ++i)
       {
-        std::vector<Node> factors;
+        std::vector<Node<T>> factors;
         for (std::size_t j = 0; j < nargs; ++j)
           factors.push_back(i == j ? _args[j].D(vp) : _args[j]);
         summands.push_back(Node<T>(MultinaryOperatorType::MULTIPLICATION, factors));
@@ -993,5 +993,18 @@ IntegerPowerData<T>::apply(Transform<T> & transform)
 {
   transform(this);
 }
+
+template class SymbolData<Real>;
+template class LocalVariableData<Real>;
+template class RealReferenceData<Real>;
+template class RealArrayReferenceData<Real>;
+template class RealNumberData<Real>;
+template class UnaryOperatorData<Real>;
+template class BinaryOperatorData<Real>;
+template class MultinaryOperatorData<Real>;
+template class UnaryFunctionData<Real>;
+template class BinaryFunctionData<Real>;
+template class ConditionalData<Real>;
+template class IntegerPowerData<Real>;
 
 } // namespace SymbolicMath

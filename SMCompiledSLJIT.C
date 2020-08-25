@@ -13,7 +13,7 @@ const double sljit_one = 1.0;
 const double sljit_zero = 0.0;
 
 template <typename T>
-CompiledSLJIT<T>::CompiledSLJIT(Function & fb) : Transform(fb), _jit_function(nullptr)
+CompiledSLJIT<T>::CompiledSLJIT(Function<T> & fb) : Transform<T>(fb), _jit_function(nullptr)
 {
   // determine required stack size
   auto current_max = std::make_pair(0, 0);
@@ -121,14 +121,14 @@ CompiledSLJIT<T>::truncWrapper(T A)
 
 template <typename T>
 void
-CompiledSLJIT<T>::operator()(SymbolData * n)
+CompiledSLJIT<T>::operator()(SymbolData<T> * n)
 {
   fatalError("Symbol in compiled function");
 }
 
 template <typename T>
 void
-CompiledSLJIT<T>::operator()(UnaryOperatorData * n)
+CompiledSLJIT<T>::operator()(UnaryOperatorData<T> * n)
 {
   n->_args[0].apply(*this);
 
@@ -148,7 +148,7 @@ CompiledSLJIT<T>::operator()(UnaryOperatorData * n)
 
 template <typename T>
 void
-CompiledSLJIT<T>::operator()(BinaryOperatorData * n)
+CompiledSLJIT<T>::operator()(BinaryOperatorData<T> * n)
 {
   n->_args[0].apply(*this);
   n->_args[1].apply(*this);
@@ -260,7 +260,7 @@ CompiledSLJIT<T>::operator()(BinaryOperatorData * n)
 
 template <typename T>
 void
-CompiledSLJIT<T>::operator()(MultinaryOperatorData * n)
+CompiledSLJIT<T>::operator()(MultinaryOperatorData<T> * n)
 {
   if (n->_args.size() == 0)
     fatalError("No child nodes in multinary operator");
@@ -289,7 +289,7 @@ CompiledSLJIT<T>::operator()(MultinaryOperatorData * n)
 
 template <typename T>
 void
-CompiledSLJIT<T>::operator()(UnaryFunctionData * n)
+CompiledSLJIT<T>::operator()(UnaryFunctionData<T> * n)
 {
   n->_args[0].apply(*this);
 
@@ -435,7 +435,7 @@ CompiledSLJIT<T>::operator()(UnaryFunctionData * n)
 
 template <typename T>
 void
-CompiledSLJIT<T>::operator()(BinaryFunctionData * n)
+CompiledSLJIT<T>::operator()(BinaryFunctionData<T> * n)
 {
   n->_args[0].apply(*this);
   n->_args[1].apply(*this);
@@ -505,7 +505,7 @@ CompiledSLJIT<T>::operator()(BinaryFunctionData * n)
 
 template <typename T>
 void
-CompiledSLJIT<T>::operator()(RealNumberData * n)
+CompiledSLJIT<T>::operator()(RealNumberData<T> * n)
 {
   // sljit does not have any 64bit floating point immediates, so we need to make a mem->register
   // transfer this makes the JIT code point to data in the expression tree! We store a copy of the
@@ -518,7 +518,7 @@ CompiledSLJIT<T>::operator()(RealNumberData * n)
 
 template <typename T>
 void
-CompiledSLJIT<T>::operator()(RealReferenceData * n)
+CompiledSLJIT<T>::operator()(RealReferenceData<T> * n)
 {
   stackPush();
   sljit_emit_fop1(_ctx, SLJIT_MOV_F64, SLJIT_FR0, 0, SLJIT_MEM, (sljit_sw)&n->_ref);
@@ -526,21 +526,21 @@ CompiledSLJIT<T>::operator()(RealReferenceData * n)
 
 template <typename T>
 void
-CompiledSLJIT<T>::operator()(RealArrayReferenceData * n)
+CompiledSLJIT<T>::operator()(RealArrayReferenceData<T> * n)
 {
   fatalError("Not implemented");
 }
 
 template <typename T>
 void
-CompiledSLJIT<T>::operator()(LocalVariableData * n)
+CompiledSLJIT<T>::operator()(LocalVariableData<T> * n)
 {
   fatalError("Not implemented");
 }
 
 template <typename T>
 void
-CompiledSLJIT<T>::operator()(ConditionalData * n)
+CompiledSLJIT<T>::operator()(ConditionalData<T> * n)
 {
   if (n->_type != ConditionalType::IF)
     fatalError("Conditional not implemented");
@@ -570,7 +570,7 @@ CompiledSLJIT<T>::operator()(ConditionalData * n)
 
 template <>
 void
-CompiledSLJIT<Real>::operator()(IntegerPowerData * n)
+CompiledSLJIT<Real>::operator()(IntegerPowerData<Real> * n)
 {
   if (n->_exponent == 0)
   {

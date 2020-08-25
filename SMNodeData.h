@@ -197,7 +197,6 @@ template <class C, typename T>
 class ValueProviderDerived : public ValueProvider<T>
 {
 public:
-protected:
   ValueProviderDerived(const std::string & name) : ValueProvider<T>(name)
   {
     (void)_vp_typeinfo_tag;
@@ -244,9 +243,9 @@ public:
 template <typename T>
 class SymbolData : public ValueProviderDerived<SymbolData<T>, T>
 {
+public:
   using ValueProvider<T>::_name;
 
-public:
   SymbolData(const std::string & name) : ValueProviderDerived<SymbolData<T>, T>(name) {}
 
   T value() override { fatalError("Node cannot be evaluated"); }
@@ -264,9 +263,9 @@ public:
 template <typename T>
 class RealReferenceData : public ValueProviderDerived<RealReferenceData<T>, T>
 {
+public:
   using ValueProvider<T>::_name;
 
-public:
   RealReferenceData(const Real & ref, const std::string & name = "")
     : ValueProviderDerived<RealReferenceData<T>, T>(name), _ref(ref)
   {
@@ -290,9 +289,9 @@ public:
 template <typename T>
 class RealArrayReferenceData : public ValueProviderDerived<RealArrayReferenceData<T>, T>
 {
+public:
   using ValueProvider<T>::_name;
 
-public:
   RealArrayReferenceData(const Real & ref, const int & index, const std::string & name = "")
     : ValueProviderDerived<RealArrayReferenceData<T>, T>(name), _ref(ref), _index(index)
   {
@@ -341,6 +340,8 @@ template <typename T>
 class RealNumberData : public NumberData<T>
 {
 public:
+  using NumberData<T>::_type;
+
   RealNumberData(T value) : NumberData<T>(), _value(value) {}
 
   T value() override { return _value; };
@@ -365,9 +366,11 @@ public:
 template <typename T>
 class UnaryOperatorData : public FixedArgumentData<T, UnaryOperatorType, 1>
 {
-  using FixedArgumentData<T, UnaryOperatorType, 1>::FixedArgumentData;
-
 public:
+  using FixedArgumentData<T, UnaryOperatorType, 1>::FixedArgumentData;
+  using FixedArgumentData<T, UnaryOperatorType, 1>::_type;
+  using FixedArgumentData<T, UnaryOperatorType, 1>::_args;
+
   T value() override;
 
   std::string format() const override;
@@ -387,9 +390,12 @@ public:
 template <typename T>
 class BinaryOperatorData : public FixedArgumentData<T, BinaryOperatorType, 2>
 {
-  using FixedArgumentData<T, BinaryOperatorType, 2>::FixedArgumentData;
-
 public:
+  using FixedArgumentData<T, BinaryOperatorType, 2>::FixedArgumentData;
+  using FixedArgumentData<T, BinaryOperatorType, 2>::_type;
+  using FixedArgumentData<T, BinaryOperatorType, 2>::_args;
+  using FixedArgumentData<T, BinaryOperatorType, 2>::is;
+
   T value() override;
 
   std::string format() const override;
@@ -409,9 +415,11 @@ public:
 template <typename T>
 class MultinaryOperatorData : public MultinaryData<T, MultinaryOperatorType>
 {
-  using MultinaryData<T, MultinaryOperatorType>::MultinaryData;
-
 public:
+  using MultinaryData<T, MultinaryOperatorType>::MultinaryData;
+  using MultinaryData<T, MultinaryOperatorType>::_type;
+  using MultinaryData<T, MultinaryOperatorType>::_args;
+
   T value() override;
 
   std::string format() const override;
@@ -431,9 +439,11 @@ public:
 template <typename T>
 class UnaryFunctionData : public FixedArgumentData<T, UnaryFunctionType, 1>
 {
-  using FixedArgumentData<T, UnaryFunctionType, 1>::FixedArgumentData;
-
 public:
+  using FixedArgumentData<T, UnaryFunctionType, 1>::FixedArgumentData;
+  using FixedArgumentData<T, UnaryFunctionType, 1>::_type;
+  using FixedArgumentData<T, UnaryFunctionType, 1>::_args;
+
   T value() override;
 
   std::string format() const override;
@@ -453,9 +463,11 @@ public:
 template <typename T>
 class BinaryFunctionData : public FixedArgumentData<T, BinaryFunctionType, 2>
 {
-  using FixedArgumentData<T, BinaryFunctionType, 2>::FixedArgumentData;
-
 public:
+  using FixedArgumentData<T, BinaryFunctionType, 2>::FixedArgumentData;
+  using FixedArgumentData<T, BinaryFunctionType, 2>::_type;
+  using FixedArgumentData<T, BinaryFunctionType, 2>::_args;
+
   T value() override;
 
   std::string format() const override;
@@ -474,9 +486,11 @@ public:
 template <typename T>
 class ConditionalData : public FixedArgumentData<T, ConditionalType, 3>
 {
-  using FixedArgumentData<T, ConditionalType, 3>::FixedArgumentData;
-
 public:
+  using FixedArgumentData<T, ConditionalType, 3>::FixedArgumentData;
+  using FixedArgumentData<T, ConditionalType, 3>::_type;
+  using FixedArgumentData<T, ConditionalType, 3>::_args;
+
   T value() override;
 
   std::string format() const override;

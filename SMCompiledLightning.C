@@ -18,7 +18,7 @@ namespace SymbolicMath
 //#define _jit _ctx
 
 template <typename T>
-CompiledLightning<T>::CompiledLightning(Function & fb) : Transform(fb), _jit_function(nullptr)
+CompiledLightning<T>::CompiledLightning(Function<T> & fb) : Transform<T>(fb), _jit_function(nullptr)
 {
   // global shit (TODO: move into singleton)
   init_jit(nullptr);
@@ -113,14 +113,14 @@ CompiledLightning<T>::wrapMax(T a, T b)
 
 template <typename T>
 void
-CompiledLightning<T>::operator()(SymbolData * n)
+CompiledLightning<T>::operator()(SymbolData<T> * n)
 {
   fatalError("Symbol in compiled function");
 }
 
 template <typename T>
 void
-CompiledLightning<T>::operator()(UnaryOperatorData * n)
+CompiledLightning<T>::operator()(UnaryOperatorData<T> * n)
 {
   n->_args[0].apply(*this);
 
@@ -140,7 +140,7 @@ CompiledLightning<T>::operator()(UnaryOperatorData * n)
 
 template <typename T>
 void
-CompiledLightning<T>::operator()(BinaryOperatorData * n)
+CompiledLightning<T>::operator()(BinaryOperatorData<T> * n)
 {
   n->_args[0].apply(*this);
   n->_args[1].apply(*this);
@@ -229,7 +229,7 @@ CompiledLightning<T>::operator()(BinaryOperatorData * n)
 
 template <typename T>
 void
-CompiledLightning<T>::operator()(MultinaryOperatorData * n)
+CompiledLightning<T>::operator()(MultinaryOperatorData<T> * n)
 {
   if (n->_args.size() == 0)
     fatalError("No child nodes in multinary operator");
@@ -260,7 +260,7 @@ CompiledLightning<T>::operator()(MultinaryOperatorData * n)
 
 template <typename T>
 void
-CompiledLightning<T>::operator()(UnaryFunctionData * n)
+CompiledLightning<T>::operator()(UnaryFunctionData<T> * n)
 {
   n->_args[0].apply(*this);
   jit_prepare();
@@ -409,7 +409,7 @@ CompiledLightning<T>::operator()(UnaryFunctionData * n)
 
 template <typename T>
 void
-CompiledLightning<T>::operator()(BinaryFunctionData * n)
+CompiledLightning<T>::operator()(BinaryFunctionData<T> * n)
 {
   n->_args[0].apply(*this);
   n->_args[1].apply(*this);
@@ -450,7 +450,7 @@ CompiledLightning<T>::operator()(BinaryFunctionData * n)
 
 template <>
 void
-CompiledLightning<Real>::operator()(RealNumberData * n)
+CompiledLightning<Real>::operator()(RealNumberData<Real> * n)
 {
   stackPush();
   jit_movi_d(JIT_F0, n->_value);
@@ -458,7 +458,7 @@ CompiledLightning<Real>::operator()(RealNumberData * n)
 
 template <>
 void
-CompiledLightning<Real>::operator()(RealReferenceData * n)
+CompiledLightning<Real>::operator()(RealReferenceData<Real> * n)
 {
   stackPush();
   jit_ldi_d(JIT_F0, const_cast<void *>(reinterpret_cast<const void *>(&n->_ref)));
@@ -466,21 +466,21 @@ CompiledLightning<Real>::operator()(RealReferenceData * n)
 
 template <typename T>
 void
-CompiledLightning<T>::operator()(RealArrayReferenceData * n)
+CompiledLightning<T>::operator()(RealArrayReferenceData<T> * n)
 {
   fatalError("Not implemented");
 }
 
 template <typename T>
 void
-CompiledLightning<T>::operator()(LocalVariableData * n)
+CompiledLightning<T>::operator()(LocalVariableData<T> * n)
 {
   fatalError("Not implemented");
 }
 
 template <typename T>
 void
-CompiledLightning<T>::operator()(ConditionalData * n)
+CompiledLightning<T>::operator()(ConditionalData<T> * n)
 {
   if (n->_type != ConditionalType::IF)
     fatalError("Conditional not implemented");
@@ -505,7 +505,7 @@ CompiledLightning<T>::operator()(ConditionalData * n)
 
 template <typename T>
 void
-CompiledLightning<T>::operator()(IntegerPowerData * n)
+CompiledLightning<T>::operator()(IntegerPowerData<T> * n)
 {
   if (n->_exponent == 0)
     jit_movi_d(JIT_F0, 1.0);

@@ -20,26 +20,25 @@ namespace SymbolicMath
 
 template <>
 const std::string
-CompiledCCode<Real>::typeName()
+CompiledCCode<Real>::Source::typeName()
 {
   return "double";
 }
 
 template <>
 const std::string
-CompiledCCode<Real>::typeHeader()
+CompiledCCode<Real>::Source::typeHeader()
 {
   return "#include <cmath>";
 }
 
 template <typename T>
-CompiledCCode<T>::CompiledCCode(Function & fb)
+CompiledCCode<T>::CompiledCCode(Function<T> & fb)
 {
-  // build and lock context (TODO: return by reference to support complex types)
-  std::string ccode = typeHeader() + "\nextern \"C\" " + typeName() + " F()\n{\n  return ";
-
   // generate source
   Source source(fb);
+  std::string ccode =
+      source.typeHeader() + "\nextern \"C\" " + source.typeName() + " F()\n{\n  return ";
   ccode += source() + ";\n}";
 
   // save to a temporary name and rename only when the file is fully written
@@ -97,21 +96,21 @@ CompiledCCode<T>::CompiledCCode(Function & fb)
 }
 
 template <typename T>
-CompiledCCode<T>::Source::Source(Function & fb) : Transform(fb)
+CompiledCCode<T>::Source::Source(Function<T> & fb) : Transform<T>(fb)
 {
   apply();
 }
 
 template <typename T>
 void
-CompiledCCode<T>::Source::operator()(SymbolData * n)
+CompiledCCode<T>::Source::operator()(SymbolData<T> * n)
 {
   fatalError("Symbol in compiled function");
 }
 
 template <typename T>
 void
-CompiledCCode<T>::Source::operator()(UnaryOperatorData * n)
+CompiledCCode<T>::Source::operator()(UnaryOperatorData<T> * n)
 {
   n->_args[0].apply(*this);
 
@@ -131,7 +130,7 @@ CompiledCCode<T>::Source::operator()(UnaryOperatorData * n)
 
 template <typename T>
 void
-CompiledCCode<T>::Source::operator()(BinaryOperatorData * n)
+CompiledCCode<T>::Source::operator()(BinaryOperatorData<T> * n)
 {
   n->_args[0].apply(*this);
   std::string A;
@@ -197,7 +196,7 @@ CompiledCCode<T>::Source::operator()(BinaryOperatorData * n)
 
 template <typename T>
 void
-CompiledCCode<T>::Source::operator()(MultinaryOperatorData * n)
+CompiledCCode<T>::Source::operator()(MultinaryOperatorData<T> * n)
 {
   auto nargs = n->_args.size();
   if (nargs == 0)
@@ -237,7 +236,7 @@ CompiledCCode<T>::Source::operator()(MultinaryOperatorData * n)
 
 template <typename T>
 void
-CompiledCCode<T>::Source::operator()(UnaryFunctionData * n)
+CompiledCCode<T>::Source::operator()(UnaryFunctionData<T> * n)
 {
   n->_args[0].apply(*this);
   const auto & A = _source;
@@ -378,7 +377,7 @@ CompiledCCode<T>::Source::operator()(UnaryFunctionData * n)
 
 template <typename T>
 void
-CompiledCCode<T>::Source::operator()(BinaryFunctionData * n)
+CompiledCCode<T>::Source::operator()(BinaryFunctionData<T> * n)
 {
   n->_args[0].apply(*this);
   std::string A;
@@ -426,14 +425,14 @@ CompiledCCode<T>::Source::operator()(BinaryFunctionData * n)
 
 template <typename T>
 void
-CompiledCCode<T>::Source::operator()(RealNumberData * n)
+CompiledCCode<T>::Source::operator()(RealNumberData<T> * n)
 {
   _source = stringify(n->_value);
 }
 
 template <typename T>
 void
-CompiledCCode<T>::Source::operator()(RealReferenceData * n)
+CompiledCCode<T>::Source::operator()(RealReferenceData<T> * n)
 {
   // will need template specializations
   _source = "*(reinterpret_cast<" + typeName() + " *>(" +
@@ -442,21 +441,21 @@ CompiledCCode<T>::Source::operator()(RealReferenceData * n)
 
 template <typename T>
 void
-CompiledCCode<T>::Source::operator()(RealArrayReferenceData * n)
+CompiledCCode<T>::Source::operator()(RealArrayReferenceData<T> * n)
 {
   fatalError("Not implemented");
 }
 
 template <typename T>
 void
-CompiledCCode<T>::Source::operator()(LocalVariableData * n)
+CompiledCCode<T>::Source::operator()(LocalVariableData<T> * n)
 {
   fatalError("Not implemented");
 }
 
 template <typename T>
 void
-CompiledCCode<T>::Source::operator()(ConditionalData * n)
+CompiledCCode<T>::Source::operator()(ConditionalData<T> * n)
 {
   n->_args[0].apply(*this);
   std::string A;
@@ -474,13 +473,13 @@ CompiledCCode<T>::Source::operator()(ConditionalData * n)
 
 template <typename T>
 void
-CompiledCCode<T>::Source::operator()(IntegerPowerData * n)
+CompiledCCode<T>::Source::operator()(IntegerPowerData<T> * n)
 {
   // replace this with a template
   n->_arg.apply(*this);
   _source = "std::pow(" + _source + ", " + stringify(n->_exponent) + ")";
 }
 
-template class CompileCCode<Real>;
+template class CompiledCCode<Real>;
 
 } // namespace SymbolicMath

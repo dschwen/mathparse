@@ -37,6 +37,9 @@ public:
   /// Evaluate the node (using JIT if available)
   T operator()() { return _root.value(); }
 
+  /// Returns the derivative of the subtree at the node w.r.t. value provider id
+  Function<T> D(ValueProviderPtr<T> vp) const { return Function<T>(_root.D(*vp)); }
+
   /// reference to the root node
   virtual const Node<T> & root() const { return _root; }
 

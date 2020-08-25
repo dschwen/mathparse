@@ -2,7 +2,7 @@ CXX ?= clang++
 CXXFLAGS ?= -O2
 
 OBJS := SMToken.o SMTokenizer.o SMParser.o SMSymbols.o \
-				SMNode.o SMNodeData.o SMUtils.o SMFunctionBase.o \
+				SMNode.o SMNodeData.o SMUtils.o \
 				SMTransform.o SMTransformSimplify.o SMCompiledByteCode.o \
 				SMCompiledCCode.o SMCompiledSLJIT.o SMCompiledLibJIT.o \
 				SMCompiledLightning.o

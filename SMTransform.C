@@ -11,7 +11,7 @@ namespace SymbolicMath
 
 template <typename T>
 void
-Transform<T>::pushNode(Node * node)
+Transform<T>::pushNode(Node<T> * node)
 {
   _node_stack.push(_current_node);
   _current_node = node;
@@ -42,49 +42,49 @@ Transform<T>::set(Real val)
 
 template <typename T>
 void
-Transform<T>::set(UnaryOperatorType type, Node arg)
+Transform<T>::set(UnaryOperatorType type, Node<T>  arg)
 {
   _current_node->_data = std::make_shared<UnaryOperatorData<T>>(type, arg);
 }
 
 template <typename T>
 void
-Transform<T>::set(BinaryOperatorType type, Node arg0, Node arg1)
+Transform<T>::set(BinaryOperatorType type, Node<T>  arg0, Node<T>  arg1)
 {
   _current_node->_data = std::make_shared<BinaryOperatorData<T>>(type, arg0, arg1);
 }
 
 template <typename T>
 void
-Transform<T>::set(MultinaryOperatorType type, std::vector<Node> args)
+Transform<T>::set(MultinaryOperatorType type, std::vector<Node<T> > args)
 {
   _current_node->_data = std::make_shared<MultinaryOperatorData<T>>(type, args);
 }
 
 template <typename T>
 void
-Transform<T>::set(UnaryFunctionType type, Node arg)
+Transform<T>::set(UnaryFunctionType type, Node<T>  arg)
 {
   _current_node->_data = std::make_shared<UnaryFunctionData<T>>(type, arg);
 }
 
 template <typename T>
 void
-Transform<T>::set(BinaryFunctionType type, Node arg0, Node arg1)
+Transform<T>::set(BinaryFunctionType type, Node<T>  arg0, Node<T>  arg1)
 {
   _current_node->_data = std::make_shared<BinaryFunctionData<T>>(type, arg0, arg1);
 }
 
 template <typename T>
 void
-Transform<T>::set(ConditionalType type, Node arg0, Node arg1, Node arg2)
+Transform<T>::set(ConditionalType type, Node<T>  arg0, Node<T>  arg1, Node<T>  arg2)
 {
   _current_node->_data = std::make_shared<ConditionalData<T>>(type, arg0, arg1, arg2);
 }
 
 template <typename T>
 void
-Transform<T>::set(IntegerPowerType, Node arg, int exponent)
+Transform<T>::set(IntegerPowerType, Node<T>  arg, int exponent)
 {
   _current_node->_data = std::make_shared<IntegerPowerData<T>>(arg, exponent);
 }

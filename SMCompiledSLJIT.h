@@ -19,28 +19,30 @@ namespace SymbolicMath
  * SLJIT compiler transform
  */
 template <typename T>
-class CompiledSLJIT : public Transform, public Evaluable<T>
+class CompiledSLJIT : public Transform<T>, public Evaluable<T>
 {
+  using Transform<T>::apply;
+
 public:
-  CompiledSLJIT(Function &);
+  CompiledSLJIT(Function<T> &);
   ~CompiledSLJIT() override;
 
-  void operator()(SymbolData *) override;
+  void operator()(SymbolData<T> *) override;
 
-  void operator()(UnaryOperatorData *) override;
-  void operator()(BinaryOperatorData *) override;
-  void operator()(MultinaryOperatorData *) override;
+  void operator()(UnaryOperatorData<T> *) override;
+  void operator()(BinaryOperatorData<T> *) override;
+  void operator()(MultinaryOperatorData<T> *) override;
 
-  void operator()(UnaryFunctionData *) override;
-  void operator()(BinaryFunctionData *) override;
+  void operator()(UnaryFunctionData<T> *) override;
+  void operator()(BinaryFunctionData<T> *) override;
 
-  void operator()(RealNumberData *) override;
-  void operator()(RealReferenceData *) override;
-  void operator()(RealArrayReferenceData *) override;
-  void operator()(LocalVariableData *) override;
+  void operator()(RealNumberData<T> *) override;
+  void operator()(RealReferenceData<T> *) override;
+  void operator()(RealArrayReferenceData<T> *) override;
+  void operator()(LocalVariableData<T> *) override;
 
-  void operator()(ConditionalData *) override;
-  void operator()(IntegerPowerData *) override;
+  void operator()(ConditionalData<T> *) override;
+  void operator()(IntegerPowerData<T> *) override;
 
   T operator()() override { return _jit_function(); }
 
