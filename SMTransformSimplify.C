@@ -133,7 +133,13 @@ Simplify<T>::operator()(MultinaryOperatorData<T> * n)
           val *= n->_args.back().value();
         n->_args.pop_back();
       }
-      first_num->_data = std::make_shared<RealNumberData<T>>(val);
+
+      if ((val == 1.0 && n->_type == MultinaryOperatorType::MULTIPLICATION) ||
+          (val == 0.0 && n->_type == MultinaryOperatorType::ADDITION))
+        n->_args.pop_back();
+      else
+        first_num->_data = std::make_shared<RealNumberData<T>>(val);
+
       return;
     }
 
@@ -165,6 +171,37 @@ Simplify<T>::operator()(BinaryFunctionData<T> * n)
   {
     set(n->value());
     return;
+  }
+
+  switch (n->_type)
+  {
+    case BinaryFunctionType::POW:
+      if (n->_args[1].is(1.0))
+      {
+        _current_node->_data = n->_args[0]._data;
+        return;
+      }
+
+      if (n->_args[1].is(0.0))
+      {
+        set(1.0);
+        return;
+      }
+
+      if (n->_args[1].is(NumberType::_ANY))
+      {
+        auto val = n->_args[1].value();
+        if (std::floor(val) == val)
+        {
+          set(IntegerPowerType::_ANY, n->_args[0], val);
+          return;
+        }
+      }
+
+      return;
+
+    default:
+      return;
   }
 }
 

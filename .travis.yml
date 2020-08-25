@@ -39,7 +39,3 @@ before_script:
 script:
   - make unittests
   - ./unittests
-  - make unittests JIT=lightning LDFLAGS="-L$TRAVIS_BUILD_DIR/install/lib -llightning" CPPFLAGS=-I$TRAVIS_BUILD_DIR/install/include
-  - ./unittests
-  - make unittests JIT=gccjit
-  - ./unittests

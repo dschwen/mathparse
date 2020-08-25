@@ -414,9 +414,15 @@ CompiledLightning<T>::operator()(BinaryFunctionData<T> * n)
   n->_args[0].apply(*this);
   n->_args[1].apply(*this);
 
+  // Arguments A = JIT_F1, B = JIT_F0 !
+  stackPop(JIT_F1);
+
   switch (n->_type)
   {
     case BinaryFunctionType::ATAN2:
+      jit_prepare();
+      jit_pushargr_d(JIT_F1);
+      jit_pushargr_d(JIT_F0);
       binaryFunctionCall(std::atan2);
       return;
 
@@ -424,10 +430,16 @@ CompiledLightning<T>::operator()(BinaryFunctionData<T> * n)
       fatalError("Function not implemented");
 
     case BinaryFunctionType::MIN:
+      jit_prepare();
+      jit_pushargr_d(JIT_F1);
+      jit_pushargr_d(JIT_F0);
       binaryFunctionCall(wrapMin);
       return;
 
     case BinaryFunctionType::MAX:
+      jit_prepare();
+      jit_pushargr_d(JIT_F1);
+      jit_pushargr_d(JIT_F0);
       binaryFunctionCall(wrapMax);
       return;
 
@@ -439,6 +451,9 @@ CompiledLightning<T>::operator()(BinaryFunctionData<T> * n)
       //            : std::log(A);
 
     case BinaryFunctionType::POW:
+      jit_prepare();
+      jit_pushargr_d(JIT_F1);
+      jit_pushargr_d(JIT_F0);
       binaryFunctionCall(std::pow);
       return;
 
