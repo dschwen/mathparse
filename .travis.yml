@@ -22,15 +22,13 @@ install:
 before_script:
   # Build GNU Lightning
   - cd $TRAVIS_BUILD_DIR
-  - wget http://git.savannah.gnu.org/cgit/lightning.git/snapshot/lightning-2.1.2.tar.gz
-  - tar xzf lightning-2.1.2.tar.gz
-  - cd lightning-2.1.2 && autoreconf -i && ./configure --prefix=$TRAVIS_BUILD_DIR/install
+  - git clone --depth=1 https://git.savannah.gnu.org/git/lightning.git
+  - cd lightning && autoreconf -i && ./configure --prefix=$TRAVIS_BUILD_DIR/install
   - make && make install
   # Build LibJIT
   - cd $TRAVIS_BUILD_DIR
-  - wget http://git.savannah.gnu.org/cgit/libjit.git/snapshot/libjit-0.1.4.tar.gz
-  - tar xzf libjit-0.1.4.tar.gz
-  - cd libjit-0.1.4 && ./bootstrap && ./configure --prefix=$TRAVIS_BUILD_DIR/install
+  - git clone --depth=1 https://github.com/ademakov/libjit.git
+  - cd libjit && ./bootstrap && ./configure --prefix=$TRAVIS_BUILD_DIR/install
   - make && make install
   - export LIBJIT_DIR=$TRAVIS_BUILD_DIR/install
   # done
