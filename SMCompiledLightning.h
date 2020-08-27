@@ -8,8 +8,6 @@
 #include "SMTransform.h"
 #include "SMEvaluable.h"
 
-#include <jit/jit.h>
-
 #include <list>
 
 // forward declaration

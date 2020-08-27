@@ -14,14 +14,15 @@ extern "C"
 namespace SymbolicMath
 {
 
-// lightning uses cascading macros to reduce the number of passed in arguments
-//#define _jit _ctx
-
 template <typename T>
-CompiledLightning<T>::CompiledLightning(Function<T> & fb) : Transform<T>(fb), _jit_function(nullptr)
+CompiledLightning<T>::CompiledLightning(Function<T> & fb)
+  : Transform<T>(fb), _jit(nullptr), _jit_function(nullptr)
 {
-  // global shit (TODO: move into singleton)
-  init_jit(nullptr);
+  // global one time initialization
+  static struct InitializationSingleton
+  {
+    InitializationSingleton() { init_jit(nullptr); }
+  } initialize;
 
   // build and lock context
   _jit = jit_new_state();
@@ -76,23 +77,42 @@ void CompiledLightning<T>::binaryFunctionCall(T (*func)(T, T))
   jit_retval_d(JIT_F0);
 }
 
-template <typename T>
+template <>
 void
-CompiledLightning<T>::stackPush()
+CompiledLightning<double>::stackPush()
 {
   if (_sp >= 0)
-    jit_stxi_d(_sp * sizeof(T) + _stack_base, JIT_FP, JIT_F0);
+    jit_stxi_d(_sp * sizeof(double) + _stack_base, JIT_FP, JIT_F0);
   _sp++;
 }
 
-template <typename T>
+template <>
 void
-CompiledLightning<T>::stackPop(int reg)
+CompiledLightning<float>::stackPush()
+{
+  if (_sp >= 0)
+    jit_stxi_f(_sp * sizeof(float) + _stack_base, JIT_FP, JIT_F0);
+  _sp++;
+}
+
+template <>
+void
+CompiledLightning<double>::stackPop(int reg)
 {
   if (_sp == 0)
     fatalError("Stack exhausted in stackPop");
   _sp--;
-  jit_ldxi_d(reg, JIT_FP, _sp * sizeof(T) + _stack_base);
+  jit_ldxi_d(reg, JIT_FP, _sp * sizeof(double) + _stack_base);
+}
+
+template <>
+void
+CompiledLightning<float>::stackPop(int reg)
+{
+  if (_sp == 0)
+    fatalError("Stack exhausted in stackPop");
+  _sp--;
+  jit_ldxi_f(reg, JIT_FP, _sp * sizeof(float) + _stack_base);
 }
 
 template <typename T>
@@ -552,8 +572,5 @@ CompiledLightning<T>::operator()(IntegerPowerData<T> * n)
 }
 
 template class CompiledLightning<Real>;
-
-// undefine the lightning helper macro
-//#undef _jit
 
 } // namespace SymbolicMath
