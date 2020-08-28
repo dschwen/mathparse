@@ -14,7 +14,7 @@
 #include <llvm/Support/raw_ostream.h>
 
 #include "LLJITHelper.h"
-#include "SMFunctionBase.h"
+#include "SMFunction.h"
 
 #include <functional>
 #include <memory>
@@ -40,7 +40,7 @@ public:
  * The Function class is the top level wrapper for a Node based expression tree.
  * It manages the active value providers and the just in time compilation.
  */
-class Function : public FunctionBase
+class Function : public Function
 {
 public:
   /// Construct form given node

@@ -6,23 +6,24 @@
 #include "SymbolicMath.h"
 #include "SMFunction.h"
 #include "SMHelpers.h"
-#include "SMJITTypes.h"
 
 #include "SMTransformSimplify.h"
 
 #include "SMCompiledByteCode.h"
 #include "SMCompiledCCode.h"
 #include "SMCompiledSLJIT.h"
+#include "SMCompiledLibJIT.h"
+#include "SMCompiledLightning.h"
 
 #include <iostream>
 
 int
 main(int argc, char * argv[])
 {
-  SymbolicMath::Parser parser;
+  SymbolicMath::Parser<SymbolicMath::Real> parser;
 
   SymbolicMath::Real c;
-  auto c_var = std::make_shared<SymbolicMath::RealReferenceData>(c, "c");
+  auto c_var = std::make_shared<SymbolicMath::RealReferenceData<SymbolicMath::Real>>(c, "c");
   parser.registerValueProvider(c_var);
 
   // auto func = parser.parse("a := c*c; b := 5; sqrt(a+b)");
@@ -34,33 +35,39 @@ main(int argc, char * argv[])
   std::cout << func.format() << '\n';
 
   {
-    SymbolicMath::CompiledCCode::Source source(func);
+    SymbolicMath::CompiledCCode<SymbolicMath::Real>::Source source(func);
     std::cout << '{' << source() << "}\n";
   }
 
   std::cout << func.formatTree() << '\n';
 
-  SymbolicMath::Simplify simplify(func);
+  SymbolicMath::Simplify<SymbolicMath::Real> simplify(func);
 
   std::cout << func.format() << '\n';
   std::cout << func.formatTree() << '\n';
 
   {
-    SymbolicMath::CompiledCCode::Source source(func);
+    SymbolicMath::CompiledCCode<SymbolicMath::Real>::Source source(func);
     std::cout << '{' << source() << "}\n";
   }
 
   c = 2.0;
   std::cout << "c = " << c << "; Value = " << func() << '\n';
 
-  SymbolicMath::CompiledByteCode vm(func);
+  SymbolicMath::CompiledByteCode<SymbolicMath::Real> vm(func);
   std::cout << "vm value = " << vm() << '\n';
 
-  SymbolicMath::CompiledCCode ccode(func);
+  SymbolicMath::CompiledCCode<SymbolicMath::Real> ccode(func);
   std::cout << "ccode value = " << ccode() << '\n';
 
-  SymbolicMath::CompiledSLJIT sljit(func);
+  SymbolicMath::CompiledSLJIT<SymbolicMath::Real> sljit(func);
   std::cout << "sljit value = " << sljit() << '\n';
+
+  SymbolicMath::CompiledLibJIT<SymbolicMath::Real> libjit(func);
+  std::cout << "libjit value = " << libjit() << '\n';
+
+  SymbolicMath::CompiledLightning<SymbolicMath::Real> lightning(func);
+  std::cout << "lightning value = " << lightning() << '\n';
 
   // func.compile();
   //

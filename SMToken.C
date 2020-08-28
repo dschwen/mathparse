@@ -13,7 +13,8 @@
 namespace SymbolicMath
 {
 
-BracketToken::BracketToken(char bracket, std::size_t pos) : Token(pos), _opening(false)
+template <typename T>
+BracketToken<T>::BracketToken(char bracket, std::size_t pos) : Token<T>(pos), _opening(false)
 {
   if ((_type = opening(bracket)) != BracketType::_INVALID)
     _opening = true;
@@ -21,8 +22,9 @@ BracketToken::BracketToken(char bracket, std::size_t pos) : Token(pos), _opening
     _type = closing(bracket);
 }
 
+template <typename T>
 BracketType
-BracketToken::opening(char c)
+BracketToken<T>::opening(char c)
 {
   switch (c)
   {
@@ -37,8 +39,9 @@ BracketToken::opening(char c)
   }
 }
 
+template <typename T>
 BracketType
-BracketToken::closing(char c)
+BracketToken<T>::closing(char c)
 {
   switch (c)
   {
@@ -53,29 +56,31 @@ BracketToken::closing(char c)
   }
 }
 
-OperatorToken *
-OperatorToken::build(const std::string & string, std::size_t pos)
+template <typename T>
+TokenPtr<T>
+OperatorToken<T>::build(const std::string & string, std::size_t pos)
 {
   // search multinary and binary operators first
   for (auto & pair : _multinary_operators)
     if (pair.second._form == string)
-      return new MultinaryOperatorToken(pair, pos);
+      return TokenPtr<T>(new MultinaryOperatorToken<T>(pair, pos));
 
   for (auto & pair : _binary_operators)
     if (pair.second._form == string)
-      return new BinaryOperatorToken(pair, pos);
+      return TokenPtr<T>(new BinaryOperatorToken<T>(pair, pos));
 
   // unary operators + and - are discriminated in the parser
   for (auto & pair : _unary_operators)
     if (pair.second._form == string)
-      return new UnaryOperatorToken(pair, pos);
+      return TokenPtr<T>(new UnaryOperatorToken<T>(pair, pos));
 
   // return an invalid operator token
-  return new InvalidOperatorToken(pos);
+  return TokenPtr<T>(new InvalidOperatorToken<T>(pos));
 }
 
-OperatorToken *
-UnaryOperatorToken::build(UnaryOperatorType type, std::size_t pos)
+template <typename T>
+TokenPtr<T>
+UnaryOperatorToken<T>::build(UnaryOperatorType type, std::size_t pos)
 {
   // unary operators + and - are discriminated in the parser
   auto it = _unary_operators.find(type);
@@ -83,57 +88,63 @@ UnaryOperatorToken::build(UnaryOperatorType type, std::size_t pos)
   if (it == _unary_operators.end())
     fatalError("Unknown unary operator");
 
-  return new UnaryOperatorToken(*it, pos);
+  return TokenPtr<T>(new UnaryOperatorToken<T>(*it, pos));
 }
 
-Node
-UnaryOperatorToken::node(std::stack<Node> & stack)
+template <typename T>
+Node<T>
+UnaryOperatorToken<T>::node(std::stack<Node<T>> & stack)
 {
   auto arg0 = stack.top();
   stack.pop();
-  return Node(_type, arg0);
+  return Node<T>(_type, arg0);
 }
 
-Node
-BinaryOperatorToken::node(std::stack<Node> & stack)
-{
-  auto arg1 = stack.top();
-  stack.pop();
-  auto arg0 = stack.top();
-  stack.pop();
-  return Node(_type, arg0, arg1);
-}
-
-Node
-MultinaryOperatorToken::node(std::stack<Node> & stack)
+template <typename T>
+Node<T>
+BinaryOperatorToken<T>::node(std::stack<Node<T>> & stack)
 {
   auto arg1 = stack.top();
   stack.pop();
   auto arg0 = stack.top();
   stack.pop();
-  return Node(_type, {arg0, arg1});
+  return Node<T>(_type, arg0, arg1);
 }
 
-Node
-UnaryFunctionToken::node(std::stack<Node> & stack)
-{
-  auto arg0 = stack.top();
-  stack.pop();
-  return Node(_type, arg0);
-}
-
-Node
-BinaryFunctionToken::node(std::stack<Node> & stack)
+template <typename T>
+Node<T>
+MultinaryOperatorToken<T>::node(std::stack<Node<T>> & stack)
 {
   auto arg1 = stack.top();
   stack.pop();
   auto arg0 = stack.top();
   stack.pop();
-  return Node(_type, arg0, arg1);
+  return Node<T>(_type, {arg0, arg1});
 }
 
-Node
-ConditionalToken::node(std::stack<Node> & stack)
+template <typename T>
+Node<T>
+UnaryFunctionToken<T>::node(std::stack<Node<T>> & stack)
+{
+  auto arg0 = stack.top();
+  stack.pop();
+  return Node<T>(_type, arg0);
+}
+
+template <typename T>
+Node<T>
+BinaryFunctionToken<T>::node(std::stack<Node<T>> & stack)
+{
+  auto arg1 = stack.top();
+  stack.pop();
+  auto arg0 = stack.top();
+  stack.pop();
+  return Node<T>(_type, arg0, arg1);
+}
+
+template <typename T>
+Node<T>
+ConditionalToken<T>::node(std::stack<Node<T>> & stack)
 {
   auto arg2 = stack.top();
   stack.pop();
@@ -141,25 +152,36 @@ ConditionalToken::node(std::stack<Node> & stack)
   stack.pop();
   auto arg0 = stack.top();
   stack.pop();
-  return Node(_type, arg0, arg1, arg2);
+  return Node<T>(_type, arg0, arg1, arg2);
 }
 
-FunctionToken *
-FunctionToken::build(const std::string & string, std::size_t pos)
+template <typename T>
+TokenPtr<T>
+FunctionToken<T>::build(const std::string & string, std::size_t pos)
 {
   if (string == "if")
-    return new ConditionalToken(ConditionalType::IF, pos);
+    return TokenPtr<T>(new ConditionalToken<T>(ConditionalType::IF, pos));
 
   for (auto & pair : _unary_functions)
     if (pair.second == string)
-      return new UnaryFunctionToken(pair.first, pos);
+      return TokenPtr<T>(new UnaryFunctionToken<T>(pair.first, pos));
 
   for (auto & pair : _binary_functions)
     if (pair.second == string)
-      return new BinaryFunctionToken(pair.first, pos);
+      return TokenPtr<T>(new BinaryFunctionToken<T>(pair.first, pos));
 
   // return an invalid function token
-  return new FunctionToken(pos);
+  return TokenPtr<T>(new FunctionToken<T>(pos));
 }
+
+template class BracketToken<Real>;
+template class OperatorToken<Real>;
+template class UnaryOperatorToken<Real>;
+template class BinaryOperatorToken<Real>;
+template class MultinaryOperatorToken<Real>;
+template class FunctionToken<Real>;
+template class UnaryFunctionToken<Real>;
+template class BinaryFunctionToken<Real>;
+template class ConditionalToken<Real>;
 
 } // namespace SymbolicMath

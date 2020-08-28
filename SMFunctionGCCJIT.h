@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "SMFunctionBase.h"
+#include "SMFunction.h"
 
 namespace SymbolicMath
 {
@@ -14,11 +14,11 @@ namespace SymbolicMath
  * The Function class is the top level wrapper for a Node based expression tree.
  * It manages the active value providers and the just in time compilation.
  */
-class Function : public FunctionBase
+class Function : public Function
 {
 public:
   /// Construct form given node
-  Function(const Node & root) : FunctionBase(root) { _state.ctxt = nullptr; }
+  Function(const Node & root) : Function(root) { _state.ctxt = nullptr; }
 
   /// tear down function (release JIT context)
   ~Function();

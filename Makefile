@@ -1,16 +1,16 @@
 CXX ?= clang++
-CPPFLAGS ?= -O2
-
-# (lightning,sljit,libjit)
-JIT ?= vm
+CXXFLAGS ?= -O2
 
 OBJS := SMToken.o SMTokenizer.o SMParser.o SMSymbols.o \
-				SMNode.o SMNodeData.o SMUtils.o SMFunctionBase.o \
+				SMNode.o SMNodeData.o SMUtils.o \
 				SMTransform.o SMTransformSimplify.o SMCompiledByteCode.o \
-				SMCompiledCCode.o SMCompiledSLJIT.o
+				SMCompiledCCode.o SMCompiledSLJIT.o SMCompiledLibJIT.o \
+				SMCompiledLightning.o
 
 # include configuration for the selected JIT backend
+ifneq ($(JIT)x, x)
 include jit_$(JIT).mk
+endif
 
 # add machine specific stuff
 ifneq (,$(findstring armv,$(shell uname -m)))
@@ -23,6 +23,15 @@ CONFIG += -DSLJIT_CONFIG_AUTO=1
 
 # CCode
 override LDFLAGS += -ldl
+
+# libjit
+LIBJIT_DIR ?= /usr/local
+override CPPFLAGS += -I$(LIBJIT_DIR)/include
+override LDFLAGS += -L$(LIBJIT_DIR)/lib -ljit
+
+# Lightning
+override LDFLAGS += -llightning
+
 
 mathparse: main.C $(OBJS)
 	$(CXX) -std=c++11 $(CONFIG) $(CPPFLAGS) $(CXXFLAGS) -o mathparse main.C $(OBJS) $(LDFLAGS)

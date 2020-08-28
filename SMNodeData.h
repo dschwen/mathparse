@@ -13,35 +13,34 @@
 #include <type_traits>
 
 #include "SMNode.h"
-#include "SMJITTypes.h"
 
 namespace SymbolicMath
 {
 
+template <typename T>
 class Parser;
+template <typename T>
 class Transform;
-class ValueProvider;
-class FunctionContext;
 
 /**
  * Node data base class. This class defines a common interface for all node data
  * objects. Node data holds the semantic content of a Node object. Node data
  * utilizes polymorphism to store a variety of different node behaviors.
  */
+template <typename T>
 class NodeData
 {
 public:
   virtual ~NodeData() {}
 
-  virtual Real value() = 0;
-  virtual JITReturnValue jit(JITStateValue & state) = 0;
+  virtual T value() = 0;
 
   virtual std::string format() const = 0;
   virtual std::string formatTree(std::string indent) const { return indent + format() + '\n'; };
 
-  virtual NodeDataPtr clone() = 0;
+  virtual NodeDataPtr<T> clone() = 0;
 
-  virtual Node getArg(unsigned int i) = 0;
+  virtual Node<T> getArg(unsigned int i) = 0;
   virtual std::size_t size() const { return 0; }
   virtual std::size_t hash() const = 0;
 
@@ -54,7 +53,7 @@ public:
   virtual bool is(BinaryFunctionType) const { return false; };
   virtual bool is(ConditionalType) const { return false; };
   virtual bool is(IntegerPowerType) const { return false; };
-  virtual bool is(ValueProvider * a) const { return false; }
+  virtual bool is(ValueProvider<T> * a) const { return false; }
 
   virtual bool isValid() const { return true; };
 
@@ -64,45 +63,45 @@ public:
   // virtual void checkIndex(const std::vector<unsigned int> & index);
 
   // apply a transform visitor
-  virtual void apply(Transform & transform) = 0;
+  virtual void apply(Transform<T> & transform) = 0;
 
-  virtual Node D(const ValueProvider & vp) = 0;
+  virtual Node<T> D(const ValueProvider<T> & vp) = 0;
 
   virtual unsigned short precedence() const { return 0; }
 
   /// amount of net stack pointer movement of this operator
   virtual void stackDepth(std::pair<int, int> & current_max) const;
 
-  friend Node;
+  friend Node<T>;
 };
 
 /**
  * Data class for empty invalid nodes that are constructed using the Node()
  * default constructor.
  */
-class EmptyData : public NodeData
+template <typename T>
+class EmptyData : public NodeData<T>
 {
 public:
   std::size_t hash() const override { return 0; }
   bool isValid() const override { return false; };
 
-  Real value() override { fatalError("invalid node"); };
-  JITReturnValue jit(JITStateValue & state) override { fatalError("invalid node"); };
+  T value() override { fatalError("invalid node"); };
 
   std::string format() const override { fatalError("invalid node"); };
   std::string formatTree(std::string indent) const override { fatalError("invalid node"); };
-  NodeDataPtr clone() override { fatalError("invalid node"); };
-  Node getArg(unsigned int i) override { fatalError("invalid node"); }
-  Node D(const ValueProvider & vp) override { fatalError("invalid node"); }
+  NodeDataPtr<T> clone() override { fatalError("invalid node"); };
+  Node<T> getArg(unsigned int i) override { fatalError("invalid node"); }
+  Node<T> D(const ValueProvider<T> & vp) override { fatalError("invalid node"); }
 
-  void apply(Transform & transform) override;
+  void apply(Transform<T> & transform) override;
 };
 
 /**
  * Base class template for NodeData objects with exactly N child nodes
  */
-template <typename Enum, std::size_t N>
-class FixedArgumentData : public NodeData
+template <typename T, typename Enum, std::size_t N>
+class FixedArgumentData : public NodeData<T>
 {
 public:
   template <typename... Args, typename = typename std::enable_if<N == sizeof...(Args), void>::type>
@@ -110,7 +109,7 @@ public:
   {
   }
 
-  Node getArg(unsigned int i) override { return _args[i]; };
+  Node<T> getArg(unsigned int i) override { return _args[i]; };
   std::size_t size() const override { return N; }
   std::size_t hash() const override
   {
@@ -129,19 +128,19 @@ public:
   }
 
   Enum _type;
-  std::array<Node, N> _args;
+  std::array<Node<T>, N> _args;
 };
 
 /**
  * Base class template for NodeData objects with an arbitrary number of child nodes
  */
-template <typename Enum>
-class MultinaryData : public NodeData
+template <typename T, typename Enum>
+class MultinaryData : public NodeData<T>
 {
 public:
-  MultinaryData(Enum type, std::vector<Node> args) : _type(type), _args(args) {}
+  MultinaryData(Enum type, std::vector<Node<T>> args) : _type(type), _args(args) {}
 
-  Node getArg(unsigned int i) override { return _args[i]; };
+  Node<T> getArg(unsigned int i) override { return _args[i]; };
   std::size_t size() const override { return _args.size(); }
   std::size_t hash() const override
   {
@@ -160,22 +159,23 @@ public:
   }
 
   Enum _type;
-  std::vector<Node> _args;
+  std::vector<Node<T>> _args;
 };
 
 /**
  * Base class for any childless node that can be evaluated directly
  */
-class ValueProvider : public NodeData
+template <typename T>
+class ValueProvider : public NodeData<T>
 {
 public:
   ValueProvider(const std::string & name) : _name(name) {}
-  Node getArg(unsigned int i) override { fatalError("Node has no arguments"); };
+  Node<T> getArg(unsigned int i) override { fatalError("Node has no arguments"); };
 
   std::string format() const override { return _name != "" ? _name : "{V}"; }
 
   // used to determine if two value providers are of the same type
-  bool is(ValueProvider * a) const override { return getTypeID() == a->getTypeID(); }
+  bool is(ValueProvider<T> * a) const override { return getTypeID() == a->getTypeID(); }
 
   void stackDepth(std::pair<int, int> & current_max) const override { current_max.first++; }
 
@@ -186,38 +186,40 @@ protected:
   virtual void * getTypeID() const = 0;
 
   /// The parser needs to be able to read the name of the object upon registration
-  friend Parser;
+  friend Parser<T>;
 };
 
 /**
  * All actual value providers need to inherit from this helper template
  * which implements the custom typeid system.
  */
-template <class T>
-class ValueProviderDerived : public ValueProvider
+template <class C, typename T>
+class ValueProviderDerived : public ValueProvider<T>
 {
 public:
-protected:
-  ValueProviderDerived(const std::string & name) : ValueProvider(name) { (void)_vp_typeinfo_tag; }
+  ValueProviderDerived(const std::string & name) : ValueProvider<T>(name)
+  {
+    (void)_vp_typeinfo_tag;
+  }
   virtual void * getTypeID() const { return reinterpret_cast<void *>(&_vp_typeinfo_tag); };
 
 private:
   static int _vp_typeinfo_tag;
 };
-template <class T>
-int ValueProviderDerived<T>::_vp_typeinfo_tag;
+template <class C, typename T>
+int ValueProviderDerived<C, T>::_vp_typeinfo_tag;
 
 /**
  * Local variable that is defined using the := operator
  */
-class LocalVariableData : public NodeData
+template <typename T>
+class LocalVariableData : public NodeData<T>
 {
 public:
   LocalVariableData(std::size_t id) : _id(id) {}
-  Node getArg(unsigned int i) override { fatalError("Node has no arguments"); };
+  Node<T> getArg(unsigned int i) override { fatalError("Node has no arguments"); };
 
-  Real value() override;
-  JITReturnValue jit(JITStateValue & state) override { fatalError("Node cannot be compiled"); }
+  T value() override;
 
   std::string format() const override { return "{V" + stringify(_id) + "}"; }
 
@@ -225,11 +227,11 @@ public:
 
   void stackDepth(std::pair<int, int> & current_max) const override { current_max.first++; }
 
-  NodeDataPtr clone() override { fatalError("Cannot clone local variable"); };
+  NodeDataPtr<T> clone() override { fatalError("Cannot clone local variable"); };
   std::size_t hash() const override { return std::hash<const void *>{}(this); }
 
-  Node D(const ValueProvider & vp) override { fatalError("Not implemented"); };
-  void apply(Transform & transform) override;
+  Node<T> D(const ValueProvider<T> & vp) override { fatalError("Not implemented"); };
+  void apply(Transform<T> & transform) override;
 
   std::size_t _id;
 };
@@ -238,40 +240,44 @@ public:
  * Purely symbolic node that cannot be evaluated or compiled by substituted and
  * derived w.r.t.
  */
-class SymbolData : public ValueProviderDerived<SymbolData>
+template <typename T>
+class SymbolData : public ValueProviderDerived<SymbolData<T>, T>
 {
 public:
-  SymbolData(const std::string & name) : ValueProviderDerived<SymbolData>(name) {}
+  using ValueProvider<T>::_name;
 
-  Real value() override { fatalError("Node cannot be evaluated"); }
-  JITReturnValue jit(JITStateValue & state) override { fatalError("Node cannot be compiled"); }
+  SymbolData(const std::string & name) : ValueProviderDerived<SymbolData<T>, T>(name) {}
 
-  NodeDataPtr clone() override { return std::make_shared<SymbolData>(_name); };
+  T value() override { fatalError("Node cannot be evaluated"); }
+
+  NodeDataPtr<T> clone() override { return std::make_shared<SymbolData<T>>(_name); };
   std::size_t hash() const override { return std::hash<std::string>{}(_name); }
 
-  Node D(const ValueProvider & vp) override;
-  void apply(Transform & transform) override;
+  Node<T> D(const ValueProvider<T> & vp) override;
+  void apply(Transform<T> & transform) override;
 };
 
 /**
- * Simple value provider that fetches its contents from a referenced Real value
+ * Simple value provider that fetches its contents from a referenced T value
  */
-class RealReferenceData : public ValueProviderDerived<RealReferenceData>
+template <typename T>
+class RealReferenceData : public ValueProviderDerived<RealReferenceData<T>, T>
 {
 public:
+  using ValueProvider<T>::_name;
+
   RealReferenceData(const Real & ref, const std::string & name = "")
-    : ValueProviderDerived<RealReferenceData>(name), _ref(ref)
+    : ValueProviderDerived<RealReferenceData<T>, T>(name), _ref(ref)
   {
   }
 
-  Real value() override { return _ref; };
-  JITReturnValue jit(JITStateValue & state) override;
+  T value() override { return _ref; };
 
-  NodeDataPtr clone() override { return std::make_shared<RealReferenceData>(_ref, _name); };
+  NodeDataPtr<T> clone() override { return std::make_shared<RealReferenceData<T>>(_ref, _name); };
   std::size_t hash() const override { return std::hash<const Real *>{}(&_ref); }
 
-  Node D(const ValueProvider & vp) override;
-  void apply(Transform & transform) override;
+  Node<T> D(const ValueProvider<T> & vp) override;
+  void apply(Transform<T> & transform) override;
 
   const Real & _ref;
 };
@@ -280,28 +286,30 @@ public:
  * Simple value provider that fetches its contents from a referenced Real array value
  * and a referenced index variable
  */
-class RealArrayReferenceData : public ValueProviderDerived<RealArrayReferenceData>
+template <typename T>
+class RealArrayReferenceData : public ValueProviderDerived<RealArrayReferenceData<T>, T>
 {
 public:
+  using ValueProvider<T>::_name;
+
   RealArrayReferenceData(const Real & ref, const int & index, const std::string & name = "")
-    : ValueProviderDerived<RealArrayReferenceData>(name), _ref(ref), _index(index)
+    : ValueProviderDerived<RealArrayReferenceData<T>, T>(name), _ref(ref), _index(index)
   {
   }
 
-  Real value() override { return (&_ref)[_index]; };
-  JITReturnValue jit(JITStateValue & state) override;
+  T value() override { return (&_ref)[_index]; };
 
-  NodeDataPtr clone() override
+  NodeDataPtr<T> clone() override
   {
-    return std::make_shared<RealArrayReferenceData>(_ref, _index, _name);
+    return std::make_shared<RealArrayReferenceData<T>>(_ref, _index, _name);
   };
   std::size_t hash() const override
   {
     return std::hash<const Real *>{}(&_ref) ^ (std::hash<const int *>{}(&_index) << 1);
   }
 
-  Node D(const ValueProvider & vp) override;
-  void apply(Transform & transform) override;
+  Node<T> D(const ValueProvider<T> & vp) override;
+  void apply(Transform<T> & transform) override;
 
   const Real & _ref;
   const int & _index;
@@ -310,14 +318,15 @@ public:
 /**
  * Base class for any childless nodes that represent a constant quantity
  */
-class NumberData : public NodeData
+template <typename T>
+class NumberData : public NodeData<T>
 {
 public:
   Shape shape() override { return {1}; }
 
-  Node getArg(unsigned int i) override { fatalError("Node has no arguments"); };
+  Node<T> getArg(unsigned int i) override { fatalError("Node has no arguments"); };
 
-  Node D(const ValueProvider &) override { return Node(0.0); }
+  Node<T> D(const ValueProvider<T> &) override { return Node<T>(0.0); }
 
   void stackDepth(std::pair<int, int> & current_max) const override { current_max.first++; }
 
@@ -327,24 +336,26 @@ public:
 /**
  * Floating point constant node
  */
-class RealNumberData : public NumberData
+template <typename T>
+class RealNumberData : public NumberData<T>
 {
 public:
-  RealNumberData(Real value) : NumberData(), _value(value) {}
+  using NumberData<T>::_type;
 
-  Real value() override { return _value; };
-  JITReturnValue jit(JITStateValue & state) override;
+  RealNumberData(T value) : NumberData<T>(), _value(value) {}
+
+  T value() override { return _value; };
 
   std::string format() const override { return stringify(_value); };
 
-  NodeDataPtr clone() override { return std::make_shared<RealNumberData>(_value); };
+  NodeDataPtr<T> clone() override { return std::make_shared<RealNumberData>(_value); };
   std::size_t hash() const override { return std::hash<Real>{}(_value); }
 
   bool is(NumberType type) const override;
-  bool is(Real value) const override { return value == _value; };
+  bool is(T value) const override { return value == _value; };
 
-  void setValue(Real value) { _value = value; }
-  void apply(Transform & transform) override;
+  void setValue(T value) { _value = value; }
+  void apply(Transform<T> & transform) override;
 
   Real _value;
 };
@@ -352,21 +363,23 @@ public:
 /**
  * Operators o of the form 'oA'
  */
-class UnaryOperatorData : public FixedArgumentData<UnaryOperatorType, 1>
+template <typename T>
+class UnaryOperatorData : public FixedArgumentData<T, UnaryOperatorType, 1>
 {
-  using FixedArgumentData<UnaryOperatorType, 1>::FixedArgumentData;
-
 public:
-  Real value() override;
-  JITReturnValue jit(JITStateValue & state) override;
+  using FixedArgumentData<T, UnaryOperatorType, 1>::FixedArgumentData;
+  using FixedArgumentData<T, UnaryOperatorType, 1>::_type;
+  using FixedArgumentData<T, UnaryOperatorType, 1>::_args;
+
+  T value() override;
 
   std::string format() const override;
   std::string formatTree(std::string indent) const override;
 
-  NodeDataPtr clone() override;
+  NodeDataPtr<T> clone() override;
 
-  Node D(const ValueProvider &) override;
-  void apply(Transform & transform) override;
+  Node<T> D(const ValueProvider<T> &) override;
+  void apply(Transform<T> & transform) override;
 
   unsigned short precedence() const override { return 3; }
 };
@@ -374,21 +387,24 @@ public:
 /**
  * Operators o of the form 'A o B'
  */
-class BinaryOperatorData : public FixedArgumentData<BinaryOperatorType, 2>
+template <typename T>
+class BinaryOperatorData : public FixedArgumentData<T, BinaryOperatorType, 2>
 {
-  using FixedArgumentData<BinaryOperatorType, 2>::FixedArgumentData;
-
 public:
-  Real value() override;
-  JITReturnValue jit(JITStateValue & state) override;
+  using FixedArgumentData<T, BinaryOperatorType, 2>::FixedArgumentData;
+  using FixedArgumentData<T, BinaryOperatorType, 2>::_type;
+  using FixedArgumentData<T, BinaryOperatorType, 2>::_args;
+  using FixedArgumentData<T, BinaryOperatorType, 2>::is;
+
+  T value() override;
 
   std::string format() const override;
   std::string formatTree(std::string indent) const override;
 
-  NodeDataPtr clone() override;
+  NodeDataPtr<T> clone() override;
 
-  Node D(const ValueProvider &) override;
-  void apply(Transform & transform) override;
+  Node<T> D(const ValueProvider<T> &) override;
+  void apply(Transform<T> & transform) override;
 
   unsigned short precedence() const override;
 };
@@ -396,121 +412,129 @@ public:
 /**
  * Operators o of the form 'A o B o B o C o D ... o Z'
  */
-class MultinaryOperatorData : public MultinaryData<MultinaryOperatorType>
+template <typename T>
+class MultinaryOperatorData : public MultinaryData<T, MultinaryOperatorType>
 {
-  using MultinaryData<MultinaryOperatorType>::MultinaryData;
-
 public:
-  Real value() override;
-  JITReturnValue jit(JITStateValue & state) override;
+  using MultinaryData<T, MultinaryOperatorType>::MultinaryData;
+  using MultinaryData<T, MultinaryOperatorType>::_type;
+  using MultinaryData<T, MultinaryOperatorType>::_args;
+
+  T value() override;
 
   std::string format() const override;
   std::string formatTree(std::string indent) const override;
 
-  NodeDataPtr clone() override;
+  NodeDataPtr<T> clone() override;
 
-  Node D(const ValueProvider & vp) override;
+  Node<T> D(const ValueProvider<T> & vp) override;
 
   unsigned short precedence() const override;
-  void apply(Transform & transform) override;
+  void apply(Transform<T> & transform) override;
 };
 
 /**
  * Functions o of the form 'F(A)'
  */
-class UnaryFunctionData : public FixedArgumentData<UnaryFunctionType, 1>
+template <typename T>
+class UnaryFunctionData : public FixedArgumentData<T, UnaryFunctionType, 1>
 {
-  using FixedArgumentData<UnaryFunctionType, 1>::FixedArgumentData;
-
 public:
-  Real value() override;
-  JITReturnValue jit(JITStateValue & state) override;
+  using FixedArgumentData<T, UnaryFunctionType, 1>::FixedArgumentData;
+  using FixedArgumentData<T, UnaryFunctionType, 1>::_type;
+  using FixedArgumentData<T, UnaryFunctionType, 1>::_args;
+
+  T value() override;
 
   std::string format() const override;
   std::string formatTree(std::string indent) const override;
 
-  NodeDataPtr clone() override;
+  NodeDataPtr<T> clone() override;
 
-  Node D(const ValueProvider &) override;
+  Node<T> D(const ValueProvider<T> &) override;
 
   unsigned short precedence() const override { return 3; }
-  void apply(Transform & transform) override;
+  void apply(Transform<T> & transform) override;
 };
 
 /**
  * Functions o of the form 'F(A,B)'
  */
-class BinaryFunctionData : public FixedArgumentData<BinaryFunctionType, 2>
+template <typename T>
+class BinaryFunctionData : public FixedArgumentData<T, BinaryFunctionType, 2>
 {
-  using FixedArgumentData<BinaryFunctionType, 2>::FixedArgumentData;
-
 public:
-  Real value() override;
-  JITReturnValue jit(JITStateValue & state) override;
+  using FixedArgumentData<T, BinaryFunctionType, 2>::FixedArgumentData;
+  using FixedArgumentData<T, BinaryFunctionType, 2>::_type;
+  using FixedArgumentData<T, BinaryFunctionType, 2>::_args;
+
+  T value() override;
 
   std::string format() const override;
   std::string formatTree(std::string indent) const override;
 
-  NodeDataPtr clone() override;
+  NodeDataPtr<T> clone() override;
 
-  Node D(const ValueProvider &) override;
-  void apply(Transform & transform) override;
+  Node<T> D(const ValueProvider<T> &) override;
+  void apply(Transform<T> & transform) override;
 };
 
 /**
  * Binary branch if(A, B, C). The condition A is evaluated first and iff A is
  * true B is evaluates otherwise C is evaluated.
  */
-class ConditionalData : public FixedArgumentData<ConditionalType, 3>
+template <typename T>
+class ConditionalData : public FixedArgumentData<T, ConditionalType, 3>
 {
-  using FixedArgumentData<ConditionalType, 3>::FixedArgumentData;
-
 public:
-  Real value() override;
-  JITReturnValue jit(JITStateValue & state) override;
+  using FixedArgumentData<T, ConditionalType, 3>::FixedArgumentData;
+  using FixedArgumentData<T, ConditionalType, 3>::_type;
+  using FixedArgumentData<T, ConditionalType, 3>::_args;
+
+  T value() override;
 
   std::string format() const override;
   std::string formatTree(std::string indent) const override;
 
-  NodeDataPtr clone() override;
+  NodeDataPtr<T> clone() override;
 
-  Node D(const ValueProvider &) override;
+  Node<T> D(const ValueProvider<T> &) override;
 
   void stackDepth(std::pair<int, int> & current_max) const override;
-  void apply(Transform & transform) override;
+  void apply(Transform<T> & transform) override;
 };
 
 /**
  * Integer power class for faster JIT code generation
  */
-class IntegerPowerData : public NodeData
+template <typename T>
+class IntegerPowerData : public NodeData<T>
 {
 public:
-  IntegerPowerData(Node arg, int exponent) : NodeData(), _arg(arg), _exponent(exponent) {}
+  IntegerPowerData(Node<T> arg, int exponent) : NodeData<T>(), _arg(arg), _exponent(exponent) {}
 
-  Real value() override { return std::pow(_arg.value(), Real(_exponent)); };
-  JITReturnValue jit(JITStateValue & state) override;
+  T value() override { return std::pow(_arg.value(), Real(_exponent)); };
 
   std::string format() const override;
   std::string formatTree(std::string indent) const override;
 
-  NodeDataPtr clone() override { return std::make_shared<IntegerPowerData>(_arg, _exponent); };
+  NodeDataPtr<T> clone() override { return std::make_shared<IntegerPowerData>(_arg, _exponent); };
 
-  Node getArg(unsigned int i) override;
+  Node<T> getArg(unsigned int i) override;
   std::size_t size() const override { return 1; }
   std::size_t hash() const override { return _arg.hash() ^ (std::hash<int>{}(_exponent) << 1); }
 
   bool is(IntegerPowerType) const override { return true; };
 
-  Node D(const ValueProvider &) override;
+  Node<T> D(const ValueProvider<T> &) override;
 
   void stackDepth(std::pair<int, int> & current_max) const override
   {
     _arg.stackDepth(current_max);
   }
-  void apply(Transform & transform) override;
+  void apply(Transform<T> & transform) override;
 
-  Node _arg;
+  Node<T> _arg;
   int _exponent;
 };
 

@@ -15,27 +15,29 @@ namespace SymbolicMath
  * Stack based bytecode machine translation and evaluation
  */
 template <typename T>
-class CompiledByteCodeTempl : public Transform, public Evaluable<T>
+class CompiledByteCode : public Transform<T>, public Evaluable<T>
 {
+  using Transform<T>::apply;
+
 public:
-  CompiledByteCodeTempl(FunctionBase &);
+  CompiledByteCode(Function<T> &);
 
-  void operator()(SymbolData *) override;
+  void operator()(SymbolData<T> *) override;
 
-  void operator()(UnaryOperatorData *) override;
-  void operator()(BinaryOperatorData *) override;
-  void operator()(MultinaryOperatorData *) override;
+  void operator()(UnaryOperatorData<T> *) override;
+  void operator()(BinaryOperatorData<T> *) override;
+  void operator()(MultinaryOperatorData<T> *) override;
 
-  void operator()(UnaryFunctionData *) override;
-  void operator()(BinaryFunctionData *) override;
+  void operator()(UnaryFunctionData<T> *) override;
+  void operator()(BinaryFunctionData<T> *) override;
 
-  void operator()(RealNumberData *) override;
-  void operator()(RealReferenceData *) override;
-  void operator()(RealArrayReferenceData *) override;
-  void operator()(LocalVariableData *) override;
+  void operator()(RealNumberData<T> *) override;
+  void operator()(RealReferenceData<T> *) override;
+  void operator()(RealArrayReferenceData<T> *) override;
+  void operator()(LocalVariableData<T> *) override;
 
-  void operator()(ConditionalData *) override;
-  void operator()(IntegerPowerData *) override;
+  void operator()(ConditionalData<T> *) override;
+  void operator()(IntegerPowerData<T> *) override;
 
   T operator()() override;
 
@@ -86,7 +88,5 @@ protected:
   /// execution stack (not thread safe)
   std::vector<T> _stack;
 };
-
-using CompiledByteCode = CompiledByteCodeTempl<Real>;
 
 } // namespace SymbolicMath

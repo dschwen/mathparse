@@ -3,7 +3,7 @@
 /// (c) 2017-2020 by Daniel Schwen
 ///
 
-#include "SMFunctionBase.h"
+#include "SMFunction.h"
 #include "SMCompiledSLJIT.h"
 
 namespace SymbolicMath
@@ -13,7 +13,7 @@ const double sljit_one = 1.0;
 const double sljit_zero = 0.0;
 
 template <typename T>
-CompiledSLJITTempl<T>::CompiledSLJITTempl(FunctionBase & fb) : Transform(fb), _jit_function(nullptr)
+CompiledSLJIT<T>::CompiledSLJIT(Function<T> & fb) : Transform<T>(fb), _jit_function(nullptr)
 {
   // determine required stack size
   auto current_max = std::make_pair(0, 0);
@@ -42,7 +42,7 @@ CompiledSLJITTempl<T>::CompiledSLJITTempl(FunctionBase & fb) : Transform(fb), _j
 }
 
 template <typename T>
-CompiledSLJITTempl<T>::~CompiledSLJITTempl()
+CompiledSLJIT<T>::~CompiledSLJIT()
 {
   if (_jit_function)
     sljit_free_code(reinterpret_cast<void *>(_jit_function));
@@ -50,18 +50,18 @@ CompiledSLJITTempl<T>::~CompiledSLJITTempl()
 
 // Helper methods
 
-template <typename T>
+template <>
 void
-CompiledSLJITTempl<T>::stackPush()
+CompiledSLJIT<Real>::stackPush()
 {
   if (_sp >= 0)
     sljit_emit_fop1(_ctx, SLJIT_MOV_F64, SLJIT_MEM1(SLJIT_SP), _sp * sizeof(double), SLJIT_FR0, 0);
   _sp++;
 }
 
-template <typename T>
+template <>
 void
-CompiledSLJITTempl<T>::stackPop(sljit_s32 op)
+CompiledSLJIT<Real>::stackPop(sljit_s32 op)
 {
   if (_sp == 0)
     fatalError("Stack exhausted in stack_pop");
@@ -70,7 +70,7 @@ CompiledSLJITTempl<T>::stackPop(sljit_s32 op)
 }
 
 template <typename T>
-void CompiledSLJITTempl<T>::unaryFunctionCall(T (*func)(T))
+void CompiledSLJIT<T>::unaryFunctionCall(T (*func)(T))
 {
   sljit_emit_icall(_ctx,
                    SLJIT_CALL_CDECL,
@@ -80,7 +80,7 @@ void CompiledSLJITTempl<T>::unaryFunctionCall(T (*func)(T))
 }
 
 template <typename T>
-void CompiledSLJITTempl<T>::binaryFunctionCall(T (*func)(T, T))
+void CompiledSLJIT<T>::binaryFunctionCall(T (*func)(T, T))
 {
   sljit_emit_icall(_ctx,
                    SLJIT_CALL_CDECL,
@@ -91,7 +91,7 @@ void CompiledSLJITTempl<T>::binaryFunctionCall(T (*func)(T, T))
 
 template <typename T>
 void
-CompiledSLJITTempl<T>::emitFcmp(sljit_s32 op)
+CompiledSLJIT<T>::emitFcmp(sljit_s32 op)
 {
   struct sljit_jump * true_lbl = sljit_emit_fcmp(_ctx, op, SLJIT_FR0, 0, SLJIT_FR1, 0);
 
@@ -112,7 +112,7 @@ CompiledSLJITTempl<T>::emitFcmp(sljit_s32 op)
 
 template <typename T>
 T
-CompiledSLJITTempl<T>::truncWrapper(T A)
+CompiledSLJIT<T>::truncWrapper(T A)
 {
   return static_cast<int>(A);
 }
@@ -121,14 +121,14 @@ CompiledSLJITTempl<T>::truncWrapper(T A)
 
 template <typename T>
 void
-CompiledSLJITTempl<T>::operator()(SymbolData * n)
+CompiledSLJIT<T>::operator()(SymbolData<T> * n)
 {
   fatalError("Symbol in compiled function");
 }
 
 template <typename T>
 void
-CompiledSLJITTempl<T>::operator()(UnaryOperatorData * n)
+CompiledSLJIT<T>::operator()(UnaryOperatorData<T> * n)
 {
   n->_args[0].apply(*this);
 
@@ -148,7 +148,7 @@ CompiledSLJITTempl<T>::operator()(UnaryOperatorData * n)
 
 template <typename T>
 void
-CompiledSLJITTempl<T>::operator()(BinaryOperatorData * n)
+CompiledSLJIT<T>::operator()(BinaryOperatorData<T> * n)
 {
   n->_args[0].apply(*this);
   n->_args[1].apply(*this);
@@ -260,7 +260,7 @@ CompiledSLJITTempl<T>::operator()(BinaryOperatorData * n)
 
 template <typename T>
 void
-CompiledSLJITTempl<T>::operator()(MultinaryOperatorData * n)
+CompiledSLJIT<T>::operator()(MultinaryOperatorData<T> * n)
 {
   if (n->_args.size() == 0)
     fatalError("No child nodes in multinary operator");
@@ -289,7 +289,7 @@ CompiledSLJITTempl<T>::operator()(MultinaryOperatorData * n)
 
 template <typename T>
 void
-CompiledSLJITTempl<T>::operator()(UnaryFunctionData * n)
+CompiledSLJIT<T>::operator()(UnaryFunctionData<T> * n)
 {
   n->_args[0].apply(*this);
 
@@ -435,7 +435,7 @@ CompiledSLJITTempl<T>::operator()(UnaryFunctionData * n)
 
 template <typename T>
 void
-CompiledSLJITTempl<T>::operator()(BinaryFunctionData * n)
+CompiledSLJIT<T>::operator()(BinaryFunctionData<T> * n)
 {
   n->_args[0].apply(*this);
   n->_args[1].apply(*this);
@@ -505,7 +505,7 @@ CompiledSLJITTempl<T>::operator()(BinaryFunctionData * n)
 
 template <typename T>
 void
-CompiledSLJITTempl<T>::operator()(RealNumberData * n)
+CompiledSLJIT<T>::operator()(RealNumberData<T> * n)
 {
   // sljit does not have any 64bit floating point immediates, so we need to make a mem->register
   // transfer this makes the JIT code point to data in the expression tree! We store a copy of the
@@ -518,7 +518,7 @@ CompiledSLJITTempl<T>::operator()(RealNumberData * n)
 
 template <typename T>
 void
-CompiledSLJITTempl<T>::operator()(RealReferenceData * n)
+CompiledSLJIT<T>::operator()(RealReferenceData<T> * n)
 {
   stackPush();
   sljit_emit_fop1(_ctx, SLJIT_MOV_F64, SLJIT_FR0, 0, SLJIT_MEM, (sljit_sw)&n->_ref);
@@ -526,21 +526,21 @@ CompiledSLJITTempl<T>::operator()(RealReferenceData * n)
 
 template <typename T>
 void
-CompiledSLJITTempl<T>::operator()(RealArrayReferenceData * n)
+CompiledSLJIT<T>::operator()(RealArrayReferenceData<T> * n)
 {
   fatalError("Not implemented");
 }
 
 template <typename T>
 void
-CompiledSLJITTempl<T>::operator()(LocalVariableData * n)
+CompiledSLJIT<T>::operator()(LocalVariableData<T> * n)
 {
   fatalError("Not implemented");
 }
 
 template <typename T>
 void
-CompiledSLJITTempl<T>::operator()(ConditionalData * n)
+CompiledSLJIT<T>::operator()(ConditionalData<T> * n)
 {
   if (n->_type != ConditionalType::IF)
     fatalError("Conditional not implemented");
@@ -568,9 +568,9 @@ CompiledSLJITTempl<T>::operator()(ConditionalData * n)
   sljit_set_label(end_if, sljit_emit_label(_ctx));
 }
 
-template <typename T>
+template <>
 void
-CompiledSLJITTempl<T>::operator()(IntegerPowerData * n)
+CompiledSLJIT<Real>::operator()(IntegerPowerData<Real> * n)
 {
   if (n->_exponent == 0)
   {
@@ -609,6 +609,6 @@ CompiledSLJITTempl<T>::operator()(IntegerPowerData * n)
   }
 }
 
-template class CompiledSLJITTempl<Real>;
+template class CompiledSLJIT<Real>;
 
 } // namespace SymbolicMath

@@ -9,14 +9,21 @@
 #include "SMNode.h"
 
 #include <string>
+#include <memory>
 
 namespace SymbolicMath
 {
 typedef double Real;
 
+template <typename T>
+class Token;
+template <typename T>
+using TokenPtr = std::shared_ptr<Token<T>>;
+
 /**
  * Token base class emmitted by the Tokenizer
  */
+template <typename T>
 class Token
 {
 public:
@@ -47,39 +54,41 @@ public:
   virtual bool isUnary() { return false; }
   virtual bool isLeftAssociative() { return false; }
 
-  virtual Node node(std::stack<Node> & stack) { fatalError("Cannot build node from token"); }
+  virtual Node<T> node(std::stack<Node<T>> & stack) { fatalError("Cannot build node from token"); }
 
 protected:
   std::size_t _pos;
 };
 
-using TokenPtr = std::shared_ptr<Token>;
-
-class EndToken : public Token
+template <typename T>
+class EndToken : public Token<T>
 {
 public:
-  EndToken(std::size_t pos) : Token(pos) {}
+  EndToken(std::size_t pos) : Token<T>(pos) {}
   bool isEnd() override { return true; }
 };
 
-class InvalidToken : public Token
+template <typename T>
+class InvalidToken : public Token<T>
 {
 public:
-  InvalidToken(std::size_t pos) : Token(pos) {}
+  InvalidToken(std::size_t pos) : Token<T>(pos) {}
   bool isInvalid() override { return true; }
 };
 
-class CommaToken : public Token
+template <typename T>
+class CommaToken : public Token<T>
 {
 public:
-  CommaToken(std::size_t pos) : Token(pos) {}
+  CommaToken(std::size_t pos) : Token<T>(pos) {}
   bool isComma() override { return true; }
 };
 
-class SymbolToken : public Token
+template <typename T>
+class SymbolToken : public Token<T>
 {
 public:
-  SymbolToken(const std::string & string, std::size_t pos) : Token(pos), _string(string) {}
+  SymbolToken(const std::string & string, std::size_t pos) : Token<T>(pos), _string(string) {}
   bool isSymbol() override { return true; }
   std::string asString() override { return _string; };
 
@@ -87,10 +96,11 @@ protected:
   std::string _string;
 };
 
-class NumberToken : public Token
+template <typename T>
+class NumberToken : public Token<T>
 {
 public:
-  NumberToken(Real number, std::size_t pos) : Token(pos), _number(number) {}
+  NumberToken(Real number, std::size_t pos) : Token<T>(pos), _number(number) {}
   bool isNumber() override { return true; }
   Real asNumber() override { return _number; };
 
@@ -98,7 +108,8 @@ protected:
   Real _number;
 };
 
-class BracketToken : public Token
+template <typename T>
+class BracketToken : public Token<T>
 {
 public:
   BracketToken(char bracket, std::size_t pos);
@@ -115,28 +126,33 @@ protected:
   BracketType _type;
 };
 
-class OperatorToken : public Token
+template <typename T>
+class OperatorToken : public Token<T>
 {
-  using Token::Token;
+  using Token<T>::Token;
 
 public:
   bool isOperator() override { return true; }
 
-  static OperatorToken * build(const std::string & string, std::size_t pos);
+  static TokenPtr<T> build(const std::string & string, std::size_t pos);
 };
 
-class InvalidOperatorToken : public OperatorToken
+template <typename T>
+class InvalidOperatorToken : public OperatorToken<T>
 {
-  using OperatorToken::OperatorToken;
+  using OperatorToken<T>::OperatorToken;
 
 public:
   bool isInvalid() override { return true; }
 };
 
-class OperatorTokenBase : public OperatorToken
+template <typename T>
+class OperatorTokenBase : public OperatorToken<T>
 {
 public:
-  OperatorTokenBase(OperatorProperties prop, std::size_t pos) : OperatorToken(pos), _prop(prop) {}
+  OperatorTokenBase(OperatorProperties prop, std::size_t pos) : OperatorToken<T>(pos), _prop(prop)
+  {
+  }
   bool isOperator() override { return true; }
   bool isInvalid() override { return true; }
   unsigned short precedence() override { return _prop._precedence; }
@@ -147,99 +163,110 @@ protected:
   OperatorProperties _prop;
 };
 
-class UnaryOperatorToken : public OperatorTokenBase
+template <typename T>
+class UnaryOperatorToken : public OperatorTokenBase<T>
 {
 public:
   UnaryOperatorToken(std::pair<UnaryOperatorType, OperatorProperties> type_prop, std::size_t pos)
-    : OperatorTokenBase(type_prop.second, pos), _type(type_prop.first)
+    : OperatorTokenBase<T>(type_prop.second, pos), _type(type_prop.first)
   {
   }
   bool isInvalid() override { return _type == UnaryOperatorType::_INVALID; }
   bool isUnary() override { return true; }
   unsigned short arguments() override { return 1; }
-  static OperatorToken * build(UnaryOperatorType type, std::size_t pos);
-  Node node(std::stack<Node> & stack) override;
+  static TokenPtr<T> build(UnaryOperatorType type, std::size_t pos);
+  Node<T> node(std::stack<Node<T>> & stack) override;
 
 protected:
   UnaryOperatorType _type;
 };
 
-class BinaryOperatorToken : public OperatorTokenBase
+template <typename T>
+class BinaryOperatorToken : public OperatorTokenBase<T>
 {
 public:
   BinaryOperatorToken(std::pair<BinaryOperatorType, OperatorProperties> type_prop, std::size_t pos)
-    : OperatorTokenBase(type_prop.second, pos), _type(type_prop.first)
+    : OperatorTokenBase<T>(type_prop.second, pos), _type(type_prop.first)
   {
   }
   bool isInvalid() override { return _type == BinaryOperatorType::_INVALID; }
   unsigned short arguments() override { return 2; }
-  Node node(std::stack<Node> & stack) override;
+  Node<T> node(std::stack<Node<T>> & stack) override;
   bool is(BinaryOperatorType type) override { return type == _type; }
 
 protected:
   BinaryOperatorType _type;
 };
 
-class MultinaryOperatorToken : public OperatorTokenBase
+template <typename T>
+class MultinaryOperatorToken : public OperatorTokenBase<T>
 {
 public:
   MultinaryOperatorToken(std::pair<MultinaryOperatorType, OperatorProperties> type_prop,
                          std::size_t pos)
-    : OperatorTokenBase(type_prop.second, pos), _type(type_prop.first)
+    : OperatorTokenBase<T>(type_prop.second, pos), _type(type_prop.first)
   {
   }
   bool isInvalid() override { return _type == MultinaryOperatorType::_INVALID; }
   unsigned short arguments() override { return 2; }
-  Node node(std::stack<Node> & stack) override;
+  Node<T> node(std::stack<Node<T>> & stack) override;
   bool is(MultinaryOperatorType type) override { return type == _type; }
 
 protected:
   MultinaryOperatorType _type;
 };
 
-class FunctionToken : public Token
+template <typename T>
+class FunctionToken : public Token<T>
 {
-  using Token::Token;
+  using Token<T>::Token;
 
 public:
-  static FunctionToken * build(const std::string & string, std::size_t pos);
+  static TokenPtr<T> build(const std::string & string, std::size_t pos);
   bool isFunction() override { return true; }
   virtual bool isInvalid() override { return true; }
 };
 
-class UnaryFunctionToken : public FunctionToken
+template <typename T>
+class UnaryFunctionToken : public FunctionToken<T>
 {
 public:
-  UnaryFunctionToken(UnaryFunctionType type, std::size_t pos) : FunctionToken(pos), _type(type) {}
+  UnaryFunctionToken(UnaryFunctionType type, std::size_t pos) : FunctionToken<T>(pos), _type(type)
+  {
+  }
   bool isInvalid() override { return _type == UnaryFunctionType::_INVALID; }
   unsigned short arguments() override { return 1; }
-  Node node(std::stack<Node> & stack) override;
+  Node<T> node(std::stack<Node<T>> & stack) override;
   std::string asString() override { return stringify(_type); };
 
 protected:
   UnaryFunctionType _type;
 };
 
-class BinaryFunctionToken : public FunctionToken
+template <typename T>
+class BinaryFunctionToken : public FunctionToken<T>
 {
 public:
-  BinaryFunctionToken(BinaryFunctionType type, std::size_t pos) : FunctionToken(pos), _type(type) {}
+  BinaryFunctionToken(BinaryFunctionType type, std::size_t pos) : FunctionToken<T>(pos), _type(type)
+  {
+  }
   bool isInvalid() override { return _type == BinaryFunctionType::_INVALID; }
   unsigned short arguments() override { return 2; }
-  Node node(std::stack<Node> & stack) override;
+  Node<T> node(std::stack<Node<T>> & stack) override;
   std::string asString() override { return stringify(_type); };
 
 protected:
   BinaryFunctionType _type;
 };
 
-class ConditionalToken : public FunctionToken
+template <typename T>
+class ConditionalToken : public FunctionToken<T>
 {
 public:
-  ConditionalToken(ConditionalType type, std::size_t pos) : FunctionToken(pos), _type(type) {}
+  ConditionalToken(ConditionalType type, std::size_t pos) : FunctionToken<T>(pos), _type(type) {}
   bool isInvalid() override { return _type == ConditionalType::_INVALID; }
   unsigned short arguments() override { return 3; }
-  Node node(std::stack<Node> & stack) override;
+  Node<T> node(std::stack<Node<T>> & stack) override;
   std::string asString() override { return stringify(_type); };
 
 protected:

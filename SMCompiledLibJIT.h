@@ -8,7 +8,7 @@
 #include "SMTransform.h"
 #include "SMEvaluable.h"
 
-#include "contrib/sljit_src/sljitLir.h"
+#include <jit/jit.h>
 
 #include <list>
 
@@ -16,16 +16,16 @@ namespace SymbolicMath
 {
 
 /**
- * SLJIT compiler transform
+ * LibJIT compiler transform
  */
 template <typename T>
-class CompiledSLJIT : public Transform<T>, public Evaluable<T>
+class CompiledLibJIT : public Transform<T>, public Evaluable<T>
 {
   using Transform<T>::apply;
 
 public:
-  CompiledSLJIT(Function<T> &);
-  ~CompiledSLJIT() override;
+  CompiledLibJIT(Function<T> &);
+  ~CompiledLibJIT() override;
 
   void operator()(SymbolData<T> *) override;
 
@@ -47,27 +47,22 @@ public:
   T operator()() override { return _jit_function(); }
 
 protected:
-  void stackPush();
-  void stackPop(sljit_s32);
+  jit_value_t unaryFunctionCall(T (*func)(T), jit_value_t);
 
-  void unaryFunctionCall(T (*func)(T));
-  void binaryFunctionCall(T (*func)(T, T));
+  /// JIT compilation context
+  jit_context_t _jit_context;
 
-  void emitFcmp(sljit_s32);
+  /// JIT return value
+  jit_value_t _value;
 
-  static T truncWrapper(T);
-
-  /// current stack entry (as array index)
-  int _sp;
-
-  /// SLJIT compiler context
-  struct sljit_compiler * _ctx;
+  /// JIT state
+  jit_function_t _state;
 
   /// store immediates in a "pointer stable" way
   std::list<T> _immediate;
 
-  /// compiled function (TODO: pass result by reference)
-  using JITFunctionPtr = T SLJIT_FUNC (*)();
+  /// compiled function
+  typedef Real (*JITFunctionPtr)();
   JITFunctionPtr _jit_function;
 };
 

@@ -12,55 +12,62 @@
 namespace SymbolicMath
 {
 
+template <typename T>
 class Node;
-class FunctionBase;
+
+template <typename T>
+class Function;
 
 /**
  * Base class for a function transforming visitor (simplification, derivation)
  */
+template <typename T>
 class Transform
 {
 public:
-  Transform(FunctionBase & fb) : _fb(fb) { _current_node = nullptr; }
+  Transform(Function<T> & fb) : _fb(fb) { _current_node = nullptr; }
   virtual ~Transform() {}
 
-  virtual void operator()(SymbolData *) = 0;
+  virtual void operator()(SymbolData<T> *) = 0;
 
-  virtual void operator()(UnaryOperatorData *) = 0;
-  virtual void operator()(BinaryOperatorData *) = 0;
-  virtual void operator()(MultinaryOperatorData *) = 0;
+  virtual void operator()(UnaryOperatorData<T> *) = 0;
+  virtual void operator()(BinaryOperatorData<T> *) = 0;
+  virtual void operator()(MultinaryOperatorData<T> *) = 0;
 
-  virtual void operator()(UnaryFunctionData *) = 0;
-  virtual void operator()(BinaryFunctionData *) = 0;
+  virtual void operator()(UnaryFunctionData<T> *) = 0;
+  virtual void operator()(BinaryFunctionData<T> *) = 0;
 
-  virtual void operator()(RealNumberData *) = 0;
-  virtual void operator()(RealReferenceData *) = 0;
-  virtual void operator()(RealArrayReferenceData *) = 0;
-  virtual void operator()(LocalVariableData *) = 0;
+  virtual void operator()(RealNumberData<T> *) = 0;
+  virtual void operator()(RealReferenceData<T> *) = 0;
+  virtual void operator()(RealArrayReferenceData<T> *) = 0;
+  virtual void operator()(LocalVariableData<T> *) = 0;
 
-  virtual void operator()(ConditionalData *) = 0;
-  virtual void operator()(IntegerPowerData *) = 0;
+  virtual void operator()(ConditionalData<T> *) = 0;
+  virtual void operator()(IntegerPowerData<T> *) = 0;
+
+  /// Perform one time system initialization (must be called outside a threaded region!)
+  static void initialize() {}
 
   // set currently processed node
-  void pushNode(Node * node);
+  void pushNode(Node<T> * node);
   void popNode();
 
 protected:
-  FunctionBase & _fb;
+  Function<T> & _fb;
 
   void apply();
 
   void set(Real val);
-  void set(UnaryOperatorType type, Node arg);
-  void set(BinaryOperatorType type, Node arg0, Node arg1);
-  void set(MultinaryOperatorType type, std::vector<Node> args);
-  void set(UnaryFunctionType type, Node arg);
-  void set(BinaryFunctionType type, Node arg0, Node arg1);
-  void set(ConditionalType type, Node arg0, Node arg1, Node arg2);
-  void set(IntegerPowerType, Node arg, int exponent);
+  void set(UnaryOperatorType type, Node<T> arg);
+  void set(BinaryOperatorType type, Node<T> arg0, Node<T> arg1);
+  void set(MultinaryOperatorType type, std::vector<Node<T>> args);
+  void set(UnaryFunctionType type, Node<T> arg);
+  void set(BinaryFunctionType type, Node<T> arg0, Node<T> arg1);
+  void set(ConditionalType type, Node<T> arg0, Node<T> arg1, Node<T> arg2);
+  void set(IntegerPowerType, Node<T> arg, int exponent);
 
-  Node * _current_node;
-  std::stack<Node *> _node_stack;
+  Node<T> * _current_node;
+  std::stack<Node<T> *> _node_stack;
 };
 
 } // namespace SymbolicMath

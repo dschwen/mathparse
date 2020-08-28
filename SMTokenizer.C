@@ -13,46 +13,53 @@
 namespace SymbolicMath
 {
 
-Tokenizer::Tokenizer(const std::string expression)
+template <typename T>
+Tokenizer<T>::Tokenizer(const std::string expression)
   : _mpt_expression(expression + '\0'), _c(_mpt_expression.begin())
 {
 }
 
+template <typename T>
 bool
-Tokenizer::isDigit()
+Tokenizer<T>::isDigit()
 {
   const std::string digit("0123456789");
   return digit.find_first_of(*_c) != std::string::npos;
 }
 
+template <typename T>
 bool
-Tokenizer::isOperator()
+Tokenizer<T>::isOperator()
 {
   const std::string operator_char("+-*/^!%<>=?:&|;");
   return operator_char.find_first_of(*_c) != std::string::npos;
 }
 
+template <typename T>
 bool
-Tokenizer::isBracket()
+Tokenizer<T>::isBracket()
 {
-  return BracketToken::opening(*_c) != BracketType::_INVALID ||
-         BracketToken::closing(*_c) != BracketType::_INVALID;
+  return BracketToken<T>::opening(*_c) != BracketType::_INVALID ||
+         BracketToken<T>::closing(*_c) != BracketType::_INVALID;
 }
 
+template <typename T>
 bool
-Tokenizer::isAlphaFirst()
+Tokenizer<T>::isAlphaFirst()
 {
   return (*_c >= 'a' && *_c <= 'z') || (*_c >= 'A' && *_c <= 'Z');
 }
 
+template <typename T>
 bool
-Tokenizer::isAlphaCont()
+Tokenizer<T>::isAlphaCont()
 {
   return isAlphaFirst() || isDigit() || *_c == '_';
 }
 
+template <typename T>
 int
-Tokenizer::getInteger()
+Tokenizer<T>::getInteger()
 {
   int integer = 0;
   while (isDigit())
@@ -60,16 +67,18 @@ Tokenizer::getInteger()
   return integer;
 }
 
+template <typename T>
 void
-Tokenizer::skipWhite()
+Tokenizer<T>::skipWhite()
 {
   // skip whitespace
   while (*_c == ' ')
     ++_c;
 }
 
-Token *
-Tokenizer::getToken()
+template <typename T>
+TokenPtr<T>
+Tokenizer<T>::getToken()
 {
   skipWhite();
 
@@ -78,13 +87,13 @@ Tokenizer::getToken()
 
   // end of expression
   if (*_c == '\0')
-    return new EndToken(pos());
+    return TokenPtr<T>(new EndToken<T>(pos()));
 
   // comma
   if (*_c == ',')
   {
     _c++;
-    return new CommaToken(pos());
+    return TokenPtr<T>(new CommaToken<T>(pos()));
   }
 
   if (isOperator())
@@ -93,11 +102,11 @@ Tokenizer::getToken()
     // parse >= <= == but NOT *-
     while (*_c == '=')
       op += *(_c++);
-    return OperatorToken::build(op, pos());
+    return OperatorToken<T>::build(op, pos());
   }
 
   if (isBracket())
-    return new BracketToken(*(_c++), pos());
+    return TokenPtr<T>(new BracketToken<T>(*(_c++), pos()));
 
   // consume symbol
   if (isAlphaFirst())
@@ -107,9 +116,9 @@ Tokenizer::getToken()
       symbol += *(_c++);
 
     if (*_c == '(')
-      return FunctionToken::build(symbol, pos());
+      return FunctionToken<T>::build(symbol, pos());
     else
-      return new SymbolToken(symbol, pos());
+      return TokenPtr<T>(new SymbolToken<T>(symbol, pos()));
   }
 
   // consume number
@@ -148,13 +157,16 @@ Tokenizer::getToken()
     }
 
     if (decimals == 0.0 && exponent == 0)
-      return new NumberToken(integer, pos());
+      return TokenPtr<T>(new NumberToken<T>(integer, pos()));
     else
-      return new NumberToken((integer + decimals) * std::pow(10.0, exponent), pos());
+      return TokenPtr<T>(
+          new NumberToken<T>((integer + decimals) * std::pow(10.0, exponent), pos()));
   }
 
   // unable to parse
-  return new InvalidToken(pos());
+  return TokenPtr<T>(new InvalidToken<T>(pos()));
 }
+
+template class Tokenizer<Real>;
 
 } // namespace SymbolicMath

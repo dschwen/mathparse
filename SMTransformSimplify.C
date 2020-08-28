@@ -7,16 +7,21 @@
 #include <algorithm>
 
 #include "SMNodeData.h"
-#include "SMFunctionBase.h"
+#include "SMFunction.h"
 #include "SMTransformSimplify.h"
 
 namespace SymbolicMath
 {
 
-Simplify::Simplify(FunctionBase & fb) : Transform(fb) { apply(); }
+template <typename T>
+Simplify<T>::Simplify(Function<T> & fb) : Transform<T>(fb)
+{
+  apply();
+}
 
+template <typename T>
 void
-Simplify::operator()(UnaryOperatorData * n)
+Simplify<T>::operator()(UnaryOperatorData<T> * n)
 {
   // simplify child
   n->_args[0].apply(*this);
@@ -24,8 +29,9 @@ Simplify::operator()(UnaryOperatorData * n)
     set(n->value());
 }
 
+template <typename T>
 void
-Simplify::operator()(BinaryOperatorData * n)
+Simplify<T>::operator()(BinaryOperatorData<T> * n)
 {
   // simplify children
   n->_args[0].apply(*this);
@@ -85,17 +91,18 @@ Simplify::operator()(BinaryOperatorData * n)
   }
 }
 
+template <typename T>
 void
-Simplify::operator()(MultinaryOperatorData * n)
+Simplify<T>::operator()(MultinaryOperatorData<T> * n)
 {
   // simplify and hoist children
-  std::vector<Node> newargs;
+  std::vector<Node<T>> newargs;
   for (auto & arg : n->_args)
   {
     arg.apply(*this);
     if (arg.is(n->_type))
     {
-      auto arg_data = std::static_pointer_cast<MultinaryOperatorData>(arg._data);
+      auto arg_data = std::static_pointer_cast<MultinaryOperatorData<T>>(arg._data);
       newargs.insert(newargs.end(), arg_data->_args.begin(), arg_data->_args.end());
     }
     else
@@ -109,12 +116,12 @@ Simplify::operator()(MultinaryOperatorData * n)
     case MultinaryOperatorType::MULTIPLICATION:
     {
       // sort constant numbers to the end
-      std::sort(n->_args.begin(), n->_args.end(), [](Node & a, Node & b) {
+      std::sort(n->_args.begin(), n->_args.end(), [](Node<T> & a, Node<T> & b) {
         return !a.is(NumberType::_ANY) && b.is(NumberType::_ANY);
       });
       // find first number node
       auto first_num = std::find_if(
-          n->_args.begin(), n->_args.end(), [](Node & a) { return a.is(NumberType::_ANY); });
+          n->_args.begin(), n->_args.end(), [](Node<T> & a) { return a.is(NumberType::_ANY); });
       if (first_num == n->_args.end())
         return;
       Real val = first_num->value();
@@ -126,7 +133,13 @@ Simplify::operator()(MultinaryOperatorData * n)
           val *= n->_args.back().value();
         n->_args.pop_back();
       }
-      first_num->_data = std::make_shared<RealNumberData>(val);
+
+      if ((val == 1.0 && n->_type == MultinaryOperatorType::MULTIPLICATION) ||
+          (val == 0.0 && n->_type == MultinaryOperatorType::ADDITION))
+        n->_args.pop_back();
+      else
+        first_num->_data = std::make_shared<RealNumberData<T>>(val);
+
       return;
     }
 
@@ -135,8 +148,9 @@ Simplify::operator()(MultinaryOperatorData * n)
   }
 }
 
+template <typename T>
 void
-Simplify::operator()(UnaryFunctionData * n)
+Simplify<T>::operator()(UnaryFunctionData<T> * n)
 {
   // simplify child
   n->_args[0].apply(*this);
@@ -144,8 +158,9 @@ Simplify::operator()(UnaryFunctionData * n)
     set(n->value());
 }
 
+template <typename T>
 void
-Simplify::operator()(BinaryFunctionData * n)
+Simplify<T>::operator()(BinaryFunctionData<T> * n)
 {
   // simplify children
   n->_args[0].apply(*this);
@@ -157,10 +172,42 @@ Simplify::operator()(BinaryFunctionData * n)
     set(n->value());
     return;
   }
+
+  switch (n->_type)
+  {
+    case BinaryFunctionType::POW:
+      if (n->_args[1].is(1.0))
+      {
+        _current_node->_data = n->_args[0]._data;
+        return;
+      }
+
+      if (n->_args[1].is(0.0))
+      {
+        set(1.0);
+        return;
+      }
+
+      if (n->_args[1].is(NumberType::_ANY))
+      {
+        auto val = n->_args[1].value();
+        if (std::floor(val) == val)
+        {
+          set(IntegerPowerType::_ANY, n->_args[0], val);
+          return;
+        }
+      }
+
+      return;
+
+    default:
+      return;
+  }
 }
 
+template <typename T>
 void
-Simplify::operator()(ConditionalData * n)
+Simplify<T>::operator()(ConditionalData<T> * n)
 {
   if (n->_type != ConditionalType::IF)
     fatalError("Conditional not implemented");
@@ -179,8 +226,9 @@ Simplify::operator()(ConditionalData * n)
   }
 }
 
+template <typename T>
 void
-Simplify::operator()(IntegerPowerData * n)
+Simplify<T>::operator()(IntegerPowerData<T> * n)
 {
   // (a^b)^c = a^(b*c) (c00^c01) ^ c1 = c00 ^ (c01*c1)
   if (n->_arg.is(IntegerPowerType::_ANY))
@@ -195,5 +243,7 @@ Simplify::operator()(IntegerPowerData * n)
   else if (n->_exponent == 0)
     set(1.0);
 }
+
+template class Simplify<Real>;
 
 } // namespace SymbolicMath
