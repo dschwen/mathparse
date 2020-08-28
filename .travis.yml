@@ -22,7 +22,7 @@ install:
 before_script:
   # Build GNU Lightning
   - cd $TRAVIS_BUILD_DIR
-  - git clone --depth=1 https://git.savannah.gnu.org/git/lightning.git
+  - git clone --depth=1 https://github.com/dschwen/lightning.git
   - cd lightning && autoreconf -i && ./configure --prefix=$TRAVIS_BUILD_DIR/install
   - make && make install
   # Build LibJIT
