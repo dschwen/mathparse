@@ -50,8 +50,7 @@ namespace SymbolicMath
 {
 
 template <typename T>
-CompiledLLVM<T>::CompiledLLVM(Function<T> & fb)
-  : Transform<T>(fb), _lljit(new Helper), _jit_function(nullptr)
+CompiledLLVM<T>::CompiledLLVM(Function<T> & fb) : Transform<T>(fb), _jit_function(nullptr)
 {
   // global one time initialization
   static struct InitializationSingleton
@@ -63,6 +62,8 @@ CompiledLLVM<T>::CompiledLLVM(Function<T> & fb)
       llvm::InitializeNativeTargetAsmParser();
     }
   } initialize;
+
+  _lljit = std::unique_ptr<Helper>(new Helper);
 
   auto C = llvm::make_unique<llvm::LLVMContext>();
   auto M = llvm::make_unique<llvm::Module>("LLJIT", *C);
@@ -76,7 +77,6 @@ CompiledLLVM<T>::CompiledLLVM(Function<T> & fb)
   _state = std::unique_ptr<JITStateValue>(new JITStateValue(BB, M.get()));
 
   // return result
-  std::cout << "apply()\n";
   apply();
   _state->builder.CreateRet(_value);
 
@@ -84,21 +84,13 @@ CompiledLLVM<T>::CompiledLLVM(Function<T> & fb)
   llvm::raw_string_ostream es(buffer);
 
   if (verifyFunction(*F, &es))
-  {
-    std::cerr << "Function verification failed: %s" << es.str() << '\n';
-    std::exit(1);
-  }
+    throw std::runtime_error("Function verification failed: " + es.str());
 
   if (verifyModule(*M, &es))
-  {
-    std::cerr << "Module verification failed: " << es.str() << '\n';
-    std::exit(1);
-  }
+    throw std::runtime_error("Module verification failed: " + es.str());
 
   if (_lljit->submitModule(std::move(M), std::move(C)))
-  {
-    std::cerr << "Greeeeeet saak-seeeesss!\n";
-  }
+    throw std::runtime_error("Module submission failed");
 
   // Request function; this compiles to machine code and links.
   _jit_function = llvm::jitTargetAddressToPointer<JITFunctionPtr>(*(_lljit->getFunctionAddr("F")));
@@ -161,7 +153,11 @@ CompiledLLVM<T>::operator()(BinaryOperatorData<T> * n)
       fatalError("Operator not implemented yet");
 
     case BinaryOperatorType::POWER:
-      fatalError("Operator not implemented yet");
+      _value = _state->builder.CreateCall(
+          Intrinsic::getDeclaration(
+              _state->M, llvm::Intrinsic::pow, {_state->builder.getDoubleTy()}),
+          {A, B});
+      return;
 
     case BinaryOperatorType::LOGICAL_OR:
       _value = _state->builder.CreateOr(A, B); //?
@@ -327,9 +323,7 @@ CompiledLLVM<Real>::operator()(UnaryFunctionData<Real> * n)
       break;
 
       // case UnaryFunctionType::T:
-      //
       // case UnaryFunctionType::TAN:
-      //
       // case UnaryFunctionType::TANH:
 
     case UnaryFunctionType::TRUNC:
@@ -354,25 +348,33 @@ CompiledLLVM<T>::operator()(BinaryFunctionData<T> * n)
   n->_args[1].apply(*this);
   const auto B = _value;
 
+  llvm::Intrinsic::ID func;
+
   switch (n->_type)
   {
       // case BinaryFunctionType::ATAN2:
-      //
       // case BinaryFunctionType::HYPOT:
-      //
-      // case BinaryFunctionType::MIN:
-      //
-      // case BinaryFunctionType::MAX:
-      //
       // case BinaryFunctionType::PLOG:
-      //
-      // case BinaryFunctionType::POW:
-      //
-      // case BinaryFunctionType::POLAR:
 
+    case BinaryFunctionType::MIN:
+      func = llvm::Intrinsic::minimum;
+      return;
+
+    case BinaryFunctionType::MAX:
+      func = llvm::Intrinsic::maximum;
+      return;
+
+    case BinaryFunctionType::POW:
+      func = llvm::Intrinsic::pow;
+      break;
+
+      // case BinaryFunctionType::POLAR:
     default:
       fatalError("Function not implemented");
   }
+
+  _value = _state->builder.CreateCall(
+      Intrinsic::getDeclaration(_state->M, func, {_state->builder.getDoubleTy()}), {A, B});
 }
 
 template <>

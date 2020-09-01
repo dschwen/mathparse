@@ -13,6 +13,9 @@
 #include "SMCompiledSLJIT.h"
 #include "SMCompiledLibJIT.h"
 #include "SMCompiledLightning.h"
+#ifdef SYMBOLICMATH_USE_LLVMIR
+#include "SMCompiledLLVM.h"
+#endif
 
 #include <iostream>
 #include <functional>
@@ -163,122 +166,136 @@ test()
 
   for (auto & test : tests)
   {
-    SymbolicMath::Parser<SymbolicMath::Real> parser;
-
-    SymbolicMath::Real c;
-    auto c_var = std::make_shared<SymbolicMath::RealReferenceData<SymbolicMath::Real>>(c, "c");
-    parser.registerValueProvider(c_var);
-
-    auto func = parser.parse(test.expression);
-
-    // evaluate for various values of c
-    norm = 0.0;
-    for (c = -1.0; c <= 1.0; c += 0.3)
-      norm += std::abs(func() - test.native(c));
-
-    if (norm > 1e-9 || std::isnan(norm))
+    try
     {
-      std::cerr << "Error evaluating unsimplified expression '" << test.expression << "'\n";
-      fail++;
+      SymbolicMath::Parser<SymbolicMath::Real> parser;
+
+      SymbolicMath::Real c;
+      auto c_var = std::make_shared<SymbolicMath::RealReferenceData<SymbolicMath::Real>>(c, "c");
+      parser.registerValueProvider(c_var);
+
+      auto func = parser.parse(test.expression);
+
+      // evaluate for various values of c
+      norm = 0.0;
+      for (c = -1.0; c <= 1.0; c += 0.3)
+        norm += std::abs(func() - test.native(c));
+
+      if (norm > 1e-9 || std::isnan(norm))
+      {
+        std::cerr << "Error evaluating unsimplified expression '" << test.expression << "'\n";
+        fail++;
+      }
+
+      SymbolicMath::Simplify<SymbolicMath::Real> simplify(func);
+
+      // evaluate for various values of c
+      norm = 0.0;
+      for (c = -1.0; c <= 1.0; c += 0.3)
+        norm += std::abs(func() - test.native(c));
+      if (norm > 1e-9 || std::isnan(norm))
+      {
+        std::cerr << "Error evaluating expression '" << test.expression << "' simplified to '"
+                  << func.format() << "'\n";
+        fail++;
+      }
+
+      C compiled(func);
+
+      // evaluate for various values of c
+      norm = 0.0;
+      std::stringstream mes;
+      for (c = -1.0; c <= 1.0; c += 0.3)
+      {
+        auto a = compiled();
+        auto b = test.native(c);
+        auto n = std::abs(a - b);
+        if (n > 1e-9 || std::isnan(norm))
+          mes << "For c=" << c << " we expected " << b << " and saw " << a << '\n';
+      }
+      if (norm > 1e-9 || std::isnan(norm))
+      {
+        std::cerr << "Error (" << norm << ") evaluating compiled expression '" << test.expression
+                  << "' simplified to '" << func.format() << "'\n"
+                  << mes.str();
+        fail++;
+      }
+
+      total += 3;
     }
-
-    SymbolicMath::Simplify<SymbolicMath::Real> simplify(func);
-
-    // evaluate for various values of c
-    norm = 0.0;
-    for (c = -1.0; c <= 1.0; c += 0.3)
-      norm += std::abs(func() - test.native(c));
-    if (norm > 1e-9 || std::isnan(norm))
+    catch (std::exception & e)
     {
-      std::cerr << "Error evaluating expression '" << test.expression << "' simplified to '"
-                << func.format() << "'\n";
-      fail++;
+      std::cout << e.what() << " in " << test.expression << '\n';
     }
-
-    C compiled(func);
-
-    // evaluate for various values of c
-    norm = 0.0;
-    std::stringstream mes;
-    for (c = -1.0; c <= 1.0; c += 0.3)
-    {
-      auto a = compiled();
-      auto b = test.native(c);
-      auto n = std::abs(a - b);
-      if (n > 1e-9 || std::isnan(norm))
-        mes << "For c=" << c << " we expected " << b << " and saw " << a << '\n';
-    }
-    if (norm > 1e-9 || std::isnan(norm))
-    {
-      std::cerr << "Error (" << norm << ") evaluating compiled expression '" << test.expression
-                << "' simplified to '" << func.format() << "'\n"
-                << mes.str();
-      fail++;
-    }
-
-    total += 3;
   }
 
   // test derivatives
   for (auto & test : difftests)
   {
-    SymbolicMath::Parser<SymbolicMath::Real> parser;
-
-    SymbolicMath::Real c;
-    auto c_var = std::make_shared<SymbolicMath::RealReferenceData<SymbolicMath::Real>>(c, "c");
-    parser.registerValueProvider(c_var);
-
-    auto func = parser.parse(test.expression);
-    SymbolicMath::Simplify<SymbolicMath::Real> simplify1(func);
-    C compiled(func);
-
-    auto diff = func.D(c_var);
-    SymbolicMath::Simplify<SymbolicMath::Real> simplify2(diff);
-    C dcompiled(diff);
-
-    // finite differencing
-    norm = 0.0;
-    SymbolicMath::Real abssum = 0.0;
-    std::stringstream mes;
-    for (c = test.cmin; c <= test.cmax; c += test.dc)
+    try
     {
-      auto a = compiled();
-      c += test.epsilon;
-      auto b = compiled();
-      c -= test.epsilon;
+      SymbolicMath::Parser<SymbolicMath::Real> parser;
 
-      auto d = dcompiled();
+      SymbolicMath::Real c;
+      auto c_var = std::make_shared<SymbolicMath::RealReferenceData<SymbolicMath::Real>>(c, "c");
+      parser.registerValueProvider(c_var);
 
-      if (std::abs(d - diff()) > 1e-9)
+      auto func = parser.parse(test.expression);
+      SymbolicMath::Simplify<SymbolicMath::Real> simplify1(func);
+      C compiled(func);
+
+      auto diff = func.D(c_var);
+      SymbolicMath::Simplify<SymbolicMath::Real> simplify2(diff);
+      C dcompiled(diff);
+
+      // finite differencing
+      norm = 0.0;
+      SymbolicMath::Real abssum = 0.0;
+      std::stringstream mes;
+      for (c = test.cmin; c <= test.cmax; c += test.dc)
       {
-        std::cout << "Discrepancy between compiled and recursively evaluated derivative " << d
-                  << " != " << diff() << " for f'(c)=" << diff.format() << '\n';
-        norm = INFINITY;
-        abssum = 1;
-        break;
+        auto a = compiled();
+        c += test.epsilon;
+        auto b = compiled();
+        c -= test.epsilon;
+
+        auto d = dcompiled();
+
+        if (std::abs(d - diff()) > 1e-9)
+        {
+          std::cout << "Discrepancy between compiled and recursively evaluated derivative " << d
+                    << " != " << diff() << " for f'(c)=" << diff.format() << '\n';
+          norm = INFINITY;
+          abssum = 1;
+          break;
+        }
+
+        abssum += std::abs(d);
+
+        auto n = std::abs(d - (b - a) / test.epsilon);
+        norm += n;
+        if (n > test.tol)
+          mes << "For c=" << c << " we expected f'(c)=" << d << " and saw "
+              << (b - a) / test.epsilon << " = (" << b << '-' << a << ")/" << test.epsilon
+              << " with f(c)=" << func() << "and f'(c)=" << diff() << '\n';
+      }
+      // for debug purposes (to set tolerances for new tests)
+      // std::cerr << norm / abssum << '\t' << test.expression << '\n';
+      if (norm / abssum > test.tol)
+      {
+        std::cerr << "Derivative does not match finite differencing for '" << test.expression
+                  << "' and the derivative '" << diff.format()
+                  << "'.\nnorm/abssum = " << (norm / abssum) << "\n"
+                  << mes.str();
+        fail++;
       }
 
-      abssum += std::abs(d);
-
-      auto n = std::abs(d - (b - a) / test.epsilon);
-      norm += n;
-      if (n > test.tol)
-        mes << "For c=" << c << " we expected f'(c)=" << d << " and saw " << (b - a) / test.epsilon
-            << " = (" << b << '-' << a << ")/" << test.epsilon << " with f(c)=" << func()
-            << "and f'(c)=" << diff() << '\n';
+      total += 2;
     }
-    // for debug purposes (to set tolerances for new tests)
-    // std::cerr << norm / abssum << '\t' << test.expression << '\n';
-    if (norm / abssum > test.tol)
+    catch (std::exception & e)
     {
-      std::cerr << "Derivative does not match finite differencing for '" << test.expression
-                << "' and the derivative '" << diff.format()
-                << "'.\nnorm/abssum = " << (norm / abssum) << "\n"
-                << mes.str();
-      fail++;
+      std::cout << e.what() << " in " << test.expression << '\n';
     }
-
-    total += 2;
   }
 
   auto finish = std::chrono::high_resolution_clock::now();
@@ -293,14 +310,18 @@ main(int argc, char * argv[])
   // test various compilers
   std::cout << "SymbolicMath::CompiledByteCode...\n";
   test<SymbolicMath::CompiledByteCode<SymbolicMath::Real>>();
-  std::cout << "SymbolicMath::CompiledCCode...\n";
-  test<SymbolicMath::CompiledCCode<SymbolicMath::Real>>();
+  // std::cout << "SymbolicMath::CompiledCCode...\n";
+  // test<SymbolicMath::CompiledCCode<SymbolicMath::Real>>();
   std::cout << "SymbolicMath::CompiledSLJIT...\n";
   test<SymbolicMath::CompiledSLJIT<SymbolicMath::Real>>();
   std::cout << "SymbolicMath::CompiledLibJIT...\n";
   test<SymbolicMath::CompiledLibJIT<SymbolicMath::Real>>();
   std::cout << "SymbolicMath::CompiledLightning...\n";
   test<SymbolicMath::CompiledLightning<SymbolicMath::Real>>();
+#ifdef SYMBOLICMATH_USE_LLVMIR
+  std::cout << "SymbolicMath::CompiledLLVM...\n";
+  test<SymbolicMath::CompiledLLVM<SymbolicMath::Real>>();
+#endif
 
   // Final output
   if (fail)

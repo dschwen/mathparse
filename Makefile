@@ -37,11 +37,12 @@ LLVM_CONFIG ?= llvm-config
 LLVM_MAJOR := $(shell $(LLVM_CONFIG) --version | cut -d. -f1)
 ifeq "$(LLVM_MAJOR)" "9"
   override LDFLAGS += $(shell $(LLVM_CONFIG) --ldflags --system-libs --libs core orcjit native)
-  override CXXFLAGS += $(shell $(LLVM_CONFIG) --cxxflags)
+  override CXXFLAGS += -I$(shell $(LLVM_CONFIG) --includedir)
   override CPPFLAGS += -DLLVM_MAJOR=$(LLVM_MAJOR) -DSYMBOLICMATH_USE_LLVMIR
   OBJS += SMCompiledLLVM.o
 endif
 
+# Applications
 
 mathparse: main.C $(OBJS)
 	$(CXX) -std=c++11 $(CONFIG) $(CPPFLAGS) $(CXXFLAGS) -o mathparse main.C $(OBJS) $(LDFLAGS)
@@ -66,14 +67,9 @@ testbench: TestBench.C $(OBJS)
 	$(CC) $(CONFIG) -MM $(CFLAGS) $(CPPFLAGS) $*.c > $*.d
 
 .PHONY: force clean
-.jit_backend: force
-	echo '$(JIT)' | cmp -s - $@ || echo '$(JIT)' > $@
-
-# force rebuild when compiling with a new JIT backend
-$(OBJS): .jit_backend
 
 clean:
-	rm -rf $(OBJS) *.o *.d mathparse performance test2 test3 performance_fparser
+	rm -rf $(OBJS) *.o *.d mathparse performance unittests testbench performance_fparser
 
 # FParser (for performance comparison)
 
@@ -93,19 +89,3 @@ fparser: $(FPARSER_OBJS)
 
 performance_fparser: performance_fparser.C fparser/fparser.hh $(FPARSER_OBJS)
 	$(CXX) -std=c++11 $(CPPFLAGS) $(CXXFLAGS) -Ifparser -o performance_fparser performance_fparser.C $(FPARSER_OBJS)
-
-# Tinkering around
-
-tests: test2 test3
-
-test2: test2.C
-	clang++ -std=c++11 -DSLJIT_CONFIG_AUTO=1 -o test2 test2.C contrib/sljit_src/sljitLir.c
-
-test3: test3.C
-	clang++ -std=c++11 -DSLJIT_CONFIG_AUTO=1 -o test3 test3.C contrib/sljit_src/sljitLir.c
-
-test5: test5.C
-	clang++ test5.C `llvm-config --cxxflags --ldflags --system-libs --libs core orcjit native` -g -o test5
-
-test6: test6.C
-	clang++ test6.C `llvm-config --cxxflags --ldflags --system-libs --libs core orcjit native` -g -o test6

@@ -81,16 +81,10 @@ Function::compile()
   llvm::raw_string_ostream es(buffer);
 
   if (verifyFunction(*F, &es))
-  {
-    std::cerr << "Function verification failed: %s" << es.str() << '\n';
-    std::exit(1);
-  }
+    throw std::runtime_error("Function verification failed: " + es.str());
 
   if (verifyModule(*M, &es))
-  {
-    std::cerr << "Module verification failed: " << es.str() << '\n';
-    std::exit(1);
-  }
+    throw std::runtime_error("Module verification failed: " + es.str());
 
   if (_lljit.submitModule(std::move(M), std::move(C)))
   {

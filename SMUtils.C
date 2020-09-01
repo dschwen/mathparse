@@ -9,6 +9,7 @@
 #include <sstream>
 #include <iomanip>
 #include <limits>
+#include <stdexcept>
 
 namespace SymbolicMath
 {
@@ -17,8 +18,9 @@ namespace SymbolicMath
 [[noreturn]] void
 fatalError(const std::string & error)
 {
-  std::cerr << error << '\n';
-  std::exit(1);
+  throw std::runtime_error(error);
+  // std::cerr << error << '\n';
+  // std::exit(1);
 }
 
 std::string
