@@ -1,0 +1,118 @@
+///
+/// SymbolicMath toolkit
+/// (c) 2017-2020 by Daniel Schwen
+///
+
+#pragma once
+
+#include "SMTransform.h"
+#include "SMEvaluable.h"
+
+#include <llvm/ExecutionEngine/ExecutionEngine.h>
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/LLVMContext.h>
+#include <llvm/IR/Verifier.h>
+#include "llvm/IR/Type.h"
+#include <llvm/Support/Format.h>
+#include <llvm/Support/TargetSelect.h>
+#include <llvm/Support/raw_ostream.h>
+#include <llvm/ADT/StringRef.h>
+#include <llvm/ADT/Triple.h>
+#include <llvm/ExecutionEngine/JITSymbol.h>
+#include <llvm/ExecutionEngine/Orc/LLJIT.h>
+#include <llvm/IR/DataLayout.h>
+#include <llvm/IR/Module.h>
+#include <llvm/Support/Error.h>
+
+#include <memory>
+
+namespace SymbolicMath
+{
+
+/**
+ * LibJIT compiler transform
+ */
+template <typename T>
+class CompiledLLVM : public Transform<T>, public Evaluable<T>
+{
+  using Transform<T>::apply;
+
+public:
+  CompiledLLVM(Function<T> &);
+  ~CompiledLLVM() override;
+
+  void operator()(SymbolData<T> *) override;
+
+  void operator()(UnaryOperatorData<T> *) override;
+  void operator()(BinaryOperatorData<T> *) override;
+  void operator()(MultinaryOperatorData<T> *) override;
+
+  void operator()(UnaryFunctionData<T> *) override;
+  void operator()(BinaryFunctionData<T> *) override;
+
+  void operator()(RealNumberData<T> *) override;
+  void operator()(RealReferenceData<T> *) override;
+  void operator()(RealArrayReferenceData<T> *) override;
+  void operator()(LocalVariableData<T> *) override;
+
+  void operator()(ConditionalData<T> *) override;
+  void operator()(IntegerPowerData<T> *) override;
+
+  T operator()() override { return _jit_function(); }
+
+protected:
+  class Helper;
+  std::unique_ptr<Helper> _lljit;
+
+  typedef Real (*JITFunctionPtr)();
+
+  llvm::Value * _value;
+
+  struct JITStateValue
+  {
+    JITStateValue(llvm::BasicBlock * BB, llvm::Module * M_) : builder(BB), M(M_) {}
+    llvm::IRBuilder<> builder;
+    llvm::Module * M;
+  };
+  std::unique_ptr<JITStateValue> _state;
+
+  JITFunctionPtr _jit_function;
+};
+
+template <typename T>
+class CompiledLLVM<T>::Helper
+{
+public:
+  Helper();
+
+  // Not a value type.
+  Helper(const Helper &) = delete;
+  Helper & operator=(const Helper &) = delete;
+  Helper(Helper &&) = delete;
+  Helper & operator=(Helper &&) = delete;
+
+  llvm::DataLayout getDataLayout() const { return LLJIT->getDataLayout(); }
+
+  // const llvm::Triple & getTargetTriple() const { return TT; }
+
+  llvm::Error submitModule(std::unique_ptr<llvm::Module> M, std::unique_ptr<llvm::LLVMContext> C);
+
+  template <class Signature_t>
+  llvm::Expected<std::function<Signature_t>> getFunction(llvm::StringRef Name)
+  {
+    if (auto A = getFunctionAddr(Name))
+      return std::function<Signature_t>(llvm::jitTargetAddressToPointer<Signature_t *>(*A));
+    else
+      return A.takeError();
+  }
+
+  llvm::Expected<llvm::JITTargetAddress> getFunctionAddr(llvm::StringRef Name);
+
+private:
+  std::unique_ptr<llvm::orc::LLJIT> LLJIT;
+  // llvm::Triple TT;
+
+  llvm::orc::JITDylib::GeneratorFunction createHostProcessResolver(llvm::DataLayout DL);
+};
+
+} // namespace SymbolicMath

@@ -14,7 +14,9 @@
 #include "SMCompiledSLJIT.h"
 #include "SMCompiledLibJIT.h"
 #include "SMCompiledLightning.h"
-
+#ifdef SYMBOLICMATH_USE_LLVMIR
+#include "SMCompiledLLVM.h"
+#endif
 #include <iostream>
 
 int
@@ -68,6 +70,11 @@ main(int argc, char * argv[])
 
   SymbolicMath::CompiledLightning<SymbolicMath::Real> lightning(func);
   std::cout << "lightning value = " << lightning() << '\n';
+
+#ifdef SYMBOLICMATH_USE_LLVMIR
+  SymbolicMath::CompiledLLVM<SymbolicMath::Real> llvm(func);
+  std::cout << "llvm value = " << llvm() << '\n';
+#endif
 
   // func.compile();
   //
