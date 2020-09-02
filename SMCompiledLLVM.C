@@ -150,7 +150,8 @@ CompiledLLVM<T>::operator()(BinaryOperatorData<T> * n)
       return;
 
     case BinaryOperatorType::MODULO:
-      fatalError("Operator not implemented yet");
+      _value = _state->builder.CreateFRem(A, B);
+      return;
 
     case BinaryOperatorType::POWER:
       _value = _state->builder.CreateCall(
@@ -160,35 +161,57 @@ CompiledLLVM<T>::operator()(BinaryOperatorData<T> * n)
       return;
 
     case BinaryOperatorType::LOGICAL_OR:
-      _value = _state->builder.CreateOr(A, B); //?
+      _value = _state->builder.CreateSelect(
+          _state->builder.CreateOr(
+              _state->builder.CreateIntCast(A, _state->builder.getInt32Ty(), true),
+              _state->builder.CreateIntCast(B, _state->builder.getInt32Ty(), true)),
+          ConstantFP::get(_state->builder.getDoubleTy(), 0.0),
+          ConstantFP::get(_state->builder.getDoubleTy(), 1.0));
       return;
 
     case BinaryOperatorType::LOGICAL_AND:
-      _value = _state->builder.CreateAnd(A, B); //?
+      _value = _state->builder.CreateSelect(
+          _state->builder.CreateAnd(
+              _state->builder.CreateIntCast(A, _state->builder.getInt32Ty(), true),
+              _state->builder.CreateIntCast(B, _state->builder.getInt32Ty(), true)),
+          ConstantFP::get(_state->builder.getDoubleTy(), 0.0),
+          ConstantFP::get(_state->builder.getDoubleTy(), 1.0));
       return;
 
     case BinaryOperatorType::LESS_THAN:
-      _value = _state->builder.CreateFCmpOLT(A, B);
+      _value = _state->builder.CreateSelect(_state->builder.CreateFCmpOLT(A, B),
+                                            ConstantFP::get(_state->builder.getDoubleTy(), 0.0),
+                                            ConstantFP::get(_state->builder.getDoubleTy(), 1.0));
       return;
 
     case BinaryOperatorType::GREATER_THAN:
-      _value = _state->builder.CreateFCmpOGT(A, B);
+      _value = _state->builder.CreateSelect(_state->builder.CreateFCmpOGT(A, B),
+                                            ConstantFP::get(_state->builder.getDoubleTy(), 0.0),
+                                            ConstantFP::get(_state->builder.getDoubleTy(), 1.0));
       return;
 
     case BinaryOperatorType::LESS_EQUAL:
-      _value = _state->builder.CreateFCmpOLE(A, B);
+      _value = _state->builder.CreateSelect(_state->builder.CreateFCmpOLE(A, B),
+                                            ConstantFP::get(_state->builder.getDoubleTy(), 0.0),
+                                            ConstantFP::get(_state->builder.getDoubleTy(), 1.0));
       return;
 
     case BinaryOperatorType::GREATER_EQUAL:
-      _value = _state->builder.CreateFCmpOGE(A, B);
+      _value = _state->builder.CreateSelect(_state->builder.CreateFCmpOGE(A, B),
+                                            ConstantFP::get(_state->builder.getDoubleTy(), 0.0),
+                                            ConstantFP::get(_state->builder.getDoubleTy(), 1.0));
       return;
 
     case BinaryOperatorType::EQUAL:
-      _value = _state->builder.CreateFCmpOEQ(A, B);
+      _value = _state->builder.CreateSelect(_state->builder.CreateFCmpOEQ(A, B),
+                                            ConstantFP::get(_state->builder.getDoubleTy(), 0.0),
+                                            ConstantFP::get(_state->builder.getDoubleTy(), 1.0));
       return;
 
     case BinaryOperatorType::NOT_EQUAL:
-      _value = _state->builder.CreateFCmpONE(A, B);
+      _value = _state->builder.CreateSelect(_state->builder.CreateFCmpONE(A, B),
+                                            ConstantFP::get(_state->builder.getDoubleTy(), 0.0),
+                                            ConstantFP::get(_state->builder.getDoubleTy(), 1.0));
       return;
 
     default:
@@ -412,7 +435,14 @@ template <typename T>
 void
 CompiledLLVM<T>::operator()(ConditionalData<T> * n)
 {
-  fatalError("Conditional not implemented");
+  n->_args[0].apply(*this);
+  const auto A = _value;
+  n->_args[1].apply(*this);
+  const auto B = _value;
+  n->_args[2].apply(*this);
+  const auto C = _value;
+
+  _value = _state->builder.CreateSelect(A, B, C);
 }
 
 template <>

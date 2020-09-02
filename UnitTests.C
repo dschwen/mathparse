@@ -35,6 +35,19 @@ const std::vector<Test> tests = {
   {"c+0", [](double c) { return c + 0.0; }},
   {"c*0", [](double c) { return c * 0.0; }},
   {"0/c", [](double c) { return 0.0 / c; }},
+  // simple operators
+  {"5*c", [](double c) { return 5.0 * c; }},
+  {"c*5", [](double c) { return c * 5.0; }},
+  {"5/(c+0.1)", [](double c) { return 5.0 / (c + 0.1); }},
+  {"c/5", [](double c) { return c / 5.0; }},
+  {"5+c", [](double c) { return 5.0 + c; }},
+  {"c+5", [](double c) { return c + 5.0; }},
+  {"5-c", [](double c) { return 5.0 - c; }},
+  {"c-5", [](double c) { return c - 5.0; }},
+  {"c^5", [](double c) { return std::pow(c, 5.0); }},
+  {"5^c", [](double c) { return std::pow(5.0, c); }},
+  {"(5*c) % 2", [](double c) { return std::fmod(5.0 * c, 2.0); }},
+  {"(-5*c) % 2", [](double c) { return std::fmod(-5.0 * c, 2.0); }},
   // expressions
   {"1 + c + 2*c + 3*c^3", [](double c) { return 1 + c + 2*c + 3*c*c*c; }},
   {"c + sin(1.1)", [](double c) { return c + std::sin(1.1); }},
@@ -200,6 +213,8 @@ test()
         fail++;
       }
 
+      std::cerr << "Evaluating expression '" << test.expression << "' simplified to '"
+                << func.format() << "'\n";
       C compiled(func);
 
       // evaluate for various values of c
