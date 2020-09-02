@@ -74,4 +74,4 @@ clean:
 # FParser (for performance comparison)
 
 performance_fparser: PerformanceFparser.C
-	$(CXX) -std=c++11 $(CPPFLAGS) $(CXXFLAGS) -I$(LIBMESH_DIR)/include -o performance_fparser PerformanceFparser.C -Wl,-rpath=$(LIBMESH_DIR)/lib -L$(LIBMESH_DIR)/lib -lmesh_opt
+	$(CXX) -std=c++11 $(CPPFLAGS) $(CXXFLAGS) -I$(LIBMESH_DIR)/include -o performance_fparser PerformanceFparser.C -Wl,-rpath,$(LIBMESH_DIR)/lib -L$(LIBMESH_DIR)/lib -lmesh_opt
