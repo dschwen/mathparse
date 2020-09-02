@@ -61,6 +61,7 @@ extern "C" double sm_llvm_cot(double a) { return 1.0 / std::tan(a); }
 extern "C" double sm_llvm_csc(double a) { return 1.0 / std::sin(a); }
 extern "C" double sm_llvm_erf(double a) { return std::erf(a); }
 extern "C" double sm_llvm_erfc(double a) { return std::erfc(a); }
+extern "C" double sm_llvm_sec(double a) { return 1.0 / std::cos(a); }
 extern "C" double sm_llvm_sinh(double a) { return std::sinh(a); }
 extern "C" double sm_llvm_tan(double a) { return std::tan(a); }
 extern "C" double sm_llvm_tanh(double a) { return std::tanh(a); }
@@ -106,9 +107,11 @@ CompiledLLVM<T>::CompiledLLVM(Function<T> & fb) : Transform<T>(fb), _jit_functio
                                                                        {Native::csc, "csc"},
                                                                        {Native::erf, "erf"},
                                                                        {Native::erfc, "erfc"},
+                                                                       {Native::sec, "sec"},
                                                                        {Native::sinh, "sinh"},
                                                                        {Native::tan, "tan"},
                                                                        {Native::tanh, "tanh"}};
+
   for (auto & unary : unary_functions)
     _native[unary.first] = llvm::Function::Create(
         llvm::FunctionType::get(
@@ -222,8 +225,9 @@ CompiledLLVM<T>::operator()(BinaryOperatorData<T> * n)
     case BinaryOperatorType::LOGICAL_OR:
       _value = _state->builder.CreateSelect(
           _state->builder.CreateOr(
-              _state->builder.CreateIntCast(A, _state->builder.getInt32Ty(), true),
-              _state->builder.CreateIntCast(B, _state->builder.getInt32Ty(), true)),
+              _state->builder.CreateFCmpONE(A, ConstantFP::get(_state->builder.getDoubleTy(), 0.0)),
+              _state->builder.CreateFCmpONE(B,
+                                            ConstantFP::get(_state->builder.getDoubleTy(), 0.0))),
           ConstantFP::get(_state->builder.getDoubleTy(), 0.0),
           ConstantFP::get(_state->builder.getDoubleTy(), 1.0));
       return;
@@ -231,8 +235,9 @@ CompiledLLVM<T>::operator()(BinaryOperatorData<T> * n)
     case BinaryOperatorType::LOGICAL_AND:
       _value = _state->builder.CreateSelect(
           _state->builder.CreateAnd(
-              _state->builder.CreateIntCast(A, _state->builder.getInt32Ty(), true),
-              _state->builder.CreateIntCast(B, _state->builder.getInt32Ty(), true)),
+              _state->builder.CreateFCmpONE(A, ConstantFP::get(_state->builder.getDoubleTy(), 0.0)),
+              _state->builder.CreateFCmpONE(B,
+                                            ConstantFP::get(_state->builder.getDoubleTy(), 0.0))),
           ConstantFP::get(_state->builder.getDoubleTy(), 0.0),
           ConstantFP::get(_state->builder.getDoubleTy(), 1.0));
       return;
@@ -416,10 +421,8 @@ CompiledLLVM<Real>::operator()(UnaryFunctionData<Real> * n)
       // case UnaryFunctionType::REAL:
 
     case UnaryFunctionType::SEC:
-      // return jit_insn_div(
-      //     func,
-      //     jit_value_create_float64_constant(func, jit_type_float64, (jit_float64)1.0),
-      //     jit_insn_cos(func, A));
+      _value = _state->builder.CreateCall(_native[Native::sec], {_value});
+      return;
 
     case UnaryFunctionType::SIN:
       func = llvm::Intrinsic::sin;
@@ -541,17 +544,18 @@ CompiledLLVM<T>::operator()(ConditionalData<T> * n)
   n->_args[2].apply(*this);
   const auto C = _value;
 
-  _value = _state->builder.CreateSelect(A, B, C);
+  _value = _state->builder.CreateSelect(
+      _state->builder.CreateFCmpONE(A, ConstantFP::get(_state->builder.getDoubleTy(), 0.0)), B, C);
 }
 
 template <>
 void
 CompiledLLVM<Real>::operator()(IntegerPowerData<Real> * n)
 {
-  _value = ConstantFP::get(_state->builder.getDoubleTy(), 1.0);
-
   n->_arg.apply(*this);
   auto A = _value;
+
+  _value = ConstantFP::get(_state->builder.getDoubleTy(), 1.0);
 
   int e = n->_exponent > 0 ? n->_exponent : -n->_exponent;
   while (e)

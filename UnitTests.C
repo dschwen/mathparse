@@ -45,6 +45,7 @@ const std::vector<Test> tests = {
   {"5-c", [](double c) { return 5.0 - c; }},
   {"c-5", [](double c) { return c - 5.0; }},
   {"c^5", [](double c) { return std::pow(c, 5.0); }},
+  {"c^15", [](double c) { return std::pow(c, 15.0); }},
   {"5^c", [](double c) { return std::pow(5.0, c); }},
   {"(5*c) % 2", [](double c) { return std::fmod(5.0 * c, 2.0); }},
   {"(-5*c) % 2", [](double c) { return std::fmod(-5.0 * c, 2.0); }},
@@ -116,6 +117,7 @@ const std::vector<Test> tests = {
   {"1==2", [](double c) { return 1==2; }},
   {"1!=2", [](double c) { return 1!=2; }},
   // logical operators
+  {"c & (1-c)", [](double c) { return c && (1.0 - c); }},
   {"c<0.5 & c>-0.5", [](double c) { return c<0.5 && c>-0.5; }},
   {"c>0.5 | c<-0.5", [](double c) { return c>0.5 || c<-0.5; }},
   {"c>0.5 | c<-0.5 | (c<0.3 & c > -0.1)", [](double c) { return c>0.5 || c<-0.5 || (c<0.3 && c > -0.1); }},

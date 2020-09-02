@@ -78,6 +78,7 @@ protected:
     csc,
     erf,
     erfc,
+    sec,
     sinh,
     tan,
     tanh,
