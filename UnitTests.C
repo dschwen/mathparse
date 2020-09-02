@@ -94,12 +94,17 @@ const std::vector<Test> tests = {
   {"max(c,0.1111)", [](double c) { return std::max(c, 0.1111); }},
   // comparison operators
   {"c<0.2", [](double c) { return c<0.2; }},
+  {"c<-0.2", [](double c) { return c<-0.2; }},
   {"c>0.2", [](double c) { return c>0.2; }},
+  {"c>-0.2", [](double c) { return c>-0.2; }},
   {"c<=0.2", [](double c) { return c<=0.2; }},
-  // {"c<=-0.7", [](double c) { return c<=-0.7; }}, // fails
+  {"c<=-0.2", [](double c) { return c<=-0.2; }},
   {"c>=0.2", [](double c) { return c>=0.2; }},
+  {"c>=-0.2", [](double c) { return c>=-0.2; }},
   {"c==0.2", [](double c) { return c==0.2; }},
+  {"c==-0.2", [](double c) { return c==-0.2; }},
   {"c!=0.2", [](double c) { return c!=0.2; }},
+  {"c!=-0.2", [](double c) { return c!=-0.2; }},
   // constant comparisons
   {"1<2", [](double c) { return 1<2; }},
   {"1>2", [](double c) { return 1>2; }},
@@ -213,8 +218,8 @@ test()
         fail++;
       }
 
-      std::cerr << "Evaluating expression '" << test.expression << "' simplified to '"
-                << func.format() << "'\n";
+      // std::cerr << "Evaluating expression '" << test.expression << "' simplified to '"
+      //           << func.format() << "'\n";
       C compiled(func);
 
       // evaluate for various values of c

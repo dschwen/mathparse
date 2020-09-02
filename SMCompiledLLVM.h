@@ -64,6 +64,28 @@ protected:
   class Helper;
   std::unique_ptr<Helper> _lljit;
 
+  enum class Native
+  {
+    acos,
+    acosh,
+    asin,
+    asinh,
+    atan,
+    atanh,
+    cbrt,
+    cosh,
+    cot,
+    csc,
+    erf,
+    erfc,
+    sinh,
+    tan,
+    tanh,
+    atan2,
+    plog
+  };
+  std::map<Native, llvm::Function *> _native;
+
   typedef Real (*JITFunctionPtr)();
 
   llvm::Value * _value;

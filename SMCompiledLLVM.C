@@ -46,6 +46,29 @@
 using namespace llvm;
 using namespace llvm::orc;
 
+// C Helper functions that are called from the JIT code
+
+// clang-format off
+extern "C" double sm_llvm_acos(double a) { return std::acos(a); }
+extern "C" double sm_llvm_acosh(double a) { return std::acosh(a); }
+extern "C" double sm_llvm_asin(double a) { return std::asin(a); }
+extern "C" double sm_llvm_asinh(double a) { return std::asinh(a); }
+extern "C" double sm_llvm_atan(double a) { return std::atan(a); }
+extern "C" double sm_llvm_atanh(double a) { return std::atanh(a); }
+extern "C" double sm_llvm_cbrt(double a) { return std::cbrt(a); }
+extern "C" double sm_llvm_cosh(double a) { return std::cosh(a); }
+extern "C" double sm_llvm_cot(double a) { return 1.0 / std::tan(a); }
+extern "C" double sm_llvm_csc(double a) { return 1.0 / std::sin(a); }
+extern "C" double sm_llvm_erf(double a) { return std::erf(a); }
+extern "C" double sm_llvm_erfc(double a) { return std::erfc(a); }
+extern "C" double sm_llvm_sinh(double a) { return std::sinh(a); }
+extern "C" double sm_llvm_tan(double a) { return std::tan(a); }
+extern "C" double sm_llvm_tanh(double a) { return std::tanh(a); }
+
+extern "C" double sm_llvm_atan2(double a, double b) { return std::atan2(a, b); }
+extern "C" double sm_llvm_plog(double a, double b) { return a < b ? std::log(b) + (a-b)/b - (a-b)*(a-b)/(2.0*b*b) + (a-b)*(a-b)*(a-b)/(3.0*b*b*b) : std::log(a); }
+// clang-format on
+
 namespace SymbolicMath
 {
 
@@ -68,8 +91,44 @@ CompiledLLVM<T>::CompiledLLVM(Function<T> & fb) : Transform<T>(fb), _jit_functio
   auto C = llvm::make_unique<llvm::LLVMContext>();
   auto M = llvm::make_unique<llvm::Module>("LLJIT", *C);
   M->setDataLayout(_lljit->getDataLayout());
-
   auto & ctx = M->getContext();
+
+  // setup bindings to native functions
+  const std::vector<std::pair<Native, std::string>> unary_functions = {{Native::acos, "acos"},
+                                                                       {Native::acosh, "acosh"},
+                                                                       {Native::asin, "asin"},
+                                                                       {Native::asinh, "asinh"},
+                                                                       {Native::atan, "atan"},
+                                                                       {Native::atanh, "atanh"},
+                                                                       {Native::cbrt, "cbrt"},
+                                                                       {Native::cosh, "cosh"},
+                                                                       {Native::cot, "cot"},
+                                                                       {Native::csc, "csc"},
+                                                                       {Native::erf, "erf"},
+                                                                       {Native::erfc, "erfc"},
+                                                                       {Native::sinh, "sinh"},
+                                                                       {Native::tan, "tan"},
+                                                                       {Native::tanh, "tanh"}};
+  for (auto & unary : unary_functions)
+    _native[unary.first] = llvm::Function::Create(
+        llvm::FunctionType::get(
+            llvm::Type::getDoubleTy(ctx), {llvm::Type::getDoubleTy(ctx)}, false),
+        llvm::GlobalValue::ExternalLinkage,
+        "sm_llvm_" + unary.second,
+        *M);
+
+  const std::vector<std::pair<Native, std::string>> binary_functions = {{Native::atan2, "atan2"},
+                                                                        {Native::plog, "plog"}};
+
+  for (auto & binary : binary_functions)
+    _native[binary.first] = llvm::Function::Create(
+        llvm::FunctionType::get(llvm::Type::getDoubleTy(ctx),
+                                {llvm::Type::getDoubleTy(ctx), llvm::Type::getDoubleTy(ctx)},
+                                false),
+        llvm::GlobalValue::ExternalLinkage,
+        "sm_llvm_" + binary.second,
+        *M);
+
   auto * FT = llvm::FunctionType::get(llvm::Type::getDoubleTy(ctx), false);
   auto * F = llvm::Function::Create(FT, llvm::Function::ExternalLinkage, "F", M.get());
 
@@ -94,7 +153,7 @@ CompiledLLVM<T>::CompiledLLVM(Function<T> & fb) : Transform<T>(fb), _jit_functio
 
   // Request function; this compiles to machine code and links.
   _jit_function = llvm::jitTargetAddressToPointer<JITFunctionPtr>(*(_lljit->getFunctionAddr("F")));
-}
+} // namespace SymbolicMath
 
 template <typename T>
 CompiledLLVM<T>::~CompiledLLVM()
@@ -256,6 +315,7 @@ void
 CompiledLLVM<Real>::operator()(UnaryFunctionData<Real> * n)
 {
   llvm::Intrinsic::ID func;
+  n->_args[0].apply(*this);
 
   switch (n->_type)
   {
@@ -263,21 +323,35 @@ CompiledLLVM<Real>::operator()(UnaryFunctionData<Real> * n)
       func = llvm::Intrinsic::fabs;
       break;
 
-      // case UnaryFunctionType::ACOS:
-      //
-      // case UnaryFunctionType::ACOSH:
-      //
+    case UnaryFunctionType::ACOS:
+      _value = _state->builder.CreateCall(_native[Native::acos], {_value});
+      return;
+
+    case UnaryFunctionType::ACOSH:
+      _value = _state->builder.CreateCall(_native[Native::acosh], {_value});
+      return;
+
       // case UnaryFunctionType::ARG:
-      //
-      // case UnaryFunctionType::ASIN:
-      //
-      // case UnaryFunctionType::ASINH:
-      //
-      // case UnaryFunctionType::ATAN:
-      //
-      // case UnaryFunctionType::ATANH:
-      //
-      // case UnaryFunctionType::CBRT:
+
+    case UnaryFunctionType::ASIN:
+      _value = _state->builder.CreateCall(_native[Native::asin], {_value});
+      return;
+
+    case UnaryFunctionType::ASINH:
+      _value = _state->builder.CreateCall(_native[Native::asinh], {_value});
+      return;
+
+    case UnaryFunctionType::ATAN:
+      _value = _state->builder.CreateCall(_native[Native::atan], {_value});
+      return;
+
+    case UnaryFunctionType::ATANH:
+      _value = _state->builder.CreateCall(_native[Native::atanh], {_value});
+      return;
+
+    case UnaryFunctionType::CBRT:
+      _value = _state->builder.CreateCall(_native[Native::cbrt], {_value});
+      return;
 
     case UnaryFunctionType::CEIL:
       func = llvm::Intrinsic::ceil;
@@ -289,13 +363,21 @@ CompiledLLVM<Real>::operator()(UnaryFunctionData<Real> * n)
       func = llvm::Intrinsic::cos;
       break;
 
-      // case UnaryFunctionType::COSH:
-      //
-      // case UnaryFunctionType::COT:
-      //
-      // case UnaryFunctionType::CSC:
-      //
-      // case UnaryFunctionType::ERF:
+    case UnaryFunctionType::COSH:
+      _value = _state->builder.CreateCall(_native[Native::cosh], {_value});
+      return;
+
+    case UnaryFunctionType::COT:
+      _value = _state->builder.CreateCall(_native[Native::cot], {_value});
+      return;
+
+    case UnaryFunctionType::CSC:
+      _value = _state->builder.CreateCall(_native[Native::csc], {_value});
+      return;
+
+    case UnaryFunctionType::ERF:
+      _value = _state->builder.CreateCall(_native[Native::erf], {_value});
+      return;
 
     case UnaryFunctionType::EXP:
       func = llvm::Intrinsic::exp;
@@ -339,15 +421,23 @@ CompiledLLVM<Real>::operator()(UnaryFunctionData<Real> * n)
       func = llvm::Intrinsic::sin;
       break;
 
-      // case UnaryFunctionType::SINH:
+    case UnaryFunctionType::SINH:
+      _value = _state->builder.CreateCall(_native[Native::sinh], {_value});
+      return;
 
     case UnaryFunctionType::SQRT:
       func = llvm::Intrinsic::sqrt;
       break;
 
       // case UnaryFunctionType::T:
-      // case UnaryFunctionType::TAN:
-      // case UnaryFunctionType::TANH:
+
+    case UnaryFunctionType::TAN:
+      _value = _state->builder.CreateCall(_native[Native::tan], {_value});
+      return;
+
+    case UnaryFunctionType::TANH:
+      _value = _state->builder.CreateCall(_native[Native::tanh], {_value});
+      return;
 
     case UnaryFunctionType::TRUNC:
       func = llvm::Intrinsic::trunc;
@@ -357,7 +447,6 @@ CompiledLLVM<Real>::operator()(UnaryFunctionData<Real> * n)
       fatalError("Function not implemented");
   }
 
-  n->_args[0].apply(*this);
   _value = _state->builder.CreateCall(
       Intrinsic::getDeclaration(_state->M, func, {_state->builder.getDoubleTy()}), {_value});
 }
@@ -375,9 +464,15 @@ CompiledLLVM<T>::operator()(BinaryFunctionData<T> * n)
 
   switch (n->_type)
   {
-      // case BinaryFunctionType::ATAN2:
+    case BinaryFunctionType::ATAN2:
+      _value = _state->builder.CreateCall(_native[Native::atan2], {A, B});
+      return;
+
       // case BinaryFunctionType::HYPOT:
-      // case BinaryFunctionType::PLOG:
+
+    case BinaryFunctionType::PLOG:
+      _value = _state->builder.CreateCall(_native[Native::plog], {A, B});
+      return;
 
     case BinaryFunctionType::MIN:
       func = llvm::Intrinsic::minimum;
