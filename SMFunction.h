@@ -25,7 +25,8 @@ template <typename T>
 class Function : public Evaluable<T>
 {
 public:
-  /// Construct form given node
+  /// Construct form given function or node (shallow copy)
+  Function(const Function<T> & func) : _root(func.root()) {} // TODO: make this deep copy
   Function(const Node<T> & root) : _root(root) {}
   virtual ~Function() {}
 

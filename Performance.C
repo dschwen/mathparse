@@ -6,38 +6,43 @@
 #include "SymbolicMath.h"
 #include "SMFunction.h"
 #include "SMHelpers.h"
-#include "SMJITTypes.h"
+#include "SMTransformSimplify.h"
+
+#include "SMCompiledByteCode.h"
+#include "SMCompiledCCode.h"
+#include "SMCompiledSLJIT.h"
+#include "SMCompiledLibJIT.h"
+#include "SMCompiledLightning.h"
+#ifdef SYMBOLICMATH_USE_LLVMIR
+#include "SMCompiledLLVM.h"
+#endif
 
 #include "performance_expression.h"
 
 #include <iostream>
 #include <chrono>
 
-int
-main(int argc, char * argv[])
+template <class C>
+void
+test()
 {
-  std::cout << "\n## with backend " << SymbolicMath::jit_backend_name << '\n';
-  SymbolicMath::Parser parser;
+  SymbolicMath::Parser<SymbolicMath::Real> parser;
 
   SymbolicMath::Real c;
-  auto c_var = std::make_shared<SymbolicMath::RealReferenceData>(c, "c");
+  auto c_var = std::make_shared<SymbolicMath::RealReferenceData<SymbolicMath::Real>>(c, "c");
   parser.registerValueProvider(c_var);
 
   SymbolicMath::Real T = 500.0;
-  auto T_var = std::make_shared<SymbolicMath::RealReferenceData>(T, "y");
+  auto T_var = std::make_shared<SymbolicMath::RealReferenceData<SymbolicMath::Real>>(T, "y");
   parser.registerValueProvider(T_var);
 
   parser.registerConstant("kB", 8.6173324e-5);
   parser.registerConstant("T0", 410.0);
 
   auto func = parser.parse(expression);
-  // std::cout << func.format() << '\n';
 
-  func.simplify();
-  // std::cout << " = " << func.format() << '\n'
-  //           << func->formatTree("\t") << '\n';
-
-  func.compile();
+  SymbolicMath::Simplify<SymbolicMath::Real> simplify(func);
+  C compiled(func);
 
   unsigned int n = 0;
   for (c = 0.01; c <= 0.99; c += 0.001)
@@ -49,13 +54,36 @@ main(int argc, char * argv[])
   auto start = std::chrono::high_resolution_clock::now();
   for (c = 0.01; c <= 0.99; c += 0.001)
     for (T = 200.0; T <= 800.0; T += 0.01)
-      sum += func.value();
+      sum += compiled();
   auto finish = std::chrono::high_resolution_clock::now();
 
   std::cout << sum << '\n';
 
   std::chrono::duration<double> elapsed = finish - start;
   std::cout << "Elapsed time: " << elapsed.count() << " s\n";
+}
+
+int
+main(int argc, char * argv[])
+{
+
+  // test various compilers
+  std::cout << "SymbolicMath::Function...\n";
+  test<SymbolicMath::Function<SymbolicMath::Real>>();
+  std::cout << "SymbolicMath::CompiledByteCode...\n";
+  test<SymbolicMath::CompiledByteCode<SymbolicMath::Real>>();
+  std::cout << "SymbolicMath::CompiledCCode...\n";
+  test<SymbolicMath::CompiledCCode<SymbolicMath::Real>>();
+  std::cout << "SymbolicMath::CompiledSLJIT...\n";
+  test<SymbolicMath::CompiledSLJIT<SymbolicMath::Real>>();
+  std::cout << "SymbolicMath::CompiledLibJIT...\n";
+  test<SymbolicMath::CompiledLibJIT<SymbolicMath::Real>>();
+  std::cout << "SymbolicMath::CompiledLightning...\n";
+  test<SymbolicMath::CompiledLightning<SymbolicMath::Real>>();
+#ifdef SYMBOLICMATH_USE_LLVMIR
+  std::cout << "SymbolicMath::CompiledLLVM...\n";
+  test<SymbolicMath::CompiledLLVM<SymbolicMath::Real>>();
+#endif
 
   return 0;
 }
