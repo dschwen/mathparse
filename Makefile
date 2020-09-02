@@ -48,7 +48,7 @@ mathparse: main.C $(OBJS)
 	$(CXX) -std=c++11 $(CONFIG) $(CPPFLAGS) $(CXXFLAGS) -o mathparse main.C $(OBJS) $(LDFLAGS)
 
 performance: Performance.C $(OBJS)
-	$(CXX) -std=c++11 $(CONFIG) $(CPPFLAGS) $(CXXFLAGS) -o performance performance.C $(OBJS) $(LDFLAGS)
+	$(CXX) -std=c++11 $(CONFIG) $(CPPFLAGS) $(CXXFLAGS) -o performance Performance.C $(OBJS) $(LDFLAGS)
 
 unittests: UnitTests.C $(OBJS)
 	$(CXX) -std=c++11 $(CONFIG) $(CPPFLAGS) $(CXXFLAGS) -o unittests UnitTests.C $(OBJS) $(LDFLAGS)
@@ -73,19 +73,5 @@ clean:
 
 # FParser (for performance comparison)
 
-fparser4.5.2.zip:
-	wget http://warp.povusers.org/FunctionParser/fparser4.5.2.zip
-
-fparser/fparser.hh: fparser4.5.2.zip
-	mkdir -p fparser && cd fparser && unzip -DD ../fparser4.5.2.zip
-
-%.o : %.cc
-	$(CXX) -std=c++11 $(CONFIG) -c $(CXXFLAGS) $(CPPFLAGS) $*.cc -o $@
-	$(CXX) -std=c++11 $(CONFIG) -MM $(CXXFLAGS) $(CPPFLAGS) $*.cc > $*.d
-
-FPARSER_SRC := $(wildcard fparser/*.cc)
-FPARSER_OBJS := $(patsubst %.cc, %.o, $(FPARSER_SRC))
-fparser: $(FPARSER_OBJS)
-
-performance_fparser: performance_fparser.C fparser/fparser.hh $(FPARSER_OBJS)
-	$(CXX) -std=c++11 $(CPPFLAGS) $(CXXFLAGS) -Ifparser -o performance_fparser performance_fparser.C $(FPARSER_OBJS)
+performance_fparser: PerformanceFparser.C
+	$(CXX) -std=c++11 $(CPPFLAGS) $(CXXFLAGS) -I$(LIBMESH_DIR)/include -o performance_fparser PerformanceFparser.C -Wl,-rpath=$(LIBMESH_DIR)/lib -L$(LIBMESH_DIR)/lib -lmesh_opt
