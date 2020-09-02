@@ -558,6 +558,9 @@ UnaryFunctionData<T>::value()
     case UnaryFunctionType::ERF:
       return std::erf(A);
 
+    case UnaryFunctionType::ERFC:
+      return std::erfc(A);
+
     case UnaryFunctionType::EXP:
       return std::exp(A);
 
@@ -690,8 +693,12 @@ UnaryFunctionData<T>::D(const ValueProvider<T> & vp)
       // 1 / sin
       return -dA * Node<T>(UnaryFunctionType::COT, A) / Node<T>(UnaryFunctionType::SIN, A);
 
-    case UnaryFunctionType::ERF: // d exp(A) = dA*exp(A)
+    case UnaryFunctionType::ERF:
       return dA * Node<T>(2.0 / std::sqrt(Constant::pi)) *
+             Node<T>(UnaryFunctionType::EXP, -Node<T>(IntegerPowerType::_ANY, A, 2));
+
+    case UnaryFunctionType::ERFC: // erfc = 1 - erf -> d erfc = -d erf
+      return -dA * Node<T>(2.0 / std::sqrt(Constant::pi)) *
              Node<T>(UnaryFunctionType::EXP, -Node<T>(IntegerPowerType::_ANY, A, 2));
 
     case UnaryFunctionType::EXP: // d exp(A) = dA*exp(A)

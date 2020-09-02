@@ -44,7 +44,7 @@ template <typename T>
 jit_value_t
 CompiledLibJIT<T>::unaryFunctionCall(T (*func)(T), jit_value_t A)
 {
-  // Prepare calling native_mult: create its signature
+  // create signature
   jit_type_t params[] = {jit_type_float64};
   jit_type_t signature = jit_type_create_signature(jit_abi_cdecl, jit_type_float64, params, 1, 1);
 
@@ -52,6 +52,29 @@ CompiledLibJIT<T>::unaryFunctionCall(T (*func)(T), jit_value_t A)
   jit_value_t args[] = {A};
   return jit_insn_call_native(
       _state, "", reinterpret_cast<void *>(func), signature, args, 1, JIT_CALL_NOTHROW);
+}
+
+template <typename T>
+jit_value_t
+CompiledLibJIT<T>::binaryFunctionCall(T (*func)(T, T), jit_value_t A, jit_value_t B)
+{
+  // create signature
+  jit_type_t params[] = {jit_type_float64, jit_type_float64};
+  jit_type_t signature = jit_type_create_signature(jit_abi_cdecl, jit_type_float64, params, 2, 1);
+
+  // set arguments and call function
+  jit_value_t args[] = {A, B};
+  return jit_insn_call_native(
+      _state, "", reinterpret_cast<void *>(func), signature, args, 2, JIT_CALL_NOTHROW);
+}
+
+template <typename T>
+T
+CompiledLibJIT<T>::plog(T a, T b)
+{
+  return a < b ? std::log(b) + (a - b) / b - (a - b) * (a - b) / (2.0 * b * b) +
+                     (a - b) * (a - b) * (a - b) / (3.0 * b * b * b)
+               : std::log(a);
 }
 
 // Visitor operators
@@ -272,6 +295,10 @@ CompiledLibJIT<Real>::operator()(UnaryFunctionData<Real> * n)
       _value = unaryFunctionCall(std::erf, A);
       return;
 
+    case UnaryFunctionType::ERFC:
+      _value = unaryFunctionCall(std::erfc, A);
+      return;
+
     case UnaryFunctionType::EXP:
       _value = jit_insn_exp(_state, A);
       return;
@@ -375,13 +402,8 @@ CompiledLibJIT<T>::operator()(BinaryFunctionData<T> * n)
       return;
 
     case BinaryFunctionType::PLOG:
-    {
-      fatalError("Function not implemented");
-      // _value = A < B
-      //            ? std::log(B) + (A - B) / B - (A - B) * (A - B) / (2.0 * B * B) +
-      //                  (A - B) * (A - B) * (A - B) / (3.0 * B * B * B)
-      //            : std::log(A);
-    }
+      _value = binaryFunctionCall(plog, A, B);
+      return;
 
     case BinaryFunctionType::POW:
       _value = jit_insn_pow(_state, A, B);

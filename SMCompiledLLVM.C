@@ -379,6 +379,10 @@ CompiledLLVM<Real>::operator()(UnaryFunctionData<Real> * n)
       _value = _state->builder.CreateCall(_native[Native::erf], {_value});
       return;
 
+    case UnaryFunctionType::ERFC:
+      _value = _state->builder.CreateCall(_native[Native::erfc], {_value});
+      return;
+
     case UnaryFunctionType::EXP:
       func = llvm::Intrinsic::exp;
       break;

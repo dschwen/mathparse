@@ -48,6 +48,9 @@ public:
 
 protected:
   jit_value_t unaryFunctionCall(T (*func)(T), jit_value_t);
+  jit_value_t binaryFunctionCall(T (*func)(T, T), jit_value_t, jit_value_t);
+
+  static T plog(T, T);
 
   /// JIT compilation context
   jit_context_t _jit_context;

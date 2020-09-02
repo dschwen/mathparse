@@ -340,6 +340,10 @@ CompiledByteCode<T>::operator()()
             a = std::erf(a);
             continue;
 
+          case UnaryFunctionType::ERFC:
+            a = std::erfc(a);
+            continue;
+
           case UnaryFunctionType::EXP:
             a = std::exp(a);
             continue;

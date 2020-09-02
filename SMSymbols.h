@@ -117,6 +117,7 @@ enum class UnaryFunctionType
   COT,
   CSC,
   ERF,
+  ERFC,
   EXP,
   EXP2,
   FLOOR,
@@ -147,15 +148,15 @@ const std::map<UnaryFunctionType, std::string> _unary_functions = {
     {UnaryFunctionType::CONJ, "conj"},   {UnaryFunctionType::COS, "cos"},
     {UnaryFunctionType::COSH, "cosh"},   {UnaryFunctionType::COT, "cot"},
     {UnaryFunctionType::CSC, "csc"},     {UnaryFunctionType::ERF, "erf"},
-    {UnaryFunctionType::EXP, "exp"},     {UnaryFunctionType::EXP2, "exp2"},
-    {UnaryFunctionType::FLOOR, "floor"}, {UnaryFunctionType::IMAG, "imag"},
-    {UnaryFunctionType::INT, "int"},     {UnaryFunctionType::LOG, "log"},
-    {UnaryFunctionType::LOG10, "log10"}, {UnaryFunctionType::LOG2, "log2"},
-    {UnaryFunctionType::REAL, "real"},   {UnaryFunctionType::SEC, "sec"},
-    {UnaryFunctionType::SIN, "sin"},     {UnaryFunctionType::SINH, "sinh"},
-    {UnaryFunctionType::SQRT, "sqrt"},   {UnaryFunctionType::T, "T"},
-    {UnaryFunctionType::TAN, "tan"},     {UnaryFunctionType::TANH, "tanh"},
-    {UnaryFunctionType::TRUNC, "trunc"}};
+    {UnaryFunctionType::ERFC, "erfc"},   {UnaryFunctionType::EXP, "exp"},
+    {UnaryFunctionType::EXP2, "exp2"},   {UnaryFunctionType::FLOOR, "floor"},
+    {UnaryFunctionType::IMAG, "imag"},   {UnaryFunctionType::INT, "int"},
+    {UnaryFunctionType::LOG, "log"},     {UnaryFunctionType::LOG10, "log10"},
+    {UnaryFunctionType::LOG2, "log2"},   {UnaryFunctionType::REAL, "real"},
+    {UnaryFunctionType::SEC, "sec"},     {UnaryFunctionType::SIN, "sin"},
+    {UnaryFunctionType::SINH, "sinh"},   {UnaryFunctionType::SQRT, "sqrt"},
+    {UnaryFunctionType::T, "T"},         {UnaryFunctionType::TAN, "tan"},
+    {UnaryFunctionType::TANH, "tanh"},   {UnaryFunctionType::TRUNC, "trunc"}};
 
 enum class BinaryFunctionType
 {

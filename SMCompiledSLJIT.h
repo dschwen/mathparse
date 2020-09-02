@@ -56,6 +56,7 @@ protected:
   void emitFcmp(sljit_s32);
 
   static T truncWrapper(T);
+  static T plog(T, T);
 
   /// current stack entry (as array index)
   int _sp;

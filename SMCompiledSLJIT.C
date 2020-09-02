@@ -112,9 +112,18 @@ CompiledSLJIT<T>::emitFcmp(sljit_s32 op)
 
 template <typename T>
 T
-CompiledSLJIT<T>::truncWrapper(T A)
+CompiledSLJIT<T>::truncWrapper(T a)
 {
-  return static_cast<int>(A);
+  return static_cast<int>(a);
+}
+
+template <typename T>
+T
+CompiledSLJIT<T>::plog(T a, T b)
+{
+  return a < b ? std::log(b) + (a - b) / b - (a - b) * (a - b) / (2.0 * b * b) +
+                     (a - b) * (a - b) * (a - b) / (3.0 * b * b * b)
+               : std::log(a);
 }
 
 // Visitor operators
@@ -361,6 +370,10 @@ CompiledSLJIT<T>::operator()(UnaryFunctionData<T> * n)
       unaryFunctionCall(std::erf);
       return;
 
+    case UnaryFunctionType::ERFC:
+      unaryFunctionCall(std::erfc);
+      return;
+
     case UnaryFunctionType::EXP:
       unaryFunctionCall(std::exp);
       return;
@@ -487,11 +500,8 @@ CompiledSLJIT<T>::operator()(BinaryFunctionData<T> * n)
     }
 
     case BinaryFunctionType::PLOG:
-      fatalError("Function not implemented");
-      // return A < B
-      //            ? std::log(B) + (A - B) / B - (A - B) * (A - B) / (2.0 * B * B) +
-      //                  (A - B) * (A - B) * (A - B) / (3.0 * B * B * B)
-      //            : std::log(A);
+      binaryFunctionCall(plog);
+      return;
 
     case BinaryFunctionType::POW:
       binaryFunctionCall(std::pow);

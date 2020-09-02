@@ -68,6 +68,7 @@ const std::vector<Test> tests = {
   {"acosh(c+2.1)", [](double c) { return std::acosh(c+2.1); }},
   {"atanh(c*0.9)", [](double c) { return std::atanh(c*0.9); }},
   {"erf(c)", [](double c) { return std::erf(c); }},
+  {"erfc(c)", [](double c) { return std::erfc(c); }},
   {"exp(c)", [](double c) { return std::exp(c); }},
   {"exp2(c)", [](double c) { return std::exp2(c); }},
   {"log(c+1.1)", [](double c) { return std::log(c+1.1); }},
@@ -81,6 +82,8 @@ const std::vector<Test> tests = {
   {"floor(c)", [](double c) { return std::floor(c); }},
   {"ceil(c)", [](double c) { return std::ceil(c); }},
   {"trunc(c)", [](double c) { return static_cast<int>(c); }},
+  // custom functions
+  {"plog(c, 0.1)", [](double a) { double b = 0.1; return a < b ? std::log(b) + (a-b)/b - (a-b)*(a-b)/(2.0*b*b) + (a-b)*(a-b)*(a-b)/(3.0*b*b*b) : std::log(a); }},
   // powers and their simplifications
   {"pow(c,3)", [](double c) { return std::pow(c, 3); }},
   {"pow(c,-3)", [](double c) { return std::pow(c, -3); }},

@@ -354,6 +354,10 @@ CompiledLightning<T>::operator()(UnaryFunctionData<T> * n)
       unaryFunctionCall(std::erf);
       return;
 
+    case UnaryFunctionType::ERFC:
+      unaryFunctionCall(std::erfc);
+      return;
+
     case UnaryFunctionType::EXP:
       unaryFunctionCall(std::exp);
       return;

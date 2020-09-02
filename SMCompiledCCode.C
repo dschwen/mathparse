@@ -305,6 +305,10 @@ CompiledCCode<T>::Source::operator()(UnaryFunctionData<T> * n)
       _source = "std::erf(" + A + ")";
       return;
 
+    case UnaryFunctionType::ERFC:
+      _source = "std::erfc(" + A + ")";
+      return;
+
     case UnaryFunctionType::EXP:
       _source = "std::exp(" + A + ")";
       return;
@@ -405,13 +409,11 @@ CompiledCCode<T>::Source::operator()(BinaryFunctionData<T> * n)
       return;
 
     case BinaryFunctionType::PLOG:
-    {
-      fatalError("Function not implemented");
-      // _source = A < B
-      //            ? std::log(B) + (A - B) / B - (A - B) * (A - B) / (2.0 * B * B) +
-      //                  (A - B) * (A - B) * (A - B) / (3.0 * B * B * B)
-      //            : std::log(A);
-    }
+      _source = "((" + A + ") < (" + B + ") ? (std::log(" + B + ") + (" + A + " - " + B + ") / " +
+                B + " - (" + A + " - " + B + ") * (" + A + " - " + B + ") / (2.0 * " + B + " * " +
+                B + ") + (" + A + " - " + B + ") * (" + A + " - " + B + ") * (" + A + " - " + B +
+                ") / (3.0 * " + B + " * " + B + " * " + B + ")) : std::log(" + A + "))";
+      return;
 
     case BinaryFunctionType::POW:
       _source = "std::pow(" + A + ", " + B + ")";
