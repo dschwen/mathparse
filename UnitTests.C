@@ -335,8 +335,8 @@ main(int argc, char * argv[])
   // test various compilers
   std::cout << "SymbolicMath::CompiledByteCode...\n";
   test<SymbolicMath::CompiledByteCode<SymbolicMath::Real>>();
-  // std::cout << "SymbolicMath::CompiledCCode...\n";
-  // test<SymbolicMath::CompiledCCode<SymbolicMath::Real>>();
+  std::cout << "SymbolicMath::CompiledCCode...\n";
+  test<SymbolicMath::CompiledCCode<SymbolicMath::Real>>();
   std::cout << "SymbolicMath::CompiledSLJIT...\n";
   test<SymbolicMath::CompiledSLJIT<SymbolicMath::Real>>();
   std::cout << "SymbolicMath::CompiledLibJIT...\n";
