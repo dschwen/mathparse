@@ -133,7 +133,9 @@ protected:
   std::vector<T> _immed;
 
   /// variables
+  std::size_t _nvars;
   std::vector<const T *> _vars;
+  std::vector<T> _vals;
 };
 
 } // namespace SymbolicMath

@@ -18,6 +18,9 @@ CompiledByteCode<T>::CompiledByteCode(Function<T> & fb) : Transform<T>(fb)
   _stack.resize(current_max.second);
 
   apply();
+
+  _nvars = _vars.size();
+  _vals.resize(_nvars);
 }
 
 template <typename T>
@@ -253,6 +256,10 @@ template <typename T>
 T
 CompiledByteCode<T>::operator()()
 {
+  // copy vars
+  for (std::size_t i = 0; i < _nvars; ++i)
+    _vals[i] = *_vars[i];
+
   // initialize instruction and stack pointer and loop over byte code
   const auto byte_code_size = _byte_code.size();
   int ip = 0, sp = -1;
@@ -269,7 +276,7 @@ CompiledByteCode<T>::operator()()
         break;
 
       case VMInstruction::LOAD_VARIABLE_REAL:
-        _stack[++sp] = *_vars[_byte_code[++ip]];
+        _stack[++sp] = _vals[_byte_code[++ip]];
         break;
 
       case VMInstruction::MO_ADDITION:
