@@ -94,11 +94,22 @@ CompiledByteCode<T>::operator()(MultinaryOperatorData<T> * n)
   if (nargs < 2)
     return;
 
-  auto vi = map.find(n->_type);
-  if (vi == map.end())
-    fatalError("Invalid instruction");
-  _byte_code.emplace_back(static_cast<int>(vi->second));
-  _byte_code.emplace_back(nargs - 1);
+  if (n->_type == MultinaryOperatorType::ADDITION && nargs == 2)
+    _byte_code.emplace_back(static_cast<int>(VMInstruction::ADD2));
+  else if (n->_type == MultinaryOperatorType::ADDITION && nargs == 3)
+    _byte_code.emplace_back(static_cast<int>(VMInstruction::ADD3));
+  else if (n->_type == MultinaryOperatorType::MULTIPLICATION && nargs == 2)
+    _byte_code.emplace_back(static_cast<int>(VMInstruction::MUL2));
+  else if (n->_type == MultinaryOperatorType::MULTIPLICATION && nargs == 3)
+    _byte_code.emplace_back(static_cast<int>(VMInstruction::MUL3));
+  else
+  {
+    auto vi = map.find(n->_type);
+    if (vi == map.end())
+      fatalError("Invalid instruction");
+    _byte_code.emplace_back(static_cast<int>(vi->second));
+    _byte_code.emplace_back(nargs - 1);
+  }
 }
 
 template <typename T>
@@ -248,8 +259,19 @@ void
 CompiledByteCode<T>::operator()(IntegerPowerData<T> * n)
 {
   n->_arg.apply(*this);
-  _byte_code.emplace_back(static_cast<int>(VMInstruction::INTEGER_POWER));
-  _byte_code.emplace_back(n->_exponent);
+  if (n->_exponent == 2)
+    _byte_code.emplace_back(static_cast<int>(VMInstruction::POW2));
+  else if (n->_exponent == 3)
+    _byte_code.emplace_back(static_cast<int>(VMInstruction::POW3));
+  else if (n->_exponent == 4)
+    _byte_code.emplace_back(static_cast<int>(VMInstruction::POW4));
+  else if (n->_exponent == 5)
+    _byte_code.emplace_back(static_cast<int>(VMInstruction::POW5));
+  else
+  {
+    _byte_code.emplace_back(static_cast<int>(VMInstruction::INTEGER_POWER));
+    _byte_code.emplace_back(n->_exponent);
+  }
 }
 
 template <typename T>
@@ -315,12 +337,12 @@ CompiledByteCode<T>::operator()()
 
       case VMInstruction::BO_SUBTRACTION:
         --sp;
-        _stack[sp] = _stack[sp] - _stack[sp + 1];
+        _stack[sp] -= _stack[sp + 1];
         break;
 
       case VMInstruction::BO_DIVISION:
         --sp;
-        _stack[sp] = _stack[sp] / _stack[sp + 1];
+        _stack[sp] /= _stack[sp + 1];
         break;
 
       case VMInstruction::BO_MODULO:
@@ -562,6 +584,48 @@ CompiledByteCode<T>::operator()()
         break;
       }
 
+      case VMInstruction::POW2:
+        _stack[sp] *= _stack[sp];
+        break;
+
+      case VMInstruction::POW3:
+        _stack[sp] *= _stack[sp] * _stack[sp];
+        break;
+
+      case VMInstruction::POW4:
+        _stack[sp] *= _stack[sp];
+        _stack[sp] *= _stack[sp];
+        break;
+
+      case VMInstruction::POW5:
+      {
+        auto tmp = _stack[sp];
+        _stack[sp] *= _stack[sp];
+        _stack[sp] *= _stack[sp];
+        _stack[sp] *= tmp;
+      }
+      break;
+
+      case VMInstruction::ADD2:
+        --sp;
+        _stack[sp] += _stack[sp + 1];
+        break;
+
+      case VMInstruction::MUL2:
+        --sp;
+        _stack[sp] *= _stack[sp + 1];
+        break;
+
+      case VMInstruction::ADD3:
+        sp -= 2;
+        _stack[sp] += _stack[sp + 1] + _stack[sp + 2];
+        break;
+
+      case VMInstruction::MUL3:
+        sp -= 2;
+        _stack[sp] *= _stack[sp + 1] * _stack[sp + 2];
+        break;
+
       default:
         fatalError("Invalid opcode " + stringify(_byte_code[ip]) + " at ip=" + stringify(ip) +
                    " sp=" + stringify(sp));
@@ -645,7 +709,15 @@ CompiledByteCode<T>::print()
                                                        "BF_POW",
                                                        "CONDITIONAL",
                                                        "INTEGER_POWER",
-                                                       "JUMP"};
+                                                       "JUMP",
+                                                       "POW2",
+                                                       "POW3",
+                                                       "POW4",
+                                                       "POW5",
+                                                       "MUL2",
+                                                       "ADD2",
+                                                       "MUL3",
+                                                       "ADD3"};
 
   for (std::size_t i = 0; i < _byte_code.size(); ++i)
   {

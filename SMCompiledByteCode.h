@@ -120,7 +120,16 @@ protected:
 
     CONDITIONAL,
     INTEGER_POWER,
-    JUMP
+    JUMP,
+
+    POW2,
+    POW3,
+    POW4,
+    POW5,
+    MUL2,
+    ADD2,
+    MUL3,
+    ADD3
   };
 
   /// byte code data

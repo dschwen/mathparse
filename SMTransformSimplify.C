@@ -188,6 +188,24 @@ Simplify<T>::operator()(BinaryFunctionData<T> * n)
         return;
       }
 
+      if (n->_args[1].is(0.5))
+      {
+        set(UnaryFunctionType::SQRT, n->_args[0]);
+        return;
+      }
+
+      if (n->_args[1].is(1.0 / 3.0))
+      {
+        set(UnaryFunctionType::CBRT, n->_args[0]);
+        return;
+      }
+
+      if (n->_args[0].is(2.0))
+      {
+        set(UnaryFunctionType::EXP2, n->_args[1]);
+        return;
+      }
+
       if (n->_args[1].is(NumberType::_ANY))
       {
         auto val = n->_args[1].value();

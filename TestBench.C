@@ -21,7 +21,7 @@
 #endif
 #include <iostream>
 
-// #include "performance_expression.h"
+#include "performance_expression.h"
 
 int
 main(int argc, char * argv[])
@@ -41,8 +41,8 @@ main(int argc, char * argv[])
   // func.simplify();
 
   // auto func = parser.parse("(c + 2) / 1 - 0 / (c -2)");
-  auto func = parser.parse("if(c<-0.5, 10, if(c>0.2, 20, 30))");
-  // auto func = parser.parse(expression);
+  // auto func = parser.parse("if(c<-0.5, 10, if(c>0.2, 20, 30))");
+  auto func = parser.parse(expression);
   std::cout << func.format() << '\n';
 
   {
