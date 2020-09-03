@@ -114,7 +114,7 @@ public:
   Helper(Helper &&) = delete;
   Helper & operator=(Helper &&) = delete;
 
-  llvm::DataLayout getDataLayout() const { return LLJIT->getDataLayout(); }
+  llvm::DataLayout getDataLayout() const { return _lljit->getDataLayout(); }
 
   // const llvm::Triple & getTargetTriple() const { return TT; }
 
@@ -132,8 +132,7 @@ public:
   llvm::Expected<llvm::JITTargetAddress> getFunctionAddr(llvm::StringRef Name);
 
 private:
-  std::unique_ptr<llvm::orc::LLJIT> LLJIT;
-  // llvm::Triple TT;
+  std::unique_ptr<llvm::orc::LLJIT> _lljit;
 
   llvm::orc::JITDylib::GeneratorFunction createHostProcessResolver(llvm::DataLayout DL);
 };

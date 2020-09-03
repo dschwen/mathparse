@@ -16,21 +16,26 @@
 #include "llvm/Support/Process.h"
 #include "llvm/Support/raw_ostream.h"
 
+#include "llvm/Analysis/TargetLibraryInfo.h"
+#include "llvm/Analysis/TargetTransformInfo.h"
 #include "llvm/IR/BasicBlock.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/IRBuilder.h"
-//#include "llvm/IR/LegacyPassManager.h"
+#include "llvm/IR/LegacyPassManager.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Type.h"
 #include "llvm/IR/Verifier.h"
 #include "llvm/Support/TargetSelect.h"
+#include "llvm/Target/TargetMachine.h"
+#include "llvm/Transforms/InstCombine/InstCombine.h"
+#include "llvm/Transforms/IPO.h"
+#include "llvm/Transforms/IPO/PassManagerBuilder.h"
 #include "llvm/Transforms/Scalar.h"
 #include "llvm/Transforms/Scalar/GVN.h"
-#include "llvm/Transforms/InstCombine/InstCombine.h"
 
 #include "llvm/ExecutionEngine/Orc/ThreadSafeModule.h"
 #include "llvm/Support/Debug.h"
@@ -138,9 +143,13 @@ CompiledLLVM<T>::CompiledLLVM(Function<T> & fb) : Transform<T>(fb), _jit_functio
   auto * BB = llvm::BasicBlock::Create(ctx, "EntryBlock", F);
   _state = std::unique_ptr<JITStateValue>(new JITStateValue(BB, M.get()));
 
-  // return result
+  // Build IR form tree recursively
   apply();
+
+  // Return result
   _state->builder.CreateRet(_value);
+
+  // Verification
 
   std::string buffer;
   llvm::raw_string_ostream es(buffer);
@@ -151,12 +160,47 @@ CompiledLLVM<T>::CompiledLLVM(Function<T> & fb) : Transform<T>(fb), _jit_functio
   if (verifyModule(*M, &es))
     throw std::runtime_error("Module verification failed: " + es.str());
 
+  // Optimization
+
+  auto machine = llvm::EngineBuilder().selectTarget();
+
+  llvm::legacy::PassManager passes;
+  passes.add(new llvm::TargetLibraryInfoWrapperPass(machine->getTargetTriple()));
+  passes.add(llvm::createTargetTransformInfoWrapperPass(machine->getTargetIRAnalysis()));
+
+  llvm::legacy::FunctionPassManager fnPasses(M.get());
+  fnPasses.add(llvm::createTargetTransformInfoWrapperPass(machine->getTargetIRAnalysis()));
+
+  auto FPM = std::make_unique<llvm::legacy::FunctionPassManager>(M.get());
+
+  llvm::PassManagerBuilder pmb;
+  pmb.OptLevel = 3;
+  pmb.SizeLevel = 0;
+  pmb.Inliner = llvm::createFunctionInliningPass(3, 0, false);
+  pmb.LoopVectorize = true;
+  pmb.SLPVectorize = true;
+  machine->adjustPassManager(pmb);
+
+  pmb.populateFunctionPassManager(fnPasses);
+  pmb.populateModulePassManager(passes);
+
+  fnPasses.doInitialization();
+  // for (auto & func : *M)
+  // fnPasses.run(func);
+  fnPasses.run(*F);
+  fnPasses.doFinalization();
+
+  passes.add(llvm::createVerifierPass());
+  passes.run(*M);
+
+  // Compilation
+
   if (_lljit->submitModule(std::move(M), std::move(C)))
     throw std::runtime_error("Module submission failed");
 
   // Request function; this compiles to machine code and links.
   _jit_function = llvm::jitTargetAddressToPointer<JITFunctionPtr>(*(_lljit->getFunctionAddr("F")));
-} // namespace SymbolicMath
+}
 
 template <typename T>
 CompiledLLVM<T>::~CompiledLLVM()
@@ -581,10 +625,10 @@ CompiledLLVM<T>::Helper::Helper()
 {
   LLJITBuilder Builder;
   // TT = Builder.JTMB->getTargetTriple();
-  LLJIT = std::move(Builder.create().get());
+  _lljit = std::move(Builder.create().get());
 
-  if (auto R = createHostProcessResolver(LLJIT->getDataLayout()))
-    LLJIT->getMainJITDylib().setGenerator(std::move(R));
+  if (auto R = createHostProcessResolver(_lljit->getDataLayout()))
+    _lljit->getMainJITDylib().setGenerator(std::move(R));
 }
 
 template <typename T>
@@ -597,13 +641,13 @@ CompiledLLVM<T>::Helper::createHostProcessResolver(DataLayout DL)
 
   if (!R)
   {
-    LLJIT->getExecutionSession().reportError(R.takeError());
+    _lljit->getExecutionSession().reportError(R.takeError());
     return nullptr;
   }
 
   if (!*R)
   {
-    LLJIT->getExecutionSession().reportError(createStringError(
+    _lljit->getExecutionSession().reportError(createStringError(
         inconvertibleErrorCode(), "Generator function for host process symbols must not be null"));
     return nullptr;
   }
@@ -615,14 +659,14 @@ template <typename T>
 Error
 CompiledLLVM<T>::Helper::submitModule(std::unique_ptr<Module> M, std::unique_ptr<LLVMContext> C)
 {
-  return LLJIT->addIRModule(ThreadSafeModule(std::move(M), std::move(C)));
+  return _lljit->addIRModule(ThreadSafeModule(std::move(M), std::move(C)));
 }
 
 template <typename T>
 Expected<JITTargetAddress>
 CompiledLLVM<T>::Helper::getFunctionAddr(StringRef Name)
 {
-  Expected<JITEvaluatedSymbol> S = LLJIT->lookup(Name);
+  Expected<JITEvaluatedSymbol> S = _lljit->lookup(Name);
   if (!S)
     return S.takeError();
 
