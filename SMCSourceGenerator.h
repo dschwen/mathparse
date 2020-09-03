@@ -35,12 +35,15 @@ public:
   void operator()(ConditionalData<T> *) override;
   void operator()(IntegerPowerData<T> *) override;
 
-  const std::string & operator()() const { return _source; };
+  std::string operator()() const { return _prologue + "return " + _source; };
 
   const std::string typeName();
 
 protected:
+  std::string _prologue;
   std::string _source;
+
+  unsigned int _tmp_id;
 };
 
 } // namespace SymbolicMath

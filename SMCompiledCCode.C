@@ -31,7 +31,7 @@ CompiledCCode<T>::CompiledCCode(Function<T> & fb)
 {
   // generate source
   CSourceGenerator<T> source(fb);
-  std::string ccode = typeHeader() + "\nextern \"C\" " + source.typeName() + " F()\n{\n  return ";
+  std::string ccode = typeHeader() + "\nextern \"C\" " + source.typeName() + " F()\n{\n";
   ccode += source() + ";\n}";
 
   // save to a temporary name and rename only when the file is fully written

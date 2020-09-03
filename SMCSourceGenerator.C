@@ -26,7 +26,7 @@ CSourceGenerator<Real>::typeName()
 }
 
 template <typename T>
-CSourceGenerator<T>::CSourceGenerator(Function<T> & fb) : Transform<T>(fb)
+CSourceGenerator<T>::CSourceGenerator(Function<T> & fb) : Transform<T>(fb), _tmp_id(0)
 {
   apply();
 }
@@ -409,7 +409,26 @@ CSourceGenerator<T>::operator()(IntegerPowerData<T> * n)
 {
   // replace this with a template
   n->_arg.apply(*this);
-  _source = "std::pow(" + _source + ", " + stringify(n->_exponent) + ")";
+  std::string t0 = "t" + stringify(_tmp_id++);
+  std::string t1 = "t" + stringify(_tmp_id++);
+  _prologue += typeName() + " " + t0 + " = " + _source + ";\n";
+  _prologue += typeName() + " " + t1 + " = 1.0;\n";
+
+  int e = std::abs(n->_exponent);
+  while (true)
+  {
+    if (e & 1)
+      _prologue += t1 + " *= " + t0 + ";\n";
+    e >>= 1;
+    if (e == 0)
+      break;
+    _prologue += t0 + " *= " + t0 + ";\n";
+  }
+
+  if (n->_exponent < 0)
+    _source = "(1.0/" + t1 + ")";
+  else
+    _source = "(" + t1 + ")";
 }
 
 template class CSourceGenerator<Real>;

@@ -5,9 +5,11 @@
 
 #include "SymbolicMath.h"
 #include "SMFunction.h"
+#include "SMTransformSimplify.h"
 #include "SMHelpers.h"
 
-#include "SMTransformSimplify.h"
+#include "SMCSourceGenerator.h"
+#include "SMCompiledCCode.h"
 
 #include "SMCompiledByteCode.h"
 #include "SMCompiledCCode.h"
@@ -19,25 +21,32 @@
 #endif
 #include <iostream>
 
+#include "performance_expression.h"
+
 int
 main(int argc, char * argv[])
 {
   SymbolicMath::Parser<SymbolicMath::Real> parser;
 
-  SymbolicMath::Real c;
+  SymbolicMath::Real c, T;
   auto c_var = std::make_shared<SymbolicMath::RealReferenceData<SymbolicMath::Real>>(c, "c");
+  auto T_var = std::make_shared<SymbolicMath::RealReferenceData<SymbolicMath::Real>>(T, "y");
   parser.registerValueProvider(c_var);
+  parser.registerValueProvider(T_var);
+
+  parser.registerConstant("kB", 8.6173324e-5);
+  parser.registerConstant("T0", 410.0);
 
   // auto func = parser.parse("a := c*c; b := 5; sqrt(a+b)");
   // func.simplify();
 
   // auto func = parser.parse("(c + 2) / 1 - 0 / (c -2)");
-  auto func = parser.parse("1 *c*2*3*sin(4)");
-  // auto func = parser.parse("sin(c/4)");
+  // auto func = parser.parse("1 *c*2*3*sin(4)");
+  auto func = parser.parse(expression);
   std::cout << func.format() << '\n';
 
   {
-    SymbolicMath::CompiledCCode<SymbolicMath::Real>::Source source(func);
+    SymbolicMath::CSourceGenerator<SymbolicMath::Real> source(func);
     std::cout << '{' << source() << "}\n";
   }
 
@@ -49,11 +58,12 @@ main(int argc, char * argv[])
   std::cout << func.formatTree() << '\n';
 
   {
-    SymbolicMath::CompiledCCode<SymbolicMath::Real>::Source source(func);
+    SymbolicMath::CSourceGenerator<SymbolicMath::Real> source(func);
     std::cout << '{' << source() << "}\n";
   }
 
-  c = 2.0;
+  c = 0.5;
+  T = 300.0;
   std::cout << "c = " << c << "; Value = " << func() << '\n';
 
   SymbolicMath::CompiledByteCode<SymbolicMath::Real> vm(func);
