@@ -21,7 +21,7 @@
 #endif
 #include <iostream>
 
-#include "performance_expression.h"
+// #include "performance_expression.h"
 
 int
 main(int argc, char * argv[])
@@ -41,8 +41,8 @@ main(int argc, char * argv[])
   // func.simplify();
 
   // auto func = parser.parse("(c + 2) / 1 - 0 / (c -2)");
-  // auto func = parser.parse("1 *c*2*3*sin(4)");
-  auto func = parser.parse(expression);
+  auto func = parser.parse("if(c<-0.5, 10, if(c>0.2, 20, 30))");
+  // auto func = parser.parse(expression);
   std::cout << func.format() << '\n';
 
   {
@@ -62,11 +62,12 @@ main(int argc, char * argv[])
     std::cout << '{' << source() << "}\n";
   }
 
-  c = 0.5;
+  c = -1;
   T = 300.0;
   std::cout << "c = " << c << "; Value = " << func() << '\n';
 
   SymbolicMath::CompiledByteCode<SymbolicMath::Real> vm(func);
+  vm.print();
   std::cout << "vm value = " << vm() << '\n';
 
   SymbolicMath::CompiledCCode<SymbolicMath::Real> ccode(func);

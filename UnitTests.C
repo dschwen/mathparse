@@ -223,8 +223,10 @@ test()
         fail++;
       }
 
-      // std::cerr << "Evaluating expression '" << test.expression << "' simplified to '"
-      //           << func.format() << "'\n";
+#ifdef DEBUG
+      std::cerr << "Evaluating expression '" << test.expression << "' simplified to '"
+                << func.format() << "'\n";
+#endif
       C compiled(func);
 
       // evaluate for various values of c
@@ -272,6 +274,10 @@ test()
       auto diff = func.D(c_var);
       SymbolicMath::Simplify<SymbolicMath::Real> simplify2(diff);
       C dcompiled(diff);
+
+#ifdef DEBUG
+      std::cerr << "Evaluating expression '" << diff.format() << "'\n";
+#endif
 
       // finite differencing
       norm = 0.0;
