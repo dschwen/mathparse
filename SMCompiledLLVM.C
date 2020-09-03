@@ -171,7 +171,7 @@ CompiledLLVM<T>::CompiledLLVM(Function<T> & fb) : Transform<T>(fb), _jit_functio
   llvm::legacy::FunctionPassManager fnPasses(M.get());
   fnPasses.add(llvm::createTargetTransformInfoWrapperPass(machine->getTargetIRAnalysis()));
 
-  auto FPM = std::make_unique<llvm::legacy::FunctionPassManager>(M.get());
+  auto FPM = llvm::make_unique<llvm::legacy::FunctionPassManager>(M.get());
 
   llvm::PassManagerBuilder pmb;
   pmb.OptLevel = 3;

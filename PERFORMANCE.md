@@ -5,31 +5,31 @@ Using an Iron Chromium free energy derivative. All times for single core executi
 
 ## SymbolicMath::Function...
 1.85968e+07
-Elapsed time: 445.041 s
+Elapsed time: 456.242 s
 
 ## SymbolicMath::CompiledByteCode...
 1.85968e+07
-Elapsed time: 417.213 s
+Elapsed time: 400.593 s
 
 ## SymbolicMath::CompiledCCode...
 4.1095e+07
-Elapsed time: 3.98411 s
+Elapsed time: 4.03427 s
 
 ## SymbolicMath::CompiledSLJIT...
 1.85968e+07
-Elapsed time: 25.899 s
+Elapsed time: 27.0249 s
 
 ## SymbolicMath::CompiledLibJIT...
 1.85968e+07
-Elapsed time: 9.57635 s
+Elapsed time: 9.63852 s
 
 ## SymbolicMath::CompiledLightning...
 1.85968e+07
-Elapsed time: 28.286 s
+Elapsed time: 29.4737 s
 
 ## SymbolicMath::CompiledLLVM...
 1.85968e+07
-Elapsed time: 11.6538 s
+Elapsed time: 3.34433 s
 
 # FParser
 
