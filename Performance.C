@@ -71,22 +71,22 @@ main(int argc, char * argv[])
 {
 
   // test various compilers
-  std::cout << "## SymbolicMath::Function...\n";
-  test<SymbolicMath::Function<SymbolicMath::Real>>();
+  // std::cout << "## SymbolicMath::Function...\n";
+  // test<SymbolicMath::Function<SymbolicMath::Real>>();
   std::cout << "\n## SymbolicMath::CompiledByteCode...\n";
   test<SymbolicMath::CompiledByteCode<SymbolicMath::Real>>();
-  std::cout << "\n## SymbolicMath::CompiledCCode...\n";
-  test<SymbolicMath::CompiledCCode<SymbolicMath::Real>>();
-  std::cout << "\n## SymbolicMath::CompiledSLJIT...\n";
-  test<SymbolicMath::CompiledSLJIT<SymbolicMath::Real>>();
-  std::cout << "\n## SymbolicMath::CompiledLibJIT...\n";
-  test<SymbolicMath::CompiledLibJIT<SymbolicMath::Real>>();
-  std::cout << "\n## SymbolicMath::CompiledLightning...\n";
-  test<SymbolicMath::CompiledLightning<SymbolicMath::Real>>();
-#ifdef SYMBOLICMATH_USE_LLVMIR
-  std::cout << "\n## SymbolicMath::CompiledLLVM...\n";
-  test<SymbolicMath::CompiledLLVM<SymbolicMath::Real>>();
-#endif
+  //   std::cout << "\n## SymbolicMath::CompiledCCode...\n";
+  //   test<SymbolicMath::CompiledCCode<SymbolicMath::Real>>();
+  //   std::cout << "\n## SymbolicMath::CompiledSLJIT...\n";
+  //   test<SymbolicMath::CompiledSLJIT<SymbolicMath::Real>>();
+  //   std::cout << "\n## SymbolicMath::CompiledLibJIT...\n";
+  //   test<SymbolicMath::CompiledLibJIT<SymbolicMath::Real>>();
+  //   std::cout << "\n## SymbolicMath::CompiledLightning...\n";
+  //   test<SymbolicMath::CompiledLightning<SymbolicMath::Real>>();
+  // #ifdef SYMBOLICMATH_USE_LLVMIR
+  //   std::cout << "\n## SymbolicMath::CompiledLLVM...\n";
+  //   test<SymbolicMath::CompiledLLVM<SymbolicMath::Real>>();
+  // #endif
 
   return 0;
 }

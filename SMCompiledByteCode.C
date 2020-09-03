@@ -148,44 +148,37 @@ T
 CompiledByteCode<T>::operator()()
 {
   // initialize instruction and stack pointer and loop over byte code
-  std::size_t ip = 0, sp = 0;
+  const auto byte_code_size = _byte_code.size();
+  int ip = 0, sp = -1;
   do
   {
     const auto & cur = _byte_code[ip];
     switch (cur.first)
     {
-      case VMInstruction::JUMP:
-        ip = cur.second._int_value - 1;
-        continue;
-
-      case VMInstruction::CONDITIONAL:
-        if (_stack[--sp] == 0)
-          ip = cur.second._int_value - 1;
-        continue;
-
       case VMInstruction::LOAD_IMMEDIATE_INTEGER:
-        _stack[sp++] = cur.second._int_value;
+        _stack[++sp] = cur.second._int_value;
         continue;
 
       case VMInstruction::LOAD_IMMEDIATE_REAL:
-        _stack[sp++] = cur.second._value;
+        _stack[++sp] = cur.second._value;
         continue;
 
       case VMInstruction::LOAD_VARIABLE_REAL:
-        _stack[sp++] = *(cur.second._variable);
+        _stack[++sp] = *(cur.second._variable);
         continue;
 
       case VMInstruction::MULTINARY_PLUS:
       {
         // take one summand off the stack and loop over remaining summands
         const auto & num = cur.second._int_value - 1;
-        auto sum = _stack[--sp];
-        for (std::size_t i = sp - num; i < sp; ++i)
+        auto sum = _stack[sp--];
+        const int end = sp - num;
+        for (int i = sp; i > end; --i)
           sum += _stack[i];
         sp -= num;
 
         // put sum on stack
-        _stack[sp++] = sum;
+        _stack[++sp] = sum;
         continue;
       }
 
@@ -193,37 +186,27 @@ CompiledByteCode<T>::operator()()
       {
         // take one factor off the stack and loop over remaining factors
         const auto & num = cur.second._int_value - 1;
-        auto prod = _stack[--sp];
-        for (std::size_t i = sp - num; i < sp; ++i)
+        auto prod = _stack[sp--];
+        const int end = sp - num;
+        for (int i = sp; i > end; --i)
           prod *= _stack[i];
         sp -= num;
 
         // put product on stack
-        _stack[sp++] = prod;
+        _stack[++sp] = prod;
         continue;
       }
 
       case VMInstruction::UNARY_OPERATOR:
-      {
-        auto & a = _stack[sp - 1];
-        switch (cur.second._unary_operator)
-        {
-          case UnaryOperatorType::PLUS:
-            continue;
-
-          case UnaryOperatorType::MINUS:
-            a = -a;
-            continue;
-
-          default:
-            fatalError("Unknown operator");
-        }
-      }
+        if (cur.second._unary_operator != UnaryOperatorType::MINUS)
+          fatalError("Unknown operator");
+        _stack[sp] = -_stack[sp];
+        continue;
 
       case VMInstruction::BINARY_OPERATOR:
       {
-        const auto & b = _stack[--sp];
-        auto & a = _stack[sp - 1];
+        const auto & b = _stack[sp--];
+        auto & a = _stack[sp];
         switch (cur.second._binary_operator)
         {
           case BinaryOperatorType::SUBTRACTION:
@@ -281,7 +264,7 @@ CompiledByteCode<T>::operator()()
 
       case VMInstruction::UNARY_FUNCTION:
       {
-        auto & a = _stack[sp - 1];
+        auto & a = _stack[sp];
         switch (cur.second._unary_function)
         {
           case UnaryFunctionType::ABS:
@@ -407,8 +390,8 @@ CompiledByteCode<T>::operator()()
 
       case VMInstruction::BINARY_FUNCTION:
       {
-        const auto & b = _stack[--sp];
-        auto & a = _stack[sp - 1];
+        const auto & b = _stack[sp--];
+        auto & a = _stack[sp];
         switch (cur.second._binary_function)
         {
           case BinaryFunctionType::ATAN2:
@@ -443,21 +426,24 @@ CompiledByteCode<T>::operator()()
         }
       }
 
+      case VMInstruction::JUMP:
+        ip = cur.second._int_value - 1;
+        continue;
+
+      case VMInstruction::CONDITIONAL:
+        if (_stack[sp--] == 0)
+          ip = cur.second._int_value - 1;
+        continue;
+
       case VMInstruction::INTEGER_POWER:
       {
-        auto & a = _stack[sp - 1];
+        auto & a = _stack[sp];
         bool neg = false;
         auto x = a;
         a = 1.0;
-        int e = cur.second._int_value;
+        unsigned int e = std::abs(cur.second._int_value);
 
-        if (e < 0)
-        {
-          neg = true;
-          e = -e;
-        }
-
-        while (e)
+        while (true)
         {
           // if bit 0 is set multiply the current power of two factor of the exponent
           if (e & 1)
@@ -466,19 +452,22 @@ CompiledByteCode<T>::operator()()
           // x is incrementally set to consecutive powers of powers of two
           x *= x;
 
+          if (e == 0)
+            break;
+
           // bit shift the exponent down
           e >>= 1;
         }
 
-        if (neg)
+        if (cur.second._int_value < 0)
           a = 1.0 / a;
         continue;
       }
     }
-  } while (++ip < _byte_code.size());
+  } while (++ip < byte_code_size);
 
   // return result from top of stack
-  return _stack[--sp];
+  return _stack[sp];
 }
 
 template class CompiledByteCode<Real>;
