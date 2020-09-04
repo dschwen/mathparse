@@ -56,6 +56,7 @@ protected:
 
   static T wrapMin(T a, T b);
   static T wrapMax(T a, T b);
+  static T plog(T a, T b);
 
   /// current stack entry (as array index)
   int _sp;

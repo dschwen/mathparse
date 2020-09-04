@@ -1,51 +1,50 @@
 # Performance comparison
-Using an Iron Chromium free energy. All times for single core execution on a Mac Pro (trashcan) unless otherwise stated.
+Using an Iron Chromium free energy derivative.
 
-# SymbolicMath `performance.C`
+# SymbolicMath
 
-## with backend LLVM IR
--2.36237e+08
-Elapsed time: 2.92443 s
+## SymbolicMath::Function...
+1.85968e+07
+Elapsed time: 374.085 s
 
-## with backend GCCJIT
--2.36237e+08
-Elapsed time: 3.60245 s
+## SymbolicMath::CompiledByteCode...
+1.85968e+07
+Elapsed time: 168.768 s
 
-## with backend LibJIT
--2.36237e+08
-Elapsed time: 7.47796 s
+## SymbolicMath::CompiledCCode...
+1.85968e+07
+Elapsed time: 3.36407 s
 
-## with backend SLJIT
--2.36237e+08
-Elapsed time: 11.2395 s
+## SymbolicMath::CompiledSLJIT...
+1.85968e+07
+Elapsed time: 38.084 s
 
-## with backend GNU Lightning
--2.36237e+08
-Elapsed time: 12.0255 s
+## SymbolicMath::CompiledLibJIT...
+1.85968e+07
+Elapsed time: 12.8325 s
 
-## with backend Byte code VM
--2.36237e+08
-Elapsed time: 126.709 s
-Elapsed time: 44.8053 s (Mac Book Pro)
+## SymbolicMath::CompiledLightning...
+1.85968e+07
+Elapsed time: 29.6275 s
 
-## without JIT
- -2.36237e+08
- Elapsed time: 425.593 s
+## SymbolicMath::CompiledLLVM...
+1.85968e+07
+Elapsed time: 3.88389 s
 
 # FParser
 
-## clang JIT and Optimizer
--2.36237e+08
-Elapsed time: 2.84876 s
-
-## clang JIT
--2.36237e+08
-Elapsed time: 4.34102 s
-
-## Bytecode and Optimizer
--2.36237e+08
-Elapsed time: 59.7881 s
-
 ## Bytecode
--2.36237e+08
-Elapsed time: 113.151 s
+1.85968e+07
+Elapsed time: 38.6246 s
+
+## Bytecode with Optimizer
+1.85968e+07
+Elapsed time: 34.4765 s
+
+## JIT with Optimizer
+1.85968e+07
+Elapsed time: 2.15999 s
+
+## JIT
+1.85968e+07
+Elapsed time: 2.37058 s

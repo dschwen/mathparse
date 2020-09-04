@@ -13,6 +13,9 @@
 #include "SMCompiledSLJIT.h"
 #include "SMCompiledLibJIT.h"
 #include "SMCompiledLightning.h"
+#ifdef SYMBOLICMATH_USE_LLVMIR
+#include "SMCompiledLLVM.h"
+#endif
 
 #include <iostream>
 #include <functional>
@@ -32,9 +35,41 @@ const std::vector<Test> tests = {
   {"c+0", [](double c) { return c + 0.0; }},
   {"c*0", [](double c) { return c * 0.0; }},
   {"0/c", [](double c) { return 0.0 / c; }},
+  // simple operators
+  {"5*c", [](double c) { return 5.0 * c; }},
+  {"c*5", [](double c) { return c * 5.0; }},
+  {"5/(c+0.1)", [](double c) { return 5.0 / (c + 0.1); }},
+  {"c/5", [](double c) { return c / 5.0; }},
+  {"5+c", [](double c) { return 5.0 + c; }},
+  {"c+5", [](double c) { return c + 5.0; }},
+  {"-(c+5)", [](double c) { return -(c + 5.0); }},
+  {"5-c", [](double c) { return 5.0 - c; }},
+  {"c-5", [](double c) { return c - 5.0; }},
+  {"c^15", [](double c) { return std::pow(c, 15.0); }},
+  {"c^7 + c^15 + c^31", [](double c) { return std::pow(c, 7) + std::pow(c, 15) + std::pow(c, 31); }},
+  {"5^c", [](double c) { return std::pow(5.0, c); }},
+  {"(5*c) % 2", [](double c) { return std::fmod(5.0 * c, 2.0); }},
+  {"(-5*c) % 2", [](double c) { return std::fmod(-5.0 * c, 2.0); }},
   // expressions
+  {"1 + c", [](double c) { return 1 + c; }},
+  {"1 + c + c*c", [](double c) { return 1 + c + c*c; }},
+  {"1 + c + c*c + c^3", [](double c) { return 1 + c + c*c + c*c*c; }},
+  {"1 + c + c*c + c^3 + c^4", [](double c) { return 1 + c + c*c + c*c*c + c*c*c*c; }},
+  {"1 + c + c*c + c^3 + c^4 + c^5", [](double c) { return 1 + c + c*c + c*c*c + c*c*c*c + c*c*c*c*c; }},
+  {"1 + c + c*c + c^3 + c^4 + c^5 + c^6", [](double c) { return 1 + c + c*c + c*c*c + c*c*c*c + c*c*c*c*c + c*c*c*c*c*c; }},
+  {"1 + c + 2*c + 3*c^3", [](double c) { return 1 + c + 2*c + 3*c*c*c; }},
   {"1 + c + 2*c + 3*c^3", [](double c) { return 1 + c + 2*c + 3*c*c*c; }},
   {"c + sin(1.1)", [](double c) { return c + std::sin(1.1); }},
+  // power simplifications
+  {"(c+2)^0.5", [](double c) { return std::sqrt(c+2); }},
+  {"(c+2)^(1/2)", [](double c) { return std::sqrt(c+2); }},
+  {"(c+2)^(1/3)", [](double c) { return std::cbrt(c+2); }},
+  {"2^c", [](double c) { return std::exp2(c); }},
+  {"c^1", [](double c) { return c; }},
+  {"c^2", [](double c) { return c*c; }},
+  {"c^3", [](double c) { return c*c*c; }},
+  {"c^4", [](double c) { return c*c*c*c; }},
+  {"c^5", [](double c) { return std::pow(c, 5.0); }},
   // mathematical functions
   {"sin(c)", [](double c) { return std::sin(c); }},
   {"cos(c)", [](double c) { return std::cos(c); }},
@@ -52,6 +87,7 @@ const std::vector<Test> tests = {
   {"acosh(c+2.1)", [](double c) { return std::acosh(c+2.1); }},
   {"atanh(c*0.9)", [](double c) { return std::atanh(c*0.9); }},
   {"erf(c)", [](double c) { return std::erf(c); }},
+  {"erfc(c)", [](double c) { return std::erfc(c); }},
   {"exp(c)", [](double c) { return std::exp(c); }},
   {"exp2(c)", [](double c) { return std::exp2(c); }},
   {"log(c+1.1)", [](double c) { return std::log(c+1.1); }},
@@ -65,6 +101,8 @@ const std::vector<Test> tests = {
   {"floor(c)", [](double c) { return std::floor(c); }},
   {"ceil(c)", [](double c) { return std::ceil(c); }},
   {"trunc(c)", [](double c) { return static_cast<int>(c); }},
+  // custom functions
+  {"plog(c, 0.1)", [](double a) { double b = 0.1; return a < b ? std::log(b) + (a-b)/b - (a-b)*(a-b)/(2.0*b*b) + (a-b)*(a-b)*(a-b)/(3.0*b*b*b) : std::log(a); }},
   // powers and their simplifications
   {"pow(c,3)", [](double c) { return std::pow(c, 3); }},
   {"pow(c,-3)", [](double c) { return std::pow(c, -3); }},
@@ -78,12 +116,17 @@ const std::vector<Test> tests = {
   {"max(c,0.1111)", [](double c) { return std::max(c, 0.1111); }},
   // comparison operators
   {"c<0.2", [](double c) { return c<0.2; }},
+  {"c<-0.2", [](double c) { return c<-0.2; }},
   {"c>0.2", [](double c) { return c>0.2; }},
+  {"c>-0.2", [](double c) { return c>-0.2; }},
   {"c<=0.2", [](double c) { return c<=0.2; }},
-  // {"c<=-0.7", [](double c) { return c<=-0.7; }}, // fails
+  {"c<=-0.2", [](double c) { return c<=-0.2; }},
   {"c>=0.2", [](double c) { return c>=0.2; }},
+  {"c>=-0.2", [](double c) { return c>=-0.2; }},
   {"c==0.2", [](double c) { return c==0.2; }},
+  {"c==-0.2", [](double c) { return c==-0.2; }},
   {"c!=0.2", [](double c) { return c!=0.2; }},
+  {"c!=-0.2", [](double c) { return c!=-0.2; }},
   // constant comparisons
   {"1<2", [](double c) { return 1<2; }},
   {"1>2", [](double c) { return 1>2; }},
@@ -92,6 +135,7 @@ const std::vector<Test> tests = {
   {"1==2", [](double c) { return 1==2; }},
   {"1!=2", [](double c) { return 1!=2; }},
   // logical operators
+  {"c & (1-c)", [](double c) { return c && (1.0 - c); }},
   {"c<0.5 & c>-0.5", [](double c) { return c<0.5 && c>-0.5; }},
   {"c>0.5 | c<-0.5", [](double c) { return c>0.5 || c<-0.5; }},
   {"c>0.5 | c<-0.5 | (c<0.3 & c > -0.1)", [](double c) { return c>0.5 || c<-0.5 || (c<0.3 && c > -0.1); }},
@@ -163,122 +207,144 @@ test()
 
   for (auto & test : tests)
   {
-    SymbolicMath::Parser<SymbolicMath::Real> parser;
-
-    SymbolicMath::Real c;
-    auto c_var = std::make_shared<SymbolicMath::RealReferenceData<SymbolicMath::Real>>(c, "c");
-    parser.registerValueProvider(c_var);
-
-    auto func = parser.parse(test.expression);
-
-    // evaluate for various values of c
-    norm = 0.0;
-    for (c = -1.0; c <= 1.0; c += 0.3)
-      norm += std::abs(func() - test.native(c));
-
-    if (norm > 1e-9 || std::isnan(norm))
+    try
     {
-      std::cerr << "Error evaluating unsimplified expression '" << test.expression << "'\n";
-      fail++;
-    }
+      SymbolicMath::Parser<SymbolicMath::Real> parser;
 
-    SymbolicMath::Simplify<SymbolicMath::Real> simplify(func);
+      SymbolicMath::Real c;
+      auto c_var = std::make_shared<SymbolicMath::RealReferenceData<SymbolicMath::Real>>(c, "c");
+      parser.registerValueProvider(c_var);
 
-    // evaluate for various values of c
-    norm = 0.0;
-    for (c = -1.0; c <= 1.0; c += 0.3)
-      norm += std::abs(func() - test.native(c));
-    if (norm > 1e-9 || std::isnan(norm))
-    {
-      std::cerr << "Error evaluating expression '" << test.expression << "' simplified to '"
+      auto func = parser.parse(test.expression);
+
+      // evaluate for various values of c
+      norm = 0.0;
+      for (c = -1.0; c <= 1.0; c += 0.3)
+        norm += std::abs(func() - test.native(c));
+
+      if (norm > 1e-9 || std::isnan(norm))
+      {
+        std::cerr << "Error evaluating unsimplified expression '" << test.expression << "'\n";
+        fail++;
+      }
+
+      SymbolicMath::Simplify<SymbolicMath::Real> simplify(func);
+
+      // evaluate for various values of c
+      norm = 0.0;
+      for (c = -1.0; c <= 1.0; c += 0.3)
+        norm += std::abs(func() - test.native(c));
+      if (norm > 1e-9 || std::isnan(norm))
+      {
+        std::cerr << "Error evaluating expression '" << test.expression << "' simplified to '"
+                  << func.format() << "'\n";
+        fail++;
+      }
+
+#ifdef DEBUG
+      std::cerr << "Evaluating expression '" << test.expression << "' simplified to '"
                 << func.format() << "'\n";
-      fail++;
+#endif
+      C compiled(func);
+
+      // evaluate for various values of c
+      norm = 0.0;
+      std::stringstream mes;
+      for (c = -1.0; c <= 1.0; c += 0.3)
+      {
+        auto a = compiled();
+        auto b = test.native(c);
+        auto n = std::abs(a - b);
+        if (n > 1e-9 || std::isnan(norm))
+          mes << "For c=" << c << " we expected " << b << " and saw " << a << '\n';
+      }
+      if (norm > 1e-9 || std::isnan(norm))
+      {
+        std::cerr << "Error (" << norm << ") evaluating compiled expression '" << test.expression
+                  << "' simplified to '" << func.format() << "'\n"
+                  << mes.str();
+        fail++;
+      }
+
+      total += 3;
     }
-
-    C compiled(func);
-
-    // evaluate for various values of c
-    norm = 0.0;
-    std::stringstream mes;
-    for (c = -1.0; c <= 1.0; c += 0.3)
+    catch (std::exception & e)
     {
-      auto a = compiled();
-      auto b = test.native(c);
-      auto n = std::abs(a - b);
-      if (n > 1e-9 || std::isnan(norm))
-        mes << "For c=" << c << " we expected " << b << " and saw " << a << '\n';
+      std::cout << e.what() << " in " << test.expression << '\n';
     }
-    if (norm > 1e-9 || std::isnan(norm))
-    {
-      std::cerr << "Error (" << norm << ") evaluating compiled expression '" << test.expression
-                << "' simplified to '" << func.format() << "'\n"
-                << mes.str();
-      fail++;
-    }
-
-    total += 3;
   }
 
   // test derivatives
   for (auto & test : difftests)
   {
-    SymbolicMath::Parser<SymbolicMath::Real> parser;
-
-    SymbolicMath::Real c;
-    auto c_var = std::make_shared<SymbolicMath::RealReferenceData<SymbolicMath::Real>>(c, "c");
-    parser.registerValueProvider(c_var);
-
-    auto func = parser.parse(test.expression);
-    SymbolicMath::Simplify<SymbolicMath::Real> simplify1(func);
-    C compiled(func);
-
-    auto diff = func.D(c_var);
-    SymbolicMath::Simplify<SymbolicMath::Real> simplify2(diff);
-    C dcompiled(diff);
-
-    // finite differencing
-    norm = 0.0;
-    SymbolicMath::Real abssum = 0.0;
-    std::stringstream mes;
-    for (c = test.cmin; c <= test.cmax; c += test.dc)
+    try
     {
-      auto a = compiled();
-      c += test.epsilon;
-      auto b = compiled();
-      c -= test.epsilon;
+      SymbolicMath::Parser<SymbolicMath::Real> parser;
 
-      auto d = dcompiled();
+      SymbolicMath::Real c;
+      auto c_var = std::make_shared<SymbolicMath::RealReferenceData<SymbolicMath::Real>>(c, "c");
+      parser.registerValueProvider(c_var);
 
-      if (std::abs(d - diff()) > 1e-9)
+      auto func = parser.parse(test.expression);
+      SymbolicMath::Simplify<SymbolicMath::Real> simplify1(func);
+      C compiled(func);
+
+      auto diff = func.D(c_var);
+      SymbolicMath::Simplify<SymbolicMath::Real> simplify2(diff);
+      C dcompiled(diff);
+
+#ifdef DEBUG
+      std::cerr << "Evaluating expression '" << diff.format() << "'\n";
+#endif
+
+      // finite differencing
+      norm = 0.0;
+      SymbolicMath::Real abssum = 0.0;
+      std::stringstream mes;
+      for (c = test.cmin; c <= test.cmax; c += test.dc)
       {
-        std::cout << "Discrepancy between compiled and recursively evaluated derivative " << d
-                  << " != " << diff() << " for f'(c)=" << diff.format() << '\n';
-        norm = INFINITY;
-        abssum = 1;
-        break;
+        auto a = compiled();
+        c += test.epsilon;
+        auto b = compiled();
+        c -= test.epsilon;
+
+        auto d = dcompiled();
+
+        if (std::abs(d - diff()) > 1e-9)
+        {
+          std::cout << "Discrepancy between compiled and recursively evaluated derivative " << d
+                    << " != " << diff() << " for f'(c)=" << diff.format() << '\n';
+          norm = INFINITY;
+          abssum = 1;
+          break;
+        }
+
+        abssum += std::abs(d);
+
+        auto n = std::abs(d - (b - a) / test.epsilon);
+        norm += n;
+        if (n > test.tol)
+          mes << "For c=" << c << " we expected f'(c)=" << d << " and saw "
+              << (b - a) / test.epsilon << " = (" << b << '-' << a << ")/" << test.epsilon
+              << " with f(c)=" << func() << "and f'(c)=" << diff() << '\n';
+      }
+      // for debug purposes (to set tolerances for new tests)
+      // std::cerr << norm / abssum << '\t' << test.expression << '\n';
+      if (norm / abssum > test.tol)
+      {
+        std::cerr << "Derivative does not match finite differencing for '" << test.expression
+                  << "' and the derivative '" << diff.format()
+                  << "'.\nnorm/abssum = " << (norm / abssum) << "\n"
+                  << mes.str();
+        fail++;
       }
 
-      abssum += std::abs(d);
-
-      auto n = std::abs(d - (b - a) / test.epsilon);
-      norm += n;
-      if (n > test.tol)
-        mes << "For c=" << c << " we expected f'(c)=" << d << " and saw " << (b - a) / test.epsilon
-            << " = (" << b << '-' << a << ")/" << test.epsilon << " with f(c)=" << func()
-            << "and f'(c)=" << diff() << '\n';
+      total += 2;
     }
-    // for debug purposes (to set tolerances for new tests)
-    // std::cerr << norm / abssum << '\t' << test.expression << '\n';
-    if (norm / abssum > test.tol)
+    catch (std::exception & e)
     {
-      std::cerr << "Derivative does not match finite differencing for '" << test.expression
-                << "' and the derivative '" << diff.format()
-                << "'.\nnorm/abssum = " << (norm / abssum) << "\n"
-                << mes.str();
-      fail++;
+      std::cout << e.what() << " in " << test.expression << '\n';
     }
-
-    total += 2;
   }
 
   auto finish = std::chrono::high_resolution_clock::now();
@@ -301,6 +367,10 @@ main(int argc, char * argv[])
   test<SymbolicMath::CompiledLibJIT<SymbolicMath::Real>>();
   std::cout << "SymbolicMath::CompiledLightning...\n";
   test<SymbolicMath::CompiledLightning<SymbolicMath::Real>>();
+#ifdef SYMBOLICMATH_USE_LLVMIR
+  std::cout << "SymbolicMath::CompiledLLVM...\n";
+  test<SymbolicMath::CompiledLLVM<SymbolicMath::Real>>();
+#endif
 
   // Final output
   if (fail)

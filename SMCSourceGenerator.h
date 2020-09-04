@@ -6,26 +6,17 @@
 #pragma once
 
 #include "SMTransform.h"
-#include "SMEvaluable.h"
-
-#include <jit/jit.h>
-
-#include <list>
 
 namespace SymbolicMath
 {
 
-/**
- * LibJIT compiler transform
- */
 template <typename T>
-class CompiledLibJIT : public Transform<T>, public Evaluable<T>
+class CSourceGenerator : public Transform<T>
 {
   using Transform<T>::apply;
 
 public:
-  CompiledLibJIT(Function<T> &);
-  ~CompiledLibJIT() override;
+  CSourceGenerator(Function<T> &);
 
   void operator()(SymbolData<T> *) override;
 
@@ -44,29 +35,19 @@ public:
   void operator()(ConditionalData<T> *) override;
   void operator()(IntegerPowerData<T> *) override;
 
-  T operator()() override { return _jit_function(); }
+  std::string operator()() const { return _prologue + "return " + _source; };
+
+  const std::string typeName();
 
 protected:
-  jit_value_t unaryFunctionCall(T (*func)(T), jit_value_t);
-  jit_value_t binaryFunctionCall(T (*func)(T, T), jit_value_t, jit_value_t);
+  std::string bracket(std::string sub, short sub_precedence, short precedence);
 
-  static T plog(T, T);
+  std::string _prologue;
+  std::string _source;
 
-  /// JIT compilation context
-  jit_context_t _jit_context;
+  std::vector<const T *> _vars;
 
-  /// JIT return value
-  jit_value_t _value;
-
-  /// JIT state
-  jit_function_t _state;
-
-  /// store immediates in a "pointer stable" way
-  std::list<T> _immediate;
-
-  /// compiled function
-  typedef Real (*JITFunctionPtr)();
-  JITFunctionPtr _jit_function;
+  unsigned int _tmp_id;
 };
 
 } // namespace SymbolicMath

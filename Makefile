@@ -5,7 +5,7 @@ OBJS := SMToken.o SMTokenizer.o SMParser.o SMSymbols.o \
 				SMNode.o SMNodeData.o SMUtils.o \
 				SMTransform.o SMTransformSimplify.o SMCompiledByteCode.o \
 				SMCompiledCCode.o SMCompiledSLJIT.o SMCompiledLibJIT.o \
-				SMCompiledLightning.o
+				SMCSourceGenerator.o SMCompiledLightning.o
 
 # include configuration for the selected JIT backend
 ifneq ($(JIT)x, x)
@@ -32,12 +32,23 @@ override LDFLAGS += -L$(LIBJIT_DIR)/lib -ljit
 # Lightning
 override LDFLAGS += -llightning
 
+# LLVM IR
+LLVM_CONFIG ?= llvm-config
+LLVM_MAJOR := $(shell $(LLVM_CONFIG) --version | cut -d. -f1)
+ifeq "$(LLVM_MAJOR)" "9"
+  override LDFLAGS += $(shell $(LLVM_CONFIG) --ldflags --system-libs --libs core orcjit native)
+  override CXXFLAGS += -I$(shell $(LLVM_CONFIG) --includedir)
+  override CPPFLAGS += -DLLVM_MAJOR=$(LLVM_MAJOR) -DSYMBOLICMATH_USE_LLVMIR
+  OBJS += SMCompiledLLVM.o
+endif
+
+# Applications
 
 mathparse: main.C $(OBJS)
 	$(CXX) -std=c++11 $(CONFIG) $(CPPFLAGS) $(CXXFLAGS) -o mathparse main.C $(OBJS) $(LDFLAGS)
 
 performance: Performance.C $(OBJS)
-	$(CXX) -std=c++11 $(CONFIG) $(CPPFLAGS) $(CXXFLAGS) -o performance performance.C $(OBJS) $(LDFLAGS)
+	$(CXX) -std=c++11 $(CONFIG) $(CPPFLAGS) $(CXXFLAGS) -o performance Performance.C $(OBJS) $(LDFLAGS)
 
 unittests: UnitTests.C $(OBJS)
 	$(CXX) -std=c++11 $(CONFIG) $(CPPFLAGS) $(CXXFLAGS) -o unittests UnitTests.C $(OBJS) $(LDFLAGS)
@@ -56,46 +67,11 @@ testbench: TestBench.C $(OBJS)
 	$(CC) $(CONFIG) -MM $(CFLAGS) $(CPPFLAGS) $*.c > $*.d
 
 .PHONY: force clean
-.jit_backend: force
-	echo '$(JIT)' | cmp -s - $@ || echo '$(JIT)' > $@
-
-# force rebuild when compiling with a new JIT backend
-$(OBJS): .jit_backend
 
 clean:
-	rm -rf $(OBJS) *.o *.d mathparse performance test2 test3 performance_fparser
+	rm -rf $(OBJS) *.o *.d mathparse performance unittests testbench performance_fparser
 
 # FParser (for performance comparison)
 
-fparser4.5.2.zip:
-	wget http://warp.povusers.org/FunctionParser/fparser4.5.2.zip
-
-fparser/fparser.hh: fparser4.5.2.zip
-	mkdir -p fparser && cd fparser && unzip -DD ../fparser4.5.2.zip
-
-%.o : %.cc
-	$(CXX) -std=c++11 $(CONFIG) -c $(CXXFLAGS) $(CPPFLAGS) $*.cc -o $@
-	$(CXX) -std=c++11 $(CONFIG) -MM $(CXXFLAGS) $(CPPFLAGS) $*.cc > $*.d
-
-FPARSER_SRC := $(wildcard fparser/*.cc)
-FPARSER_OBJS := $(patsubst %.cc, %.o, $(FPARSER_SRC))
-fparser: $(FPARSER_OBJS)
-
-performance_fparser: performance_fparser.C fparser/fparser.hh $(FPARSER_OBJS)
-	$(CXX) -std=c++11 $(CPPFLAGS) $(CXXFLAGS) -Ifparser -o performance_fparser performance_fparser.C $(FPARSER_OBJS)
-
-# Tinkering around
-
-tests: test2 test3
-
-test2: test2.C
-	clang++ -std=c++11 -DSLJIT_CONFIG_AUTO=1 -o test2 test2.C contrib/sljit_src/sljitLir.c
-
-test3: test3.C
-	clang++ -std=c++11 -DSLJIT_CONFIG_AUTO=1 -o test3 test3.C contrib/sljit_src/sljitLir.c
-
-test5: test5.C
-	clang++ test5.C `llvm-config --cxxflags --ldflags --system-libs --libs core orcjit native` -g -o test5
-
-test6: test6.C
-	clang++ test6.C `llvm-config --cxxflags --ldflags --system-libs --libs core orcjit native` -g -o test6
+performance_fparser: PerformanceFparser.C
+	$(CXX) -std=c++11 $(CPPFLAGS) $(CXXFLAGS) -I$(LIBMESH_DIR)/include -o performance_fparser PerformanceFparser.C -Wl,-rpath,$(LIBMESH_DIR)/lib -L$(LIBMESH_DIR)/lib -lmesh_opt

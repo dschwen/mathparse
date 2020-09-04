@@ -18,6 +18,9 @@ CompiledByteCode<T>::CompiledByteCode(Function<T> & fb) : Transform<T>(fb)
   _stack.resize(current_max.second);
 
   apply();
+
+  _nvars = _vars.size();
+  _vals.resize(_nvars);
 }
 
 template <typename T>
@@ -31,23 +34,59 @@ template <typename T>
 void
 CompiledByteCode<T>::operator()(UnaryOperatorData<T> * n)
 {
+  static const std::map<UnaryOperatorType, VMInstruction> map = {
+      {UnaryOperatorType::PLUS, VMInstruction::UO_PLUS},
+      {UnaryOperatorType::MINUS, VMInstruction::UO_MINUS},
+      {UnaryOperatorType::FACULTY, VMInstruction::UO_FACULTY},
+      {UnaryOperatorType::NOT, VMInstruction::UO_NOT}};
+
   n->_args[0].apply(*this);
-  _byte_code.emplace_back(VMInstruction::UNARY_OPERATOR, n->_type);
+
+  auto vi = map.find(n->_type);
+  if (vi == map.end())
+    fatalError("Invalid instruction");
+  _byte_code.emplace_back(static_cast<int>(vi->second));
 }
 
 template <typename T>
 void
 CompiledByteCode<T>::operator()(BinaryOperatorData<T> * n)
 {
+  static const std::map<BinaryOperatorType, VMInstruction> map = {
+      {BinaryOperatorType::SUBTRACTION, VMInstruction::BO_SUBTRACTION},
+      {BinaryOperatorType::DIVISION, VMInstruction::BO_DIVISION},
+      {BinaryOperatorType::MODULO, VMInstruction::BO_MODULO},
+      {BinaryOperatorType::POWER, VMInstruction::BO_POWER},
+      {BinaryOperatorType::LOGICAL_OR, VMInstruction::BO_LOGICAL_OR},
+      {BinaryOperatorType::LOGICAL_AND, VMInstruction::BO_LOGICAL_AND},
+      {BinaryOperatorType::LESS_THAN, VMInstruction::BO_LESS_THAN},
+      {BinaryOperatorType::GREATER_THAN, VMInstruction::BO_GREATER_THAN},
+      {BinaryOperatorType::LESS_EQUAL, VMInstruction::BO_LESS_EQUAL},
+      {BinaryOperatorType::GREATER_EQUAL, VMInstruction::BO_GREATER_EQUAL},
+      {BinaryOperatorType::EQUAL, VMInstruction::BO_EQUAL},
+      {BinaryOperatorType::NOT_EQUAL, VMInstruction::BO_NOT_EQUAL},
+      {BinaryOperatorType::ASSIGNMENT, VMInstruction::BO_ASSIGNMENT},
+      {BinaryOperatorType::LIST, VMInstruction::BO_LIST}};
+
   n->_args[0].apply(*this);
   n->_args[1].apply(*this);
-  _byte_code.emplace_back(VMInstruction::BINARY_OPERATOR, n->_type);
+
+  auto vi = map.find(n->_type);
+  if (vi == map.end())
+    fatalError("Invalid instruction");
+  _byte_code.emplace_back(static_cast<int>(vi->second));
 }
 
 template <typename T>
 void
 CompiledByteCode<T>::operator()(MultinaryOperatorData<T> * n)
 {
+  static const std::map<MultinaryOperatorType, VMInstruction> map = {
+      {MultinaryOperatorType::ADDITION, VMInstruction::MO_ADDITION},
+      {MultinaryOperatorType::MULTIPLICATION, VMInstruction::MO_MULTIPLICATION},
+      {MultinaryOperatorType::COMPONENT, VMInstruction::MO_COMPONENT},
+      {MultinaryOperatorType::LIST, VMInstruction::MO_LIST}};
+
   const int nargs = static_cast<int>(n->_args.size());
   for (auto arg : n->_args)
     arg.apply(*this);
@@ -55,18 +94,21 @@ CompiledByteCode<T>::operator()(MultinaryOperatorData<T> * n)
   if (nargs < 2)
     return;
 
-  switch (n->_type)
+  if (n->_type == MultinaryOperatorType::ADDITION && nargs == 2)
+    _byte_code.emplace_back(static_cast<int>(VMInstruction::ADD2));
+  else if (n->_type == MultinaryOperatorType::ADDITION && nargs == 3)
+    _byte_code.emplace_back(static_cast<int>(VMInstruction::ADD3));
+  else if (n->_type == MultinaryOperatorType::MULTIPLICATION && nargs == 2)
+    _byte_code.emplace_back(static_cast<int>(VMInstruction::MUL2));
+  else if (n->_type == MultinaryOperatorType::MULTIPLICATION && nargs == 3)
+    _byte_code.emplace_back(static_cast<int>(VMInstruction::MUL3));
+  else
   {
-    case MultinaryOperatorType::ADDITION:
-      _byte_code.emplace_back(VMInstruction::MULTINARY_PLUS, nargs);
-      break;
-
-    case MultinaryOperatorType::MULTIPLICATION:
-      _byte_code.emplace_back(VMInstruction::MULTINARY_MULTIPLY, nargs);
-      break;
-
-    default:
-      fatalError("Unknown operator");
+    auto vi = map.find(n->_type);
+    if (vi == map.end())
+      fatalError("Invalid instruction");
+    _byte_code.emplace_back(static_cast<int>(vi->second));
+    _byte_code.emplace_back(nargs - 1);
   }
 }
 
@@ -74,31 +116,104 @@ template <typename T>
 void
 CompiledByteCode<T>::operator()(UnaryFunctionData<T> * n)
 {
+  static const std::map<UnaryFunctionType, VMInstruction> map = {
+      {UnaryFunctionType::ABS, VMInstruction::UF_ABS},
+      {UnaryFunctionType::ACOS, VMInstruction::UF_ACOS},
+      {UnaryFunctionType::ACOSH, VMInstruction::UF_ACOSH},
+      {UnaryFunctionType::ARG, VMInstruction::UF_ARG},
+      {UnaryFunctionType::ASIN, VMInstruction::UF_ASIN},
+      {UnaryFunctionType::ASINH, VMInstruction::UF_ASINH},
+      {UnaryFunctionType::ATAN, VMInstruction::UF_ATAN},
+      {UnaryFunctionType::ATANH, VMInstruction::UF_ATANH},
+      {UnaryFunctionType::CBRT, VMInstruction::UF_CBRT},
+      {UnaryFunctionType::CEIL, VMInstruction::UF_CEIL},
+      {UnaryFunctionType::CONJ, VMInstruction::UF_CONJ},
+      {UnaryFunctionType::COS, VMInstruction::UF_COS},
+      {UnaryFunctionType::COSH, VMInstruction::UF_COSH},
+      {UnaryFunctionType::COT, VMInstruction::UF_COT},
+      {UnaryFunctionType::CSC, VMInstruction::UF_CSC},
+      {UnaryFunctionType::ERF, VMInstruction::UF_ERF},
+      {UnaryFunctionType::ERFC, VMInstruction::UF_ERFC},
+      {UnaryFunctionType::EXP, VMInstruction::UF_EXP},
+      {UnaryFunctionType::EXP2, VMInstruction::UF_EXP2},
+      {UnaryFunctionType::FLOOR, VMInstruction::UF_FLOOR},
+      {UnaryFunctionType::IMAG, VMInstruction::UF_IMAG},
+      {UnaryFunctionType::INT, VMInstruction::UF_INT},
+      {UnaryFunctionType::LOG, VMInstruction::UF_LOG},
+      {UnaryFunctionType::LOG10, VMInstruction::UF_LOG10},
+      {UnaryFunctionType::LOG2, VMInstruction::UF_LOG2},
+      {UnaryFunctionType::REAL, VMInstruction::UF_REAL},
+      {UnaryFunctionType::SEC, VMInstruction::UF_SEC},
+      {UnaryFunctionType::SIN, VMInstruction::UF_SIN},
+      {UnaryFunctionType::SINH, VMInstruction::UF_SINH},
+      {UnaryFunctionType::SQRT, VMInstruction::UF_SQRT},
+      {UnaryFunctionType::T, VMInstruction::UF_T},
+      {UnaryFunctionType::TAN, VMInstruction::UF_TAN},
+      {UnaryFunctionType::TANH, VMInstruction::UF_TANH},
+      {UnaryFunctionType::TRUNC, VMInstruction::UF_TRUNC}};
+
   n->_args[0].apply(*this);
-  _byte_code.emplace_back(VMInstruction::UNARY_FUNCTION, n->_type);
+
+  auto vi = map.find(n->_type);
+  if (vi == map.end())
+    fatalError("Invalid instruction");
+  _byte_code.emplace_back(static_cast<int>(vi->second));
 }
 
 template <typename T>
 void
 CompiledByteCode<T>::operator()(BinaryFunctionData<T> * n)
 {
+  static const std::map<BinaryFunctionType, VMInstruction> map = {
+      {BinaryFunctionType::ATAN2, VMInstruction::BF_ATAN2},
+      {BinaryFunctionType::HYPOT, VMInstruction::BF_HYPOT},
+      {BinaryFunctionType::MAX, VMInstruction::BF_MAX},
+      {BinaryFunctionType::MIN, VMInstruction::BF_MIN},
+      {BinaryFunctionType::PLOG, VMInstruction::BF_PLOG},
+      {BinaryFunctionType::POLAR, VMInstruction::BF_POLAR},
+      {BinaryFunctionType::POW, VMInstruction::BF_POW}};
+
   n->_args[0].apply(*this);
   n->_args[1].apply(*this);
-  _byte_code.emplace_back(VMInstruction::BINARY_FUNCTION, n->_type);
+
+  auto vi = map.find(n->_type);
+  if (vi == map.end())
+    fatalError("Invalid instruction");
+  _byte_code.emplace_back(static_cast<int>(vi->second));
 }
 
 template <typename T>
 void
 CompiledByteCode<T>::operator()(RealNumberData<T> * n)
 {
-  _byte_code.emplace_back(VMInstruction::LOAD_IMMEDIATE_REAL, n->_value);
+  _byte_code.emplace_back(static_cast<int>(VMInstruction::LOAD_IMMEDIATE_REAL));
+
+  // find pointer in _immed, or add if not found
+  for (int i = 0; i < _immed.size(); ++i)
+    if (_immed[i] == n->_value)
+    {
+      _byte_code.emplace_back(i);
+      return;
+    }
+  _immed.emplace_back(n->_value);
+  _byte_code.emplace_back(_immed.size() - 1);
 }
 
 template <typename T>
 void
 CompiledByteCode<T>::operator()(RealReferenceData<T> * n)
 {
-  _byte_code.emplace_back(VMInstruction::LOAD_VARIABLE_REAL, &n->_ref);
+  _byte_code.emplace_back(static_cast<int>(VMInstruction::LOAD_VARIABLE_REAL));
+
+  // find pointer in _vars, or add if not found
+  for (int i = 0; i < _vars.size(); ++i)
+    if (_vars[i] == &n->_ref)
+    {
+      _byte_code.emplace_back(i);
+      return;
+    }
+  _vars.emplace_back(&n->_ref);
+  _byte_code.emplace_back(_vars.size() - 1);
 }
 
 template <typename T>
@@ -120,19 +235,23 @@ void
 CompiledByteCode<T>::operator()(ConditionalData<T> * n)
 {
   n->_args[0].apply(*this);
+  _byte_code.emplace_back(static_cast<int>(VMInstruction::CONDITIONAL));
+  // jump label placeholder
   const auto conditional_ip = _byte_code.size();
-  _byte_code.emplace_back(VMInstruction::CONDITIONAL, 0);
+  _byte_code.emplace_back(0);
   // true branch
   n->_args[1].apply(*this);
   // jump past false at the end of the true branch
+  _byte_code.emplace_back(static_cast<int>(VMInstruction::JUMP));
+  // jump label placeholder
   const auto jump_past_false_ip = _byte_code.size();
-  _byte_code.emplace_back(VMInstruction::JUMP, 0);
+  _byte_code.emplace_back(0);
   // set jump to false ip on conditional instruction
-  _byte_code[conditional_ip].second._int_value = _byte_code.size();
+  _byte_code[conditional_ip] = _byte_code.size();
   // false branch
   n->_args[2].apply(*this);
   // set jump past false target
-  _byte_code[jump_past_false_ip].second._int_value = _byte_code.size();
+  _byte_code[jump_past_false_ip] = _byte_code.size();
 }
 
 template <typename T>
@@ -140,341 +259,511 @@ void
 CompiledByteCode<T>::operator()(IntegerPowerData<T> * n)
 {
   n->_arg.apply(*this);
-  _byte_code.emplace_back(VMInstruction::INTEGER_POWER, n->_exponent);
+  if (n->_exponent == 2)
+    _byte_code.emplace_back(static_cast<int>(VMInstruction::POW2));
+  else if (n->_exponent == 3)
+    _byte_code.emplace_back(static_cast<int>(VMInstruction::POW3));
+  else if (n->_exponent == 4)
+    _byte_code.emplace_back(static_cast<int>(VMInstruction::POW4));
+  else if (n->_exponent == 5)
+    _byte_code.emplace_back(static_cast<int>(VMInstruction::POW5));
+  else
+  {
+    _byte_code.emplace_back(static_cast<int>(VMInstruction::INTEGER_POWER));
+    _byte_code.emplace_back(n->_exponent);
+  }
 }
 
 template <typename T>
 T
 CompiledByteCode<T>::operator()()
 {
+  // copy vars
+  for (std::size_t i = 0; i < _nvars; ++i)
+    _vals[i] = *_vars[i];
+
   // initialize instruction and stack pointer and loop over byte code
-  std::size_t ip = 0, sp = 0;
+  const auto byte_code_size = _byte_code.size();
+  int ip = 0, sp = -1;
   do
   {
-    const auto & cur = _byte_code[ip];
-    switch (cur.first)
+#ifdef DEBUG
+    std::cout << "mon: " << ip << ' ' << _byte_code[ip] << ' ' << sp << '\n';
+#endif
+
+    switch (static_cast<VMInstruction>(_byte_code[ip]))
     {
-      case VMInstruction::JUMP:
-        ip = cur.second._int_value - 1;
-        continue;
-
-      case VMInstruction::CONDITIONAL:
-        if (_stack[--sp] == 0)
-          ip = cur.second._int_value - 1;
-        continue;
-
-      case VMInstruction::LOAD_IMMEDIATE_INTEGER:
-        _stack[sp++] = cur.second._int_value;
-        continue;
-
       case VMInstruction::LOAD_IMMEDIATE_REAL:
-        _stack[sp++] = cur.second._value;
-        continue;
+        _stack[++sp] = _immed[_byte_code[++ip]];
+        break;
 
       case VMInstruction::LOAD_VARIABLE_REAL:
-        _stack[sp++] = *(cur.second._variable);
-        continue;
+        _stack[++sp] = _vals[_byte_code[++ip]];
+        break;
 
-      case VMInstruction::MULTINARY_PLUS:
+      case VMInstruction::MO_ADDITION:
       {
         // take one summand off the stack and loop over remaining summands
-        const auto & num = cur.second._int_value - 1;
-        auto sum = _stack[--sp];
-        for (std::size_t i = sp - num; i < sp; ++i)
+        const auto & num = _byte_code[++ip];
+        auto sum = _stack[sp--];
+        const int end = sp - num;
+        for (int i = sp; i > end; --i)
           sum += _stack[i];
         sp -= num;
 
         // put sum on stack
-        _stack[sp++] = sum;
-        continue;
+        _stack[++sp] = sum;
+        break;
       }
 
-      case VMInstruction::MULTINARY_MULTIPLY:
+      case VMInstruction::MO_MULTIPLICATION:
       {
         // take one factor off the stack and loop over remaining factors
-        const auto & num = cur.second._int_value - 1;
-        auto prod = _stack[--sp];
-        for (std::size_t i = sp - num; i < sp; ++i)
+        const auto & num = _byte_code[++ip];
+        auto prod = _stack[sp--];
+        const int end = sp - num;
+        for (int i = sp; i > end; --i)
           prod *= _stack[i];
         sp -= num;
 
         // put product on stack
-        _stack[sp++] = prod;
-        continue;
+        _stack[++sp] = prod;
+        break;
       }
 
-      case VMInstruction::UNARY_OPERATOR:
+      case VMInstruction::UO_MINUS:
+        _stack[sp] = -_stack[sp];
+        break;
+
+      case VMInstruction::BO_SUBTRACTION:
+        --sp;
+        _stack[sp] -= _stack[sp + 1];
+        break;
+
+      case VMInstruction::BO_DIVISION:
+        --sp;
+        _stack[sp] /= _stack[sp + 1];
+        break;
+
+      case VMInstruction::BO_MODULO:
+        --sp;
+        _stack[sp] = std::fmod(_stack[sp], _stack[sp + 1]);
+        break;
+
+      case VMInstruction::BO_POWER:
+        --sp;
+        _stack[sp] = std::pow(_stack[sp], _stack[sp + 1]);
+        break;
+
+      case VMInstruction::BO_LOGICAL_OR:
+        --sp;
+        _stack[sp] = _stack[sp] || _stack[sp + 1] ? 1.0 : 0.0;
+        break;
+
+      case VMInstruction::BO_LOGICAL_AND:
+        --sp;
+        _stack[sp] = _stack[sp] && _stack[sp + 1] ? 1.0 : 0.0;
+        break;
+
+      case VMInstruction::BO_LESS_THAN:
+        --sp;
+        _stack[sp] = _stack[sp] < _stack[sp + 1] ? 1.0 : 0.0;
+        break;
+
+      case VMInstruction::BO_GREATER_THAN:
+        --sp;
+        _stack[sp] = _stack[sp] > _stack[sp + 1] ? 1.0 : 0.0;
+        break;
+
+      case VMInstruction::BO_LESS_EQUAL:
+        --sp;
+        _stack[sp] = _stack[sp] <= _stack[sp + 1] ? 1.0 : 0.0;
+        break;
+
+      case VMInstruction::BO_GREATER_EQUAL:
+        --sp;
+        _stack[sp] = _stack[sp] >= _stack[sp + 1] ? 1.0 : 0.0;
+        break;
+
+      case VMInstruction::BO_EQUAL:
+        --sp;
+        _stack[sp] = _stack[sp] == _stack[sp + 1] ? 1.0 : 0.0;
+        break;
+
+      case VMInstruction::BO_NOT_EQUAL:
+        --sp;
+        _stack[sp] = _stack[sp] != _stack[sp + 1] ? 1.0 : 0.0;
+        break;
+
+      case VMInstruction::UF_ABS:
+        _stack[sp] = std::abs(_stack[sp]);
+        break;
+
+      case VMInstruction::UF_ACOS:
+        _stack[sp] = std::acos(_stack[sp]);
+        break;
+
+      case VMInstruction::UF_ACOSH:
+        _stack[sp] = std::acosh(_stack[sp]);
+        break;
+
+      case VMInstruction::UF_ASIN:
+        _stack[sp] = std::asin(_stack[sp]);
+        break;
+
+      case VMInstruction::UF_ASINH:
+        _stack[sp] = std::asinh(_stack[sp]);
+        break;
+
+      case VMInstruction::UF_ATAN:
+        _stack[sp] = std::atan(_stack[sp]);
+        break;
+
+      case VMInstruction::UF_ATANH:
+        _stack[sp] = std::atanh(_stack[sp]);
+        break;
+
+      case VMInstruction::UF_CBRT:
+        _stack[sp] = std::cbrt(_stack[sp]);
+        break;
+
+      case VMInstruction::UF_CEIL:
+        _stack[sp] = std::ceil(_stack[sp]);
+        break;
+
+      case VMInstruction::UF_COS:
+        _stack[sp] = std::cos(_stack[sp]);
+        break;
+
+      case VMInstruction::UF_COSH:
+        _stack[sp] = std::cosh(_stack[sp]);
+        break;
+
+      case VMInstruction::UF_COT:
+        _stack[sp] = 1.0 / std::tan(_stack[sp]);
+        break;
+
+      case VMInstruction::UF_CSC:
+        _stack[sp] = 1.0 / std::sin(_stack[sp]);
+        break;
+
+      case VMInstruction::UF_ERF:
+        _stack[sp] = std::erf(_stack[sp]);
+        break;
+
+      case VMInstruction::UF_ERFC:
+        _stack[sp] = std::erfc(_stack[sp]);
+        break;
+
+      case VMInstruction::UF_EXP:
+        _stack[sp] = std::exp(_stack[sp]);
+        break;
+
+      case VMInstruction::UF_EXP2:
+        _stack[sp] = std::exp2(_stack[sp]);
+        break;
+
+      case VMInstruction::UF_FLOOR:
+        _stack[sp] = std::floor(_stack[sp]);
+        break;
+
+      case VMInstruction::UF_INT:
+        _stack[sp] = std::round(_stack[sp]);
+        break;
+
+      case VMInstruction::UF_LOG:
+        _stack[sp] = std::log(_stack[sp]);
+        break;
+
+      case VMInstruction::UF_LOG10:
+        _stack[sp] = std::log10(_stack[sp]);
+        break;
+
+      case VMInstruction::UF_LOG2:
+        _stack[sp] = std::log2(_stack[sp]);
+        break;
+
+      case VMInstruction::UF_SEC:
+        _stack[sp] = 1.0 / std::cos(_stack[sp]);
+        break;
+
+      case VMInstruction::UF_SIN:
+        _stack[sp] = std::sin(_stack[sp]);
+        break;
+
+      case VMInstruction::UF_SINH:
+        _stack[sp] = std::sinh(_stack[sp]);
+        break;
+
+      case VMInstruction::UF_SQRT:
+        _stack[sp] = std::sqrt(_stack[sp]);
+        break;
+
+      case VMInstruction::UF_TAN:
+        _stack[sp] = std::tan(_stack[sp]);
+        break;
+
+      case VMInstruction::UF_TANH:
+        _stack[sp] = std::tanh(_stack[sp]);
+        break;
+
+      case VMInstruction::UF_TRUNC:
+        _stack[sp] = static_cast<int>(_stack[sp]);
+        break;
+
+      case VMInstruction::BF_ATAN2:
+        --sp;
+        _stack[sp] = std::atan2(_stack[sp], _stack[sp + 1]);
+        break;
+
+      case VMInstruction::BF_HYPOT:
+        --sp;
+        _stack[sp] = std::sqrt(_stack[sp] * _stack[sp] + _stack[sp + 1] * _stack[sp + 1]);
+        break;
+
+      case VMInstruction::BF_MAX:
+        --sp;
+        _stack[sp] = std::max(_stack[sp], _stack[sp + 1]);
+        break;
+
+      case VMInstruction::BF_MIN:
+        --sp;
+        _stack[sp] = std::min(_stack[sp], _stack[sp + 1]);
+        break;
+
+      case VMInstruction::BF_PLOG:
       {
-        auto & a = _stack[sp - 1];
-        switch (cur.second._unary_operator)
-        {
-          case UnaryOperatorType::PLUS:
-            continue;
-
-          case UnaryOperatorType::MINUS:
-            a = -a;
-            continue;
-
-          default:
-            fatalError("Unknown operator");
-        }
+        --sp;
+        const auto & a = _stack[sp];
+        const auto & b = _stack[sp + 1];
+        _stack[sp] = a < b ? std::log(b) + (a - b) / b - (a - b) * (a - b) / (2.0 * b * b) +
+                                 (a - b) * (a - b) * (a - b) / (3.0 * b * b * b)
+                           : std::log(a);
+        break;
       }
 
-      case VMInstruction::BINARY_OPERATOR:
-      {
-        const auto & b = _stack[--sp];
-        auto & a = _stack[sp - 1];
-        switch (cur.second._binary_operator)
-        {
-          case BinaryOperatorType::SUBTRACTION:
-            a = a - b;
-            continue;
+      case VMInstruction::BF_POW:
+        --sp;
+        _stack[sp] = std::pow(_stack[sp], _stack[sp + 1]);
+        break;
 
-          case BinaryOperatorType::DIVISION:
-            a = a / b;
-            continue;
+      case VMInstruction::JUMP:
+        ip = _byte_code[++ip] - 1;
+        break;
 
-          case BinaryOperatorType::MODULO:
-            a = std::fmod(a, b);
-            continue;
-
-          case BinaryOperatorType::POWER:
-            a = std::pow(a, b);
-            continue;
-
-          case BinaryOperatorType::LOGICAL_OR:
-            a = a || b ? 1.0 : 0.0;
-            continue;
-
-          case BinaryOperatorType::LOGICAL_AND:
-            a = a && b ? 1.0 : 0.0;
-            continue;
-
-          case BinaryOperatorType::LESS_THAN:
-            a = a < b ? 1.0 : 0.0;
-            continue;
-
-          case BinaryOperatorType::GREATER_THAN:
-            a = a > b ? 1.0 : 0.0;
-            continue;
-
-          case BinaryOperatorType::LESS_EQUAL:
-            a = a <= b ? 1.0 : 0.0;
-            continue;
-
-          case BinaryOperatorType::GREATER_EQUAL:
-            a = a >= b ? 1.0 : 0.0;
-            continue;
-
-          case BinaryOperatorType::EQUAL:
-            a = a == b ? 1.0 : 0.0;
-            continue;
-
-          case BinaryOperatorType::NOT_EQUAL:
-            a = a != b ? 1.0 : 0.0;
-            continue;
-
-          default:
-            fatalError("Unknown operator");
-        }
-      }
-
-      case VMInstruction::UNARY_FUNCTION:
-      {
-        auto & a = _stack[sp - 1];
-        switch (cur.second._unary_function)
-        {
-          case UnaryFunctionType::ABS:
-            a = std::abs(a);
-            continue;
-
-          case UnaryFunctionType::ACOS:
-            a = std::acos(a);
-            continue;
-
-          case UnaryFunctionType::ACOSH:
-            a = std::acosh(a);
-            continue;
-
-          case UnaryFunctionType::ASIN:
-            a = std::asin(a);
-            continue;
-
-          case UnaryFunctionType::ASINH:
-            a = std::asinh(a);
-            continue;
-
-          case UnaryFunctionType::ATAN:
-            a = std::atan(a);
-            continue;
-
-          case UnaryFunctionType::ATANH:
-            a = std::atanh(a);
-            continue;
-
-          case UnaryFunctionType::CBRT:
-            a = std::cbrt(a);
-            continue;
-
-          case UnaryFunctionType::CEIL:
-            a = std::ceil(a);
-            continue;
-
-          case UnaryFunctionType::COS:
-            a = std::cos(a);
-            continue;
-
-          case UnaryFunctionType::COSH:
-            a = std::cosh(a);
-            continue;
-
-          case UnaryFunctionType::COT:
-            a = 1.0 / std::tan(a);
-            continue;
-
-          case UnaryFunctionType::CSC:
-            a = 1.0 / std::sin(a);
-            continue;
-
-          case UnaryFunctionType::ERF:
-            a = std::erf(a);
-            continue;
-
-          case UnaryFunctionType::EXP:
-            a = std::exp(a);
-            continue;
-
-          case UnaryFunctionType::EXP2:
-            a = std::exp2(a);
-            continue;
-
-          case UnaryFunctionType::FLOOR:
-            a = std::floor(a);
-            continue;
-
-          case UnaryFunctionType::INT:
-            a = std::round(a);
-            continue;
-
-          case UnaryFunctionType::LOG:
-            a = std::log(a);
-            continue;
-
-          case UnaryFunctionType::LOG10:
-            a = std::log10(a);
-            continue;
-
-          case UnaryFunctionType::LOG2:
-            a = std::log2(a);
-            continue;
-
-          case UnaryFunctionType::SEC:
-            a = 1.0 / std::cos(a);
-            continue;
-
-          case UnaryFunctionType::SIN:
-            a = std::sin(a);
-            continue;
-
-          case UnaryFunctionType::SINH:
-            a = std::sinh(a);
-            continue;
-
-          case UnaryFunctionType::SQRT:
-            a = std::sqrt(a);
-            continue;
-
-          case UnaryFunctionType::TAN:
-            a = std::tan(a);
-            continue;
-
-          case UnaryFunctionType::TANH:
-            a = std::tanh(a);
-            continue;
-
-          case UnaryFunctionType::TRUNC:
-            a = static_cast<int>(a);
-            continue;
-
-          default:
-            fatalError("Function not implemented");
-        }
-      }
-
-      case VMInstruction::BINARY_FUNCTION:
-      {
-        const auto & b = _stack[--sp];
-        auto & a = _stack[sp - 1];
-        switch (cur.second._binary_function)
-        {
-          case BinaryFunctionType::ATAN2:
-            a = std::atan2(a, b);
-            continue;
-
-          case BinaryFunctionType::HYPOT:
-            a = std::sqrt(a * a + b * b);
-            continue;
-
-          case BinaryFunctionType::MAX:
-            a = std::max(a, b);
-            continue;
-
-          case BinaryFunctionType::MIN:
-            a = std::min(a, b);
-            continue;
-
-          case BinaryFunctionType::PLOG:
-            a = a < b ? std::log(b) + (a - b) / b - (a - b) * (a - b) / (2.0 * b * b) +
-                            (a - b) * (a - b) * (a - b) / (3.0 * b * b * b)
-                      : std::log(a);
-            continue;
-
-          case BinaryFunctionType::POW:
-            a = std::pow(a, b);
-            continue;
-
-          case BinaryFunctionType::POLAR:
-          default:
-            fatalError("Function not implemented");
-        }
-      }
+      case VMInstruction::CONDITIONAL:
+        ++ip;
+        if (_stack[sp--] == 0)
+          ip = _byte_code[ip] - 1;
+        break;
 
       case VMInstruction::INTEGER_POWER:
       {
-        auto & a = _stack[sp - 1];
-        bool neg = false;
-        auto x = a;
-        a = 1.0;
-        int e = cur.second._int_value;
+        auto x = _stack[sp];
+        _stack[sp] = 1.0;
+        int e = std::abs(_byte_code[++ip]);
 
-        if (e < 0)
-        {
-          neg = true;
-          e = -e;
-        }
-
-        while (e)
+        while (true)
         {
           // if bit 0 is set multiply the current power of two factor of the exponent
           if (e & 1)
-            a *= x;
+            _stack[sp] *= x;
 
           // x is incrementally set to consecutive powers of powers of two
           x *= x;
+
+          if (e == 0)
+            break;
 
           // bit shift the exponent down
           e >>= 1;
         }
 
-        if (neg)
-          a = 1.0 / a;
-        continue;
+        if (_byte_code[ip] < 0)
+          _stack[sp] = 1.0 / _stack[sp];
+        break;
       }
+
+      case VMInstruction::POW2:
+        _stack[sp] *= _stack[sp];
+        break;
+
+      case VMInstruction::POW3:
+        _stack[sp] *= _stack[sp] * _stack[sp];
+        break;
+
+      case VMInstruction::POW4:
+        _stack[sp] *= _stack[sp];
+        _stack[sp] *= _stack[sp];
+        break;
+
+      case VMInstruction::POW5:
+      {
+        auto tmp = _stack[sp];
+        _stack[sp] *= _stack[sp];
+        _stack[sp] *= _stack[sp];
+        _stack[sp] *= tmp;
+      }
+      break;
+
+      case VMInstruction::ADD2:
+        --sp;
+        _stack[sp] += _stack[sp + 1];
+        break;
+
+      case VMInstruction::MUL2:
+        --sp;
+        _stack[sp] *= _stack[sp + 1];
+        break;
+
+      case VMInstruction::ADD3:
+        sp -= 2;
+        _stack[sp] += _stack[sp + 1] + _stack[sp + 2];
+        break;
+
+      case VMInstruction::MUL3:
+        sp -= 2;
+        _stack[sp] *= _stack[sp + 1] * _stack[sp + 2];
+        break;
+
+      case VMInstruction::FETCH:
+        _stack[sp + 1] = _stack[sp - _byte_code[++ip]];
+        ++sp;
+        break;
+
+      case VMInstruction::FETCH0:
+        _stack[sp + 1] = _stack[sp];
+        ++sp;
+        break;
+
+      default:
+        fatalError("Invalid opcode " + stringify(_byte_code[ip]) + " at ip=" + stringify(ip) +
+                   " sp=" + stringify(sp));
     }
-  } while (++ip < _byte_code.size());
+  } while (++ip < byte_code_size);
 
   // return result from top of stack
-  return _stack[--sp];
+  return _stack[sp];
+}
+
+template <typename T>
+void
+CompiledByteCode<T>::print()
+{
+  // disassemble the bytecode
+  static const std::vector<std::string> instruction = {"LOAD_IMMEDIATE_INTEGER",
+                                                       "LOAD_IMMEDIATE_REAL",
+                                                       "LOAD_VARIABLE_REAL",
+                                                       "UO_PLUS",
+                                                       "UO_MINUS",
+                                                       "UO_FACULTY",
+                                                       "UO_NOT",
+                                                       "BO_SUBTRACTION",
+                                                       "BO_DIVISION",
+                                                       "BO_MODULO",
+                                                       "BO_POWER",
+                                                       "BO_LOGICAL_OR",
+                                                       "BO_LOGICAL_AND",
+                                                       "BO_LESS_THAN",
+                                                       "BO_GREATER_THAN",
+                                                       "BO_LESS_EQUAL",
+                                                       "BO_GREATER_EQUAL",
+                                                       "BO_EQUAL",
+                                                       "BO_NOT_EQUAL",
+                                                       "BO_ASSIGNMENT",
+                                                       "BO_LIST",
+                                                       "MO_ADDITION",
+                                                       "MO_MULTIPLICATION",
+                                                       "MO_COMPONENT",
+                                                       "MO_LIST",
+                                                       "UF_ABS",
+                                                       "UF_ACOS",
+                                                       "UF_ACOSH",
+                                                       "UF_ARG",
+                                                       "UF_ASIN",
+                                                       "UF_ASINH",
+                                                       "UF_ATAN",
+                                                       "UF_ATANH",
+                                                       "UF_CBRT",
+                                                       "UF_CEIL",
+                                                       "UF_CONJ",
+                                                       "UF_COS",
+                                                       "UF_COSH",
+                                                       "UF_COT",
+                                                       "UF_CSC",
+                                                       "UF_ERF",
+                                                       "UF_ERFC",
+                                                       "UF_EXP",
+                                                       "UF_EXP2",
+                                                       "UF_FLOOR",
+                                                       "UF_IMAG",
+                                                       "UF_INT",
+                                                       "UF_LOG",
+                                                       "UF_LOG10",
+                                                       "UF_LOG2",
+                                                       "UF_REAL",
+                                                       "UF_SEC",
+                                                       "UF_SIN",
+                                                       "UF_SINH",
+                                                       "UF_SQRT",
+                                                       "UF_T",
+                                                       "UF_TAN",
+                                                       "UF_TANH",
+                                                       "UF_TRUNC",
+                                                       "BF_ATAN2",
+                                                       "BF_HYPOT",
+                                                       "BF_MAX",
+                                                       "BF_MIN",
+                                                       "BF_PLOG",
+                                                       "BF_POLAR",
+                                                       "BF_POW",
+                                                       "CONDITIONAL",
+                                                       "INTEGER_POWER",
+                                                       "JUMP",
+                                                       "POW2",
+                                                       "POW3",
+                                                       "POW4",
+                                                       "POW5",
+                                                       "MUL2",
+                                                       "ADD2",
+                                                       "MUL3",
+                                                       "ADD3",
+                                                       "FETCH",
+                                                       "FETCH0"};
+
+  for (std::size_t i = 0; i < _byte_code.size(); ++i)
+  {
+    auto vc = _byte_code[i];
+    auto vi = static_cast<VMInstruction>(vc);
+
+    std::cout << i << " [" << vc << "] " << instruction[vc] << '\n';
+
+    switch (vi)
+    {
+      case VMInstruction::LOAD_IMMEDIATE_REAL:
+        ++i;
+        std::cout << i << " [" << _byte_code[i] << "] " << _immed[_byte_code[i]] << '\n';
+        break;
+
+      case VMInstruction::LOAD_VARIABLE_REAL:
+        ++i;
+        std::cout << i << " [" << _byte_code[i] << "] " << *_vars[_byte_code[i]] << '\n';
+        break;
+
+      case VMInstruction::MO_ADDITION:
+      case VMInstruction::MO_MULTIPLICATION:
+      case VMInstruction::CONDITIONAL:
+      case VMInstruction::INTEGER_POWER:
+      case VMInstruction::JUMP:
+      case VMInstruction::FETCH:
+        ++i;
+        std::cout << i << " [" << _byte_code[i] << "] " << '\n';
+        break;
+
+      default:
+        break;
+    }
+  }
 }
 
 template class CompiledByteCode<Real>;

@@ -73,6 +73,9 @@ void CompiledLightning<T>::unaryFunctionCall(T (*func)(T))
 template <typename T>
 void CompiledLightning<T>::binaryFunctionCall(T (*func)(T, T))
 {
+  jit_prepare();
+  jit_pushargr_d(JIT_F1);
+  jit_pushargr_d(JIT_F0);
   jit_finishi(reinterpret_cast<void *>(func));
   jit_retval_d(JIT_F0);
 }
@@ -129,6 +132,15 @@ CompiledLightning<T>::wrapMax(T a, T b)
   return std::max(a, b);
 }
 
+template <typename T>
+T
+CompiledLightning<T>::plog(T a, T b)
+{
+  return a < b ? std::log(b) + (a - b) / b - (a - b) * (a - b) / (2.0 * b * b) +
+                     (a - b) * (a - b) * (a - b) / (3.0 * b * b * b)
+               : std::log(a);
+}
+
 // Visitor operators
 
 template <typename T>
@@ -179,22 +191,12 @@ CompiledLightning<T>::operator()(BinaryOperatorData<T> * n)
       return;
 
     case BinaryOperatorType::MODULO:
-    {
-      jit_prepare();
-      jit_pushargr_d(JIT_F1);
-      jit_pushargr_d(JIT_F0);
       binaryFunctionCall(std::fmod);
       return;
-    }
 
     case BinaryOperatorType::POWER:
-    {
-      jit_prepare();
-      jit_pushargr_d(JIT_F1);
-      jit_pushargr_d(JIT_F0);
       binaryFunctionCall(std::pow);
       return;
-    }
 
     case BinaryOperatorType::LOGICAL_OR:
       // logical or
@@ -354,6 +356,10 @@ CompiledLightning<T>::operator()(UnaryFunctionData<T> * n)
       unaryFunctionCall(std::erf);
       return;
 
+    case UnaryFunctionType::ERFC:
+      unaryFunctionCall(std::erfc);
+      return;
+
     case UnaryFunctionType::EXP:
       unaryFunctionCall(std::exp);
       return;
@@ -440,9 +446,6 @@ CompiledLightning<T>::operator()(BinaryFunctionData<T> * n)
   switch (n->_type)
   {
     case BinaryFunctionType::ATAN2:
-      jit_prepare();
-      jit_pushargr_d(JIT_F1);
-      jit_pushargr_d(JIT_F0);
       binaryFunctionCall(std::atan2);
       return;
 
@@ -450,30 +453,17 @@ CompiledLightning<T>::operator()(BinaryFunctionData<T> * n)
       fatalError("Function not implemented");
 
     case BinaryFunctionType::MIN:
-      jit_prepare();
-      jit_pushargr_d(JIT_F1);
-      jit_pushargr_d(JIT_F0);
       binaryFunctionCall(wrapMin);
       return;
 
     case BinaryFunctionType::MAX:
-      jit_prepare();
-      jit_pushargr_d(JIT_F1);
-      jit_pushargr_d(JIT_F0);
       binaryFunctionCall(wrapMax);
       return;
 
     case BinaryFunctionType::PLOG:
-      fatalError("Function not implemented");
-      // return A < B
-      //            ? std::log(B) + (A - B) / B - (A - B) * (A - B) / (2.0 * B * B) +
-      //                  (A - B) * (A - B) * (A - B) / (3.0 * B * B * B)
-      //            : std::log(A);
+      binaryFunctionCall(plog);
 
     case BinaryFunctionType::POW:
-      jit_prepare();
-      jit_pushargr_d(JIT_F1);
-      jit_pushargr_d(JIT_F0);
       binaryFunctionCall(std::pow);
       return;
 
