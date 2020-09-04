@@ -43,6 +43,7 @@ main(int argc, char * argv[])
   // auto func = parser.parse("(c + 2) / 1 - 0 / (c -2)");
   // auto func = parser.parse("if(c<-0.5, 10, if(c>0.2, 20, 30))");
   auto func = parser.parse(expression);
+  // auto func = parser.parse("-(c+5)");
   std::cout << func.format() << '\n';
 
   {
@@ -62,7 +63,7 @@ main(int argc, char * argv[])
     std::cout << '{' << source() << "}\n";
   }
 
-  c = -1;
+  c = 0.5;
   T = 300.0;
   std::cout << "c = " << c << "; Value = " << func() << '\n';
 

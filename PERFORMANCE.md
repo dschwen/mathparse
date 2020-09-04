@@ -1,50 +1,51 @@
 # Performance comparison
-Using an Iron Chromium free energy derivative. All times for single core execution on an AMD Ryzen unless otherwise stated.
+Using an Iron Chromium free energy derivative. 
 
 # SymbolicMath
 
 ## SymbolicMath::Function...
 1.85968e+07
-Elapsed time: 456.242 s
+Elapsed time: 469.272 s
 
 ## SymbolicMath::CompiledByteCode...
 1.85968e+07
-Elapsed time: 400.593 s
+Elapsed time: 186.794 s
 
 ## SymbolicMath::CompiledCCode...
-4.1095e+07
-Elapsed time: 4.03427 s
+1.85968e+07
+Elapsed time: 3.25494 s
 
 ## SymbolicMath::CompiledSLJIT...
 1.85968e+07
-Elapsed time: 27.0249 s
+Elapsed time: 38.338 s
 
 ## SymbolicMath::CompiledLibJIT...
 1.85968e+07
-Elapsed time: 9.63852 s
+Elapsed time: 12.9106 s
 
 ## SymbolicMath::CompiledLightning...
 1.85968e+07
-Elapsed time: 29.4737 s
+Elapsed time: 30.25 s
 
 ## SymbolicMath::CompiledLLVM...
 1.85968e+07
-Elapsed time: 3.34433 s
+Elapsed time: 3.96136 s
 
 # FParser
 
 ## Bytecode
 1.85968e+07
-Elapsed time: 66.9428 s
+Elapsed time: 39.3713 s
 
 ## Bytecode with Optimizer
 1.85968e+07
-Elapsed time: 54.5693 s
+Elapsed time: 35.3058 s
 
 ## JIT with Optimizer
 1.85968e+07
-Elapsed time: 1.73766 s
+Elapsed time: 2.30982 s
 
 ## JIT
 1.85968e+07
-Elapsed time: 2.08427 s
+Elapsed time: 2.56954 s
+

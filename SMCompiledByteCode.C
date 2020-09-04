@@ -738,6 +738,8 @@ CompiledByteCode<T>::print()
         std::cout << i << " [" << _byte_code[i] << "] " << *_vars[_byte_code[i]] << '\n';
         break;
 
+      case VMInstruction::MO_ADDITION:
+      case VMInstruction::MO_MULTIPLICATION:
       case VMInstruction::CONDITIONAL:
       case VMInstruction::INTEGER_POWER:
       case VMInstruction::JUMP:

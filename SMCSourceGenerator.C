@@ -43,6 +43,8 @@ void
 CSourceGenerator<T>::operator()(UnaryOperatorData<T> * n)
 {
   n->_args[0].apply(*this);
+  auto Ap = n->_args[0].precedence();
+  auto Ab = bracket(_source, Ap, n->precedence());
 
   switch (n->_type)
   {
@@ -50,7 +52,7 @@ CSourceGenerator<T>::operator()(UnaryOperatorData<T> * n)
       return;
 
     case UnaryOperatorType::MINUS:
-      _source = "-" + _source;
+      _source = "-" + Ab;
       return;
 
     default:
@@ -69,14 +71,20 @@ CSourceGenerator<T>::operator()(BinaryOperatorData<T> * n)
   n->_args[1].apply(*this);
   const auto & B = _source;
 
+  auto Ap = n->_args[0].precedence();
+  auto Bp = n->_args[1].precedence();
+
+  auto Ab = bracket(A, Ap, n->precedence());
+  auto Bb = bracket(B, Bp, n->precedence());
+
   switch (n->_type)
   {
     case BinaryOperatorType::SUBTRACTION:
-      _source = "(" + A + ") - (" + B + ")";
+      _source = Ab + " - " + Bb;
       return;
 
     case BinaryOperatorType::DIVISION:
-      _source = "(" + A + ") / (" + B + ")";
+      _source = Ab + " / " + Bb;
       return;
 
     case BinaryOperatorType::MODULO:
@@ -96,27 +104,27 @@ CSourceGenerator<T>::operator()(BinaryOperatorData<T> * n)
       return;
 
     case BinaryOperatorType::LESS_THAN:
-      _source = "static_cast<" + typeName() + ">((" + A + ") < (" + B + "))";
+      _source = "static_cast<" + typeName() + ">(" + Ab + " < " + Bb + ")";
       return;
 
     case BinaryOperatorType::GREATER_THAN:
-      _source = "static_cast<" + typeName() + ">((" + A + ") > (" + B + "))";
+      _source = "static_cast<" + typeName() + ">(" + Ab + " > " + Bb + ")";
       return;
 
     case BinaryOperatorType::LESS_EQUAL:
-      _source = "static_cast<" + typeName() + ">((" + A + ") <= (" + B + "))";
+      _source = "static_cast<" + typeName() + ">(" + Ab + " <= " + Bb + ")";
       return;
 
     case BinaryOperatorType::GREATER_EQUAL:
-      _source = "static_cast<" + typeName() + ">((" + A + ") >= (" + B + "))";
+      _source = "static_cast<" + typeName() + ">(" + Ab + " >= " + Bb + ")";
       return;
 
     case BinaryOperatorType::EQUAL:
-      _source = "static_cast<" + typeName() + ">((" + A + ") == (" + B + "))";
+      _source = "static_cast<" + typeName() + ">(" + Ab + " == " + Bb + ")";
       return;
 
     case BinaryOperatorType::NOT_EQUAL:
-      _source = "static_cast<" + typeName() + ">((" + A + ") != (" + B + "))";
+      _source = "static_cast<" + typeName() + ">(" + Ab + " != " + Bb + ")";
       return;
 
     default:
@@ -133,14 +141,17 @@ CSourceGenerator<T>::operator()(MultinaryOperatorData<T> * n)
     fatalError("No child nodes in multinary operator");
 
   char op;
+  short precedence;
   switch (n->_type)
   {
     case MultinaryOperatorType::ADDITION:
       op = '+';
+      precedence = 6;
       break;
 
     case MultinaryOperatorType::MULTIPLICATION:
       op = '*';
+      precedence = 5;
       break;
 
     default:
@@ -157,7 +168,7 @@ CSourceGenerator<T>::operator()(MultinaryOperatorData<T> * n)
       n->_args[i].apply(*this);
       if (i)
         out += op;
-      out += '(' + _source + ')';
+      out += bracket(_source, n->_args[i].precedence(), precedence);
       _source = "";
     }
     _source = out;
@@ -327,15 +338,21 @@ CSourceGenerator<T>::operator()(BinaryFunctionData<T> * n)
       return;
 
     case BinaryFunctionType::HYPOT:
-      _source = "std::sqrt((" + A + ")*(" + A + ") + (" + B + ")*(" + B + "))";
+    {
+      auto Ap = n->_args[0].precedence();
+      auto Bp = n->_args[1].precedence();
+      auto Ab = bracket(A, Ap, 5 /* MULTIPLICATION */);
+      auto Bb = bracket(B, Bp, 5 /* MULTIPLICATION */);
+      _source = "std::sqrt(" + Ab + "*" + Ab + "+" + Bb + "*" + Bb + ")";
       return;
+    }
 
     case BinaryFunctionType::MIN:
-      _source = "((" + A + ") < (" + B + ") ? (" + A + ") : (" + B + "))";
+      _source = "std::min(" + A + ", " + B + ")";
       return;
 
     case BinaryFunctionType::MAX:
-      _source = "((" + A + ") > (" + B + ") ? (" + A + ") : (" + B + "))";
+      _source = "std::max(" + A + ", " + B + ")";
       return;
 
     case BinaryFunctionType::PLOG:
@@ -366,9 +383,19 @@ template <typename T>
 void
 CSourceGenerator<T>::operator()(RealReferenceData<T> * n)
 {
-  // will need template specializations
-  _source = "*(reinterpret_cast<" + typeName() + " *>(" +
-            std::to_string(reinterpret_cast<long>(&n->_ref)) + "))";
+  for (int i = 0; i < _vars.size(); ++i)
+    if (_vars[i] == &n->_ref)
+    {
+      _source = "v" + stringify(i);
+      return;
+    }
+
+  _vars.emplace_back(&n->_ref);
+  auto var = "v" + stringify(_vars.size() - 1);
+
+  _prologue += "const " + typeName() + ' ' + var + " = *(reinterpret_cast<" + typeName() + " *>(" +
+               std::to_string(reinterpret_cast<long>(&n->_ref)) + "));\n";
+  _source = var;
 }
 
 template <typename T>
@@ -428,7 +455,17 @@ CSourceGenerator<T>::operator()(IntegerPowerData<T> * n)
   if (n->_exponent < 0)
     _source = "(1.0/" + t1 + ")";
   else
-    _source = "(" + t1 + ")";
+    _source = t1;
+}
+
+template <typename T>
+std::string
+CSourceGenerator<T>::bracket(std::string sub, short sub_precedence, short precedence)
+{
+  if (sub_precedence > precedence)
+    return '(' + sub + ')';
+  else
+    return sub;
 }
 
 template class CSourceGenerator<Real>;

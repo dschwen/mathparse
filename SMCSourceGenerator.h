@@ -40,8 +40,12 @@ public:
   const std::string typeName();
 
 protected:
+  std::string bracket(std::string sub, short sub_precedence, short precedence);
+
   std::string _prologue;
   std::string _source;
+
+  std::vector<const T *> _vars;
 
   unsigned int _tmp_id;
 };
