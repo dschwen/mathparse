@@ -14,7 +14,7 @@ namespace SymbolicMath
 {
 
 /**
- * C source code compilation, dynamic object laoding, evaluation
+ * C source code compilation, dynamic object loading, evaluation
  */
 template <typename T>
 class CompiledCCode : public Evaluable<T>

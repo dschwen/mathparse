@@ -44,7 +44,7 @@ public:
   Node(NodeDataPtr<T> data) : _data(data) {}
 
   /// Copy constructor (shallow copy!)
-  Node(const Node & copy);
+  Node(const Node<T> & copy);
 
   /// Deep copy
   Node<T> clone();

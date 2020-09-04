@@ -130,18 +130,18 @@ CompiledSLJIT<T>::plog(T a, T b)
 
 template <typename T>
 void
-CompiledSLJIT<T>::operator()(SymbolData<T> * n)
+CompiledSLJIT<T>::operator()(Node<T> & node, SymbolData<T> & data)
 {
   fatalError("Symbol in compiled function");
 }
 
 template <typename T>
 void
-CompiledSLJIT<T>::operator()(UnaryOperatorData<T> * n)
+CompiledSLJIT<T>::operator()(Node<T> & node, UnaryOperatorData<T> & data)
 {
-  n->_args[0].apply(*this);
+  data._args[0].apply(*this);
 
-  switch (n->_type)
+  switch (data._type)
   {
     case UnaryOperatorType::PLUS:
       return;
@@ -157,16 +157,16 @@ CompiledSLJIT<T>::operator()(UnaryOperatorData<T> * n)
 
 template <typename T>
 void
-CompiledSLJIT<T>::operator()(BinaryOperatorData<T> * n)
+CompiledSLJIT<T>::operator()(Node<T> & node, BinaryOperatorData<T> & data)
 {
-  n->_args[0].apply(*this);
-  n->_args[1].apply(*this);
+  data._args[0].apply(*this);
+  data._args[1].apply(*this);
 
   // Arguments A = SLJIT_FR0, B = SLJIT_FR1
   sljit_emit_fop1(_ctx, SLJIT_MOV_F64, SLJIT_FR1, 0, SLJIT_FR0, 0);
   stackPop(SLJIT_FR0);
 
-  switch (n->_type)
+  switch (data._type)
   {
     case BinaryOperatorType::SUBTRACTION:
       sljit_emit_fop2(_ctx, SLJIT_SUB_F64, SLJIT_FR0, 0, SLJIT_FR0, 0, SLJIT_FR1, 0);
@@ -269,18 +269,18 @@ CompiledSLJIT<T>::operator()(BinaryOperatorData<T> * n)
 
 template <typename T>
 void
-CompiledSLJIT<T>::operator()(MultinaryOperatorData<T> * n)
+CompiledSLJIT<T>::operator()(Node<T> & node, MultinaryOperatorData<T> & data)
 {
-  if (n->_args.size() == 0)
+  if (data._args.size() == 0)
     fatalError("No child nodes in multinary operator");
 
-  n->_args[0].apply(*this);
+  data._args[0].apply(*this);
 
-  for (std::size_t i = 1; i < n->_args.size(); ++i)
+  for (std::size_t i = 1; i < data._args.size(); ++i)
   {
-    n->_args[i].apply(*this);
+    data._args[i].apply(*this);
     stackPop(SLJIT_FR1);
-    switch (n->_type)
+    switch (data._type)
     {
       case MultinaryOperatorType::ADDITION:
         sljit_emit_fop2(_ctx, SLJIT_ADD_F64, SLJIT_FR0, 0, SLJIT_FR0, 0, SLJIT_FR1, 0);
@@ -298,11 +298,11 @@ CompiledSLJIT<T>::operator()(MultinaryOperatorData<T> * n)
 
 template <typename T>
 void
-CompiledSLJIT<T>::operator()(UnaryFunctionData<T> * n)
+CompiledSLJIT<T>::operator()(Node<T> & node, UnaryFunctionData<T> & data)
 {
-  n->_args[0].apply(*this);
+  data._args[0].apply(*this);
 
-  switch (n->_type)
+  switch (data._type)
   {
     case UnaryFunctionType::ABS:
       sljit_emit_fop1(_ctx, SLJIT_ABS_F64, SLJIT_FR0, 0, SLJIT_FR0, 0);
@@ -448,16 +448,16 @@ CompiledSLJIT<T>::operator()(UnaryFunctionData<T> * n)
 
 template <typename T>
 void
-CompiledSLJIT<T>::operator()(BinaryFunctionData<T> * n)
+CompiledSLJIT<T>::operator()(Node<T> & node, BinaryFunctionData<T> & data)
 {
-  n->_args[0].apply(*this);
-  n->_args[1].apply(*this);
+  data._args[0].apply(*this);
+  data._args[1].apply(*this);
 
   // Arguments A = SLJIT_FR0, B = SLJIT_FR1
   sljit_emit_fop1(_ctx, SLJIT_MOV_F64, SLJIT_FR1, 0, SLJIT_FR0, 0);
   stackPop(SLJIT_FR0);
 
-  switch (n->_type)
+  switch (data._type)
   {
     case BinaryFunctionType::ATAN2:
       binaryFunctionCall(std::atan2);
@@ -515,50 +515,50 @@ CompiledSLJIT<T>::operator()(BinaryFunctionData<T> * n)
 
 template <typename T>
 void
-CompiledSLJIT<T>::operator()(RealNumberData<T> * n)
+CompiledSLJIT<T>::operator()(Node<T> & node, RealNumberData<T> & data)
 {
   // sljit does not have any 64bit floating point immediates, so we need to make a mem->register
   // transfer this makes the JIT code point to data in the expression tree! We store a copy of the
   // immediate in this object to avoid depending on data in the original expression tree, which
   // might get shuffled around or freed.
   stackPush();
-  _immediate.push_back(n->_value);
+  _immediate.push_back(data._value);
   sljit_emit_fop1(_ctx, SLJIT_MOV_F64, SLJIT_FR0, 0, SLJIT_MEM, (sljit_sw)&_immediate.back());
 }
 
 template <typename T>
 void
-CompiledSLJIT<T>::operator()(RealReferenceData<T> * n)
+CompiledSLJIT<T>::operator()(Node<T> & node, RealReferenceData<T> & data)
 {
   stackPush();
-  sljit_emit_fop1(_ctx, SLJIT_MOV_F64, SLJIT_FR0, 0, SLJIT_MEM, (sljit_sw)&n->_ref);
+  sljit_emit_fop1(_ctx, SLJIT_MOV_F64, SLJIT_FR0, 0, SLJIT_MEM, (sljit_sw)&data._ref);
 }
 
 template <typename T>
 void
-CompiledSLJIT<T>::operator()(RealArrayReferenceData<T> * n)
+CompiledSLJIT<T>::operator()(Node<T> & node, RealArrayReferenceData<T> & data)
 {
   fatalError("Not implemented");
 }
 
 template <typename T>
 void
-CompiledSLJIT<T>::operator()(LocalVariableData<T> * n)
+CompiledSLJIT<T>::operator()(Node<T> & node, LocalVariableData<T> & data)
 {
   fatalError("Not implemented");
 }
 
 template <typename T>
 void
-CompiledSLJIT<T>::operator()(ConditionalData<T> * n)
+CompiledSLJIT<T>::operator()(Node<T> & node, ConditionalData<T> & data)
 {
-  if (n->_type != ConditionalType::IF)
+  if (data._type != ConditionalType::IF)
     fatalError("Conditional not implemented");
 
   struct sljit_jump * false_case;
   struct sljit_jump * end_if;
 
-  n->_args[0].apply(*this);
+  data._args[0].apply(*this);
 
   // sljit_emit_op1(_ctx, SLJIT_MOV, SLJIT_R0, 0, SLJIT_MEM, (sljit_sw)state.stack);
   false_case =
@@ -566,13 +566,13 @@ CompiledSLJIT<T>::operator()(ConditionalData<T> * n)
 
   // true case
   auto stack_pos = _sp;
-  n->_args[1].apply(*this);
+  data._args[1].apply(*this);
   end_if = sljit_emit_jump(_ctx, SLJIT_JUMP);
 
   // false case
   _sp = stack_pos;
   sljit_set_label(false_case, sljit_emit_label(_ctx));
-  n->_args[2].apply(*this);
+  data._args[2].apply(*this);
 
   // end if
   sljit_set_label(end_if, sljit_emit_label(_ctx));
@@ -580,9 +580,9 @@ CompiledSLJIT<T>::operator()(ConditionalData<T> * n)
 
 template <>
 void
-CompiledSLJIT<Real>::operator()(IntegerPowerData<Real> * n)
+CompiledSLJIT<Real>::operator()(Node<Real> & node, IntegerPowerData<Real> & data)
 {
-  if (n->_exponent == 0)
+  if (data._exponent == 0)
   {
     // this case should be simplified away and never reached
     sljit_emit_fop1(_ctx, SLJIT_MOV_F64, SLJIT_FR0, 0, SLJIT_MEM, (sljit_sw)&sljit_one);
@@ -590,13 +590,13 @@ CompiledSLJIT<Real>::operator()(IntegerPowerData<Real> * n)
   }
 
   // FR0 = A
-  n->_arg.apply(*this);
+  data._arg.apply(*this);
 
   // FR1 = FR2 = 1.0
   sljit_emit_fop1(_ctx, SLJIT_MOV_F64, SLJIT_FR2, 0, SLJIT_MEM, (sljit_sw)&sljit_one);
   sljit_emit_fop1(_ctx, SLJIT_MOV_F64, SLJIT_FR1, 0, SLJIT_FR2, 0);
 
-  int e = n->_exponent > 0 ? n->_exponent : -n->_exponent;
+  int e = data._exponent > 0 ? data._exponent : -data._exponent;
   while (e)
   {
     // if bit 0 is set multiply the current power of two factor of the exponent
@@ -610,7 +610,7 @@ CompiledSLJIT<Real>::operator()(IntegerPowerData<Real> * n)
     e >>= 1;
   }
 
-  if (n->_exponent >= 0)
+  if (data._exponent >= 0)
     sljit_emit_fop1(_ctx, SLJIT_MOV_F64, SLJIT_FR0, 0, SLJIT_FR1, 0);
   else
   {

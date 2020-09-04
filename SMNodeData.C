@@ -26,7 +26,7 @@ NodeData<T>::stackDepth(std::pair<int, int> & current_max) const
 
 template <typename T>
 void
-EmptyData<T>::apply(Transform<T> & transform)
+EmptyData<T>::apply(Node<T> & node, Transform<T> & transform)
 {
   fatalError("Cannot apply transform to an empty / invalid node");
 }
@@ -51,9 +51,9 @@ SymbolData<T>::D(const ValueProvider<T> & vp)
 
 template <typename T>
 void
-SymbolData<T>::apply(Transform<T> & transform)
+SymbolData<T>::apply(Node<T> & node, Transform<T> & transform)
 {
-  transform(this);
+  transform(node, *this);
 }
 
 /********************************************************
@@ -69,9 +69,9 @@ LocalVariableData<T>::value() const
 
 template <typename T>
 void
-LocalVariableData<T>::apply(Transform<T> & transform)
+LocalVariableData<T>::apply(Node<T> & node, Transform<T> & transform)
 {
-  transform(this);
+  transform(node, *this);
 }
 
 /********************************************************
@@ -96,9 +96,9 @@ RealReferenceData<T>::D(const ValueProvider<T> & vp)
 
 template <typename T>
 void
-RealReferenceData<T>::apply(Transform<T> & transform)
+RealReferenceData<T>::apply(Node<T> & node, Transform<T> & transform)
 {
-  transform(this);
+  transform(node, *this);
 }
 
 /********************************************************
@@ -122,9 +122,9 @@ RealArrayReferenceData<T>::D(const ValueProvider<T> & vp)
 
 template <typename T>
 void
-RealArrayReferenceData<T>::apply(Transform<T> & transform)
+RealArrayReferenceData<T>::apply(Node<T> & node, Transform<T> & transform)
 {
-  transform(this);
+  transform(node, *this);
 }
 
 /********************************************************
@@ -140,9 +140,9 @@ RealNumberData<T>::is(NumberType type) const
 
 template <typename T>
 void
-RealNumberData<T>::apply(Transform<T> & transform)
+RealNumberData<T>::apply(Node<T> & node, Transform<T> & transform)
 {
-  transform(this);
+  transform(node, *this);
 }
 
 /********************************************************
@@ -212,9 +212,9 @@ UnaryOperatorData<T>::D(const ValueProvider<T> & vp)
 
 template <typename T>
 void
-UnaryOperatorData<T>::apply(Transform<T> & transform)
+UnaryOperatorData<T>::apply(Node<T> & node, Transform<T> & transform)
 {
-  transform(this);
+  transform(node, *this);
 }
 
 /********************************************************
@@ -367,9 +367,9 @@ BinaryOperatorData<T>::precedence() const
 
 template <typename T>
 void
-BinaryOperatorData<T>::apply(Transform<T> & transform)
+BinaryOperatorData<T>::apply(Node<T> & node, Transform<T> & transform)
 {
-  transform(this);
+  transform(node, *this);
 }
 
 /********************************************************
@@ -499,9 +499,9 @@ MultinaryOperatorData<T>::precedence() const
 
 template <typename T>
 void
-MultinaryOperatorData<T>::apply(Transform<T> & transform)
+MultinaryOperatorData<T>::apply(Node<T> & node, Transform<T> & transform)
 {
-  transform(this);
+  transform(node, *this);
 }
 
 /********************************************************
@@ -752,9 +752,9 @@ UnaryFunctionData<T>::D(const ValueProvider<T> & vp)
 
 template <typename T>
 void
-UnaryFunctionData<T>::apply(Transform<T> & transform)
+UnaryFunctionData<T>::apply(Node<T> & node, Transform<T> & transform)
 {
-  transform(this);
+  transform(node, *this);
 }
 
 /********************************************************
@@ -867,9 +867,9 @@ BinaryFunctionData<T>::D(const ValueProvider<T> & vp)
 
 template <typename T>
 void
-BinaryFunctionData<T>::apply(Transform<T> & transform)
+BinaryFunctionData<T>::apply(Node<T> & node, Transform<T> & transform)
 {
-  transform(this);
+  transform(node, *this);
 }
 
 /********************************************************
@@ -950,9 +950,9 @@ ConditionalData<T>::stackDepth(std::pair<int, int> & current_max) const
 
 template <typename T>
 void
-ConditionalData<T>::apply(Transform<T> & transform)
+ConditionalData<T>::apply(Node<T> & node, Transform<T> & transform)
 {
-  transform(this);
+  transform(node, *this);
 }
 
 /********************************************************
@@ -1019,9 +1019,9 @@ IntegerPowerData<T>::D(const ValueProvider<T> & vp)
 
 template <typename T>
 void
-IntegerPowerData<T>::apply(Transform<T> & transform)
+IntegerPowerData<T>::apply(Node<T> & node, Transform<T> & transform)
 {
-  transform(this);
+  transform(node, *this);
 }
 
 template class SymbolData<Real>;

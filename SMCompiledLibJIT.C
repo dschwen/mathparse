@@ -81,18 +81,18 @@ CompiledLibJIT<T>::plog(T a, T b)
 
 template <typename T>
 void
-CompiledLibJIT<T>::operator()(SymbolData<T> * n)
+CompiledLibJIT<T>::operator()(Node<T> & node, SymbolData<T> & data)
 {
   fatalError("Symbol in compiled function");
 }
 
 template <typename T>
 void
-CompiledLibJIT<T>::operator()(UnaryOperatorData<T> * n)
+CompiledLibJIT<T>::operator()(Node<T> & node, UnaryOperatorData<T> & data)
 {
-  n->_args[0].apply(*this);
+  data._args[0].apply(*this);
 
-  switch (n->_type)
+  switch (data._type)
   {
     case UnaryOperatorType::PLUS:
       return;
@@ -108,14 +108,14 @@ CompiledLibJIT<T>::operator()(UnaryOperatorData<T> * n)
 
 template <typename T>
 void
-CompiledLibJIT<T>::operator()(BinaryOperatorData<T> * n)
+CompiledLibJIT<T>::operator()(Node<T> & node, BinaryOperatorData<T> & data)
 {
-  n->_args[0].apply(*this);
+  data._args[0].apply(*this);
   const auto A = _value;
-  n->_args[1].apply(*this);
+  data._args[1].apply(*this);
   const auto B = _value;
 
-  switch (n->_type)
+  switch (data._type)
   {
     case BinaryOperatorType::SUBTRACTION:
       _value = jit_insn_sub(_state, A, B);
@@ -188,20 +188,20 @@ CompiledLibJIT<T>::operator()(BinaryOperatorData<T> * n)
 
 template <typename T>
 void
-CompiledLibJIT<T>::operator()(MultinaryOperatorData<T> * n)
+CompiledLibJIT<T>::operator()(Node<T> & node, MultinaryOperatorData<T> & data)
 {
-  if (n->_args.size() == 0)
+  if (data._args.size() == 0)
     fatalError("No child nodes in multinary operator");
 
-  n->_args[0].apply(*this);
-  if (n->_args.size() == 1)
+  data._args[0].apply(*this);
+  if (data._args.size() == 1)
     return;
 
   auto tmp = _value;
-  for (std::size_t i = 1; i < n->_args.size(); ++i)
+  for (std::size_t i = 1; i < data._args.size(); ++i)
   {
-    n->_args[i].apply(*this);
-    switch (n->_type)
+    data._args[i].apply(*this);
+    switch (data._type)
     {
       case MultinaryOperatorType::ADDITION:
         tmp = jit_insn_add(_state, tmp, _value);
@@ -220,12 +220,12 @@ CompiledLibJIT<T>::operator()(MultinaryOperatorData<T> * n)
 
 template <>
 void
-CompiledLibJIT<Real>::operator()(UnaryFunctionData<Real> * n)
+CompiledLibJIT<Real>::operator()(Node<Real> & node, UnaryFunctionData<Real> & data)
 {
-  n->_args[0].apply(*this);
+  data._args[0].apply(*this);
   const auto A = _value;
 
-  switch (n->_type)
+  switch (data._type)
   {
     case UnaryFunctionType::ABS:
       _value = jit_insn_abs(_state, A);
@@ -375,14 +375,14 @@ CompiledLibJIT<Real>::operator()(UnaryFunctionData<Real> * n)
 
 template <typename T>
 void
-CompiledLibJIT<T>::operator()(BinaryFunctionData<T> * n)
+CompiledLibJIT<T>::operator()(Node<T> & node, BinaryFunctionData<T> & data)
 {
-  n->_args[0].apply(*this);
+  data._args[0].apply(*this);
   const auto A = _value;
-  n->_args[1].apply(*this);
+  data._args[1].apply(*this);
   const auto B = _value;
 
-  switch (n->_type)
+  switch (data._type)
   {
     case BinaryFunctionType::ATAN2:
       _value = jit_insn_atan2(_state, A, B);
@@ -417,69 +417,69 @@ CompiledLibJIT<T>::operator()(BinaryFunctionData<T> * n)
 
 template <>
 void
-CompiledLibJIT<Real>::operator()(RealNumberData<Real> * n)
+CompiledLibJIT<Real>::operator()(Node<Real> & node, RealNumberData<Real> & data)
 {
-  _value = jit_value_create_float64_constant(_state, jit_type_float64, (jit_float64)n->_value);
+  _value = jit_value_create_float64_constant(_state, jit_type_float64, (jit_float64)data._value);
 }
 
 template <>
 void
-CompiledLibJIT<Real>::operator()(RealReferenceData<Real> * n)
+CompiledLibJIT<Real>::operator()(Node<Real> & node, RealReferenceData<Real> & data)
 {
   _value =
       jit_insn_load_relative(_state,
                              jit_value_create_nint_constant(
-                                 _state, jit_type_void_ptr, reinterpret_cast<jit_nint>(&n->_ref)),
+                                 _state, jit_type_void_ptr, reinterpret_cast<jit_nint>(&data._ref)),
                              0,
                              jit_type_float64);
 }
 
 template <>
 void
-CompiledLibJIT<Real>::operator()(RealArrayReferenceData<Real> * n)
+CompiledLibJIT<Real>::operator()(Node<Real> & node, RealArrayReferenceData<Real> & data)
 {
-  auto index =
-      jit_insn_load_relative(_state,
-                             jit_value_create_nint_constant(
-                                 _state, jit_type_void_ptr, reinterpret_cast<jit_nint>(&n->_index)),
-                             0,
-                             jit_type_int);
+  auto index = jit_insn_load_relative(
+      _state,
+      jit_value_create_nint_constant(
+          _state, jit_type_void_ptr, reinterpret_cast<jit_nint>(&data._index)),
+      0,
+      jit_type_int);
 
   _value = jit_insn_load_elem_address(
       _state,
       jit_value_create_nint_constant(
-          _state, jit_type_void_ptr, reinterpret_cast<jit_nint>(&n->_ref)),
+          _state, jit_type_void_ptr, reinterpret_cast<jit_nint>(&data._ref)),
       index,
       jit_type_float64);
 }
 
 template <typename T>
 void
-CompiledLibJIT<T>::operator()(LocalVariableData<T> * n)
+CompiledLibJIT<T>::operator()(Node<T> & node, LocalVariableData<T> & data)
 {
   fatalError("Not implemented");
 }
 
 template <>
 void
-CompiledLibJIT<Real>::operator()(ConditionalData<Real> * n)
+CompiledLibJIT<Real>::operator()(Node<Real> & node, ConditionalData<Real> & data)
 {
-  if (n->_type != ConditionalType::IF)
+  if (data._type != ConditionalType::IF)
     fatalError("Conditional not implemented");
 
   auto label1 = jit_label_undefined;
   auto label2 = jit_label_undefined;
   auto result = jit_value_create(_state, jit_type_float64);
 
-  n->_args[0].apply(*this);
+  data._args[0].apply(*this);
   jit_insn_branch_if_not(_state, _value, &label1);
   // true branch
-  n->_args[1].apply(*this);
+  data._args[1].apply(*this);
   jit_insn_store(_state, result, _value);
   jit_insn_branch(_state, &label2);
   jit_insn_label(_state, &label1);
   // false branch
-  n->_args[2].apply(*this);
+  data._args[2].apply(*this);
   jit_insn_store(_state, result, _value);
   jit_insn_label(_state, &label2);
   _value = jit_insn_load(_state, result);
@@ -487,13 +487,13 @@ CompiledLibJIT<Real>::operator()(ConditionalData<Real> * n)
 
 template <>
 void
-CompiledLibJIT<Real>::operator()(IntegerPowerData<Real> * n)
+CompiledLibJIT<Real>::operator()(Node<Real> & node, IntegerPowerData<Real> & data)
 {
   auto result = jit_value_create_float64_constant(_state, jit_type_float64, (jit_float64)1.0);
 
-  n->_arg.apply(*this);
+  data._arg.apply(*this);
   auto A = _value;
-  int e = n->_exponent > 0 ? n->_exponent : -n->_exponent;
+  int e = std::abs(data._exponent);
   while (e)
   {
     // if bit 0 is set multiply the current power of two factor of the exponent
@@ -507,7 +507,7 @@ CompiledLibJIT<Real>::operator()(IntegerPowerData<Real> * n)
     e >>= 1;
   }
 
-  if (n->_exponent >= 0)
+  if (data._exponent >= 0)
     _value = result;
   else
     _value =

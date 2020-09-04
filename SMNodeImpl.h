@@ -13,7 +13,7 @@ namespace SymbolicMath
 {
 
 template <typename T>
-Node<T>::Node(const Node & copy) : _data(copy._data)
+Node<T>::Node(const Node<T> & copy) : _data(copy._data)
 {
 }
 
@@ -294,9 +294,7 @@ template <typename T>
 void
 Node<T>::apply(Transform<T> & transform)
 {
-  transform.pushNode(this);
-  _data->apply(transform);
-  transform.popNode();
+  _data->apply(*this, transform);
 }
 
 } // namespace SymbolicMath
