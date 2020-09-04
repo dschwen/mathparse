@@ -626,6 +626,16 @@ CompiledByteCode<T>::operator()()
         _stack[sp] *= _stack[sp + 1] * _stack[sp + 2];
         break;
 
+      case VMInstruction::FETCH:
+        _stack[sp + 1] = _stack[sp - _byte_code[++ip]];
+        ++sp;
+        break;
+
+      case VMInstruction::FETCH0:
+        _stack[sp + 1] = _stack[sp];
+        ++sp;
+        break;
+
       default:
         fatalError("Invalid opcode " + stringify(_byte_code[ip]) + " at ip=" + stringify(ip) +
                    " sp=" + stringify(sp));
@@ -717,7 +727,9 @@ CompiledByteCode<T>::print()
                                                        "MUL2",
                                                        "ADD2",
                                                        "MUL3",
-                                                       "ADD3"};
+                                                       "ADD3",
+                                                       "FETCH",
+                                                       "FETCH0"};
 
   for (std::size_t i = 0; i < _byte_code.size(); ++i)
   {
@@ -743,6 +755,7 @@ CompiledByteCode<T>::print()
       case VMInstruction::CONDITIONAL:
       case VMInstruction::INTEGER_POWER:
       case VMInstruction::JUMP:
+      case VMInstruction::FETCH:
         ++i;
         std::cout << i << " [" << _byte_code[i] << "] " << '\n';
         break;

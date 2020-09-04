@@ -33,7 +33,7 @@ class NodeData
 public:
   virtual ~NodeData() {}
 
-  virtual T value() = 0;
+  virtual T value() const = 0;
 
   virtual std::string format() const = 0;
   virtual std::string formatTree(std::string indent) const { return indent + format() + '\n'; };
@@ -86,7 +86,7 @@ public:
   std::size_t hash() const override { return 0; }
   bool isValid() const override { return false; };
 
-  T value() override { fatalError("invalid node"); };
+  T value() const override { fatalError("invalid node"); };
 
   std::string format() const override { fatalError("invalid node"); };
   std::string formatTree(std::string indent) const override { fatalError("invalid node"); };
@@ -219,7 +219,7 @@ public:
   LocalVariableData(std::size_t id) : _id(id) {}
   Node<T> getArg(unsigned int i) override { fatalError("Node has no arguments"); };
 
-  T value() override;
+  T value() const override;
 
   std::string format() const override { return "{V" + stringify(_id) + "}"; }
 
@@ -248,7 +248,7 @@ public:
 
   SymbolData(const std::string & name) : ValueProviderDerived<SymbolData<T>, T>(name) {}
 
-  T value() override { fatalError("Node cannot be evaluated"); }
+  T value() const override { fatalError("Node cannot be evaluated"); }
 
   NodeDataPtr<T> clone() override { return std::make_shared<SymbolData<T>>(_name); };
   std::size_t hash() const override { return std::hash<std::string>{}(_name); }
@@ -271,7 +271,7 @@ public:
   {
   }
 
-  T value() override { return _ref; };
+  T value() const override { return _ref; };
 
   NodeDataPtr<T> clone() override { return std::make_shared<RealReferenceData<T>>(_ref, _name); };
   std::size_t hash() const override { return std::hash<const Real *>{}(&_ref); }
@@ -297,7 +297,7 @@ public:
   {
   }
 
-  T value() override { return (&_ref)[_index]; };
+  T value() const override { return (&_ref)[_index]; };
 
   NodeDataPtr<T> clone() override
   {
@@ -344,7 +344,7 @@ public:
 
   RealNumberData(T value) : NumberData<T>(), _value(value) {}
 
-  T value() override { return _value; };
+  T value() const override { return _value; };
 
   std::string format() const override { return stringify(_value); };
 
@@ -371,7 +371,7 @@ public:
   using FixedArgumentData<T, UnaryOperatorType, 1>::_type;
   using FixedArgumentData<T, UnaryOperatorType, 1>::_args;
 
-  T value() override;
+  T value() const override;
 
   std::string format() const override;
   std::string formatTree(std::string indent) const override;
@@ -396,7 +396,7 @@ public:
   using FixedArgumentData<T, BinaryOperatorType, 2>::_args;
   using FixedArgumentData<T, BinaryOperatorType, 2>::is;
 
-  T value() override;
+  T value() const override;
 
   std::string format() const override;
   std::string formatTree(std::string indent) const override;
@@ -420,7 +420,7 @@ public:
   using MultinaryData<T, MultinaryOperatorType>::_type;
   using MultinaryData<T, MultinaryOperatorType>::_args;
 
-  T value() override;
+  T value() const override;
 
   std::string format() const override;
   std::string formatTree(std::string indent) const override;
@@ -444,7 +444,7 @@ public:
   using FixedArgumentData<T, UnaryFunctionType, 1>::_type;
   using FixedArgumentData<T, UnaryFunctionType, 1>::_args;
 
-  T value() override;
+  T value() const override;
 
   std::string format() const override;
   std::string formatTree(std::string indent) const override;
@@ -468,7 +468,7 @@ public:
   using FixedArgumentData<T, BinaryFunctionType, 2>::_type;
   using FixedArgumentData<T, BinaryFunctionType, 2>::_args;
 
-  T value() override;
+  T value() const override;
 
   std::string format() const override;
   std::string formatTree(std::string indent) const override;
@@ -491,7 +491,7 @@ public:
   using FixedArgumentData<T, ConditionalType, 3>::_type;
   using FixedArgumentData<T, ConditionalType, 3>::_args;
 
-  T value() override;
+  T value() const override;
 
   std::string format() const override;
   std::string formatTree(std::string indent) const override;
@@ -513,7 +513,7 @@ class IntegerPowerData : public NodeData<T>
 public:
   IntegerPowerData(Node<T> arg, int exponent) : NodeData<T>(), _arg(arg), _exponent(exponent) {}
 
-  T value() override { return std::pow(_arg.value(), Real(_exponent)); };
+  T value() const override;
 
   std::string format() const override;
   std::string formatTree(std::string indent) const override;

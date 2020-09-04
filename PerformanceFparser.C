@@ -38,6 +38,10 @@ main(int argc, char * argv[])
     fparser.Parse(expression, "c,y");
     fparser.AutoDiff("c");
 
+#ifdef FUNCTIONPARSER_SUPPORT_DEBUGGING
+    fparser.PrintByteCode(std::cerr);
+#endif
+
     std::cout << "\n## Bytecode\n";
     bench(fparser);
 

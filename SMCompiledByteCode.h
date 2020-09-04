@@ -129,7 +129,10 @@ protected:
     MUL2,
     ADD2,
     MUL3,
-    ADD3
+    ADD3,
+
+    FETCH,
+    FETCH0
   };
 
   /// byte code data

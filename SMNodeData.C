@@ -62,7 +62,7 @@ SymbolData<T>::apply(Transform<T> & transform)
 
 template <typename T>
 T
-LocalVariableData<T>::value()
+LocalVariableData<T>::value() const
 {
   fatalError("LocalVariable::value not yet implemented");
 }
@@ -151,7 +151,7 @@ RealNumberData<T>::apply(Transform<T> & transform)
 
 template <typename T>
 T
-UnaryOperatorData<T>::value()
+UnaryOperatorData<T>::value() const
 {
   switch (_type)
   {
@@ -223,7 +223,7 @@ UnaryOperatorData<T>::apply(Transform<T> & transform)
 
 template <typename T>
 T
-BinaryOperatorData<T>::value()
+BinaryOperatorData<T>::value() const
 {
   const auto A = _args[0].value();
   const auto B = _args[1].value();
@@ -378,7 +378,7 @@ BinaryOperatorData<T>::apply(Transform<T> & transform)
 
 template <typename T>
 T
-MultinaryOperatorData<T>::value()
+MultinaryOperatorData<T>::value() const
 {
   switch (_type)
   {
@@ -510,7 +510,7 @@ MultinaryOperatorData<T>::apply(Transform<T> & transform)
 
 template <typename T>
 T
-UnaryFunctionData<T>::value()
+UnaryFunctionData<T>::value() const
 {
   const auto A = _args[0].value();
 
@@ -763,7 +763,7 @@ UnaryFunctionData<T>::apply(Transform<T> & transform)
 
 template <typename T>
 T
-BinaryFunctionData<T>::value()
+BinaryFunctionData<T>::value() const
 {
   const auto A = _args[0].value();
   const auto B = _args[1].value();
@@ -878,7 +878,7 @@ BinaryFunctionData<T>::apply(Transform<T> & transform)
 
 template <typename T>
 T
-ConditionalData<T>::value()
+ConditionalData<T>::value() const
 {
   if (_type != ConditionalType::IF)
     fatalError("Conditional not implemented");
@@ -958,6 +958,29 @@ ConditionalData<T>::apply(Transform<T> & transform)
 /********************************************************
  * Integer power Node
  ********************************************************/
+
+template <typename T>
+T
+IntegerPowerData<T>::value() const
+{
+  auto x = _arg.value();
+  T result = 1.0;
+
+  int e = std::abs(_exponent);
+  while (true)
+  {
+    if (e & 1)
+      result *= x;
+    x *= x;
+    if (e == 0)
+      break;
+    e >>= 1;
+  }
+
+  if (_exponent < 0)
+    return 1.0 / result;
+  return result;
+}
 
 template <typename T>
 std::string

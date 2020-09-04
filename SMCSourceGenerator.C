@@ -462,7 +462,7 @@ template <typename T>
 std::string
 CSourceGenerator<T>::bracket(std::string sub, short sub_precedence, short precedence)
 {
-  if (sub_precedence > precedence)
+  if (sub_precedence >= precedence)
     return '(' + sub + ')';
   else
     return sub;

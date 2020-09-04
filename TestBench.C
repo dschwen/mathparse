@@ -42,8 +42,8 @@ main(int argc, char * argv[])
 
   // auto func = parser.parse("(c + 2) / 1 - 0 / (c -2)");
   // auto func = parser.parse("if(c<-0.5, 10, if(c>0.2, 20, 30))");
-  auto func = parser.parse(expression);
-  // auto func = parser.parse("-(c+5)");
+  // auto func = parser.parse(expression);
+  auto func = parser.parse("log10(c)");
   std::cout << func.format() << '\n';
 
   {
@@ -60,6 +60,16 @@ main(int argc, char * argv[])
 
   {
     SymbolicMath::CSourceGenerator<SymbolicMath::Real> source(func);
+    std::cout << '{' << source() << "}\n";
+  }
+
+  auto diff = func.D(c_var);
+
+  std::cout << diff.format() << '\n';
+  std::cout << diff.formatTree() << '\n';
+
+  {
+    SymbolicMath::CSourceGenerator<SymbolicMath::Real> source(diff);
     std::cout << '{' << source() << "}\n";
   }
 
