@@ -179,7 +179,6 @@ public:
 
   void stackDepth(std::pair<int, int> & current_max) const override { current_max.first++; }
 
-protected:
   std::string _name;
 
   // we roll our own typeid system to avoid relying on RTTI
