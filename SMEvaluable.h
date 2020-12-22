@@ -15,6 +15,8 @@ template <typename T>
 class Evaluable
 {
 public:
+  virtual ~Evaluable() = default;
+
   /// Evaluate the node (using JIT if available)
   virtual T operator()() = 0;
 };

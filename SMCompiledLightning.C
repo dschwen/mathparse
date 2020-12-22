@@ -5,6 +5,7 @@
 
 #include "SMFunction.h"
 #include "SMCompiledLightning.h"
+#include "SMCompilerFactory.h"
 
 extern "C"
 {
@@ -13,6 +14,8 @@ extern "C"
 
 namespace SymbolicMath
 {
+
+registerCompiler(CompiledLightning, "CompiledLightning", Real);
 
 template <typename T>
 CompiledLightning<T>::CompiledLightning(Function<T> & fb)

@@ -5,9 +5,12 @@
 
 #include "SMFunction.h"
 #include "SMCompiledSLJIT.h"
+#include "SMCompilerFactory.h"
 
 namespace SymbolicMath
 {
+
+registerCompiler(CompiledSLJIT, "CompiledSLJIT", Real);
 
 const double sljit_one = 1.0;
 const double sljit_zero = 0.0;

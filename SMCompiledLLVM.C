@@ -5,6 +5,7 @@
 
 #include "SMFunction.h"
 #include "SMCompiledLLVM.h"
+#include "SMCompilerFactory.h"
 
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/ExecutionEngine/JITSymbol.h"
@@ -77,6 +78,8 @@ extern "C" double sm_llvm_plog(double a, double b) { return a < b ? std::log(b) 
 
 namespace SymbolicMath
 {
+
+registerCompiler(CompiledLLVM, "CompiledLLVM", Real);
 
 template <typename T>
 CompiledLLVM<T>::CompiledLLVM(Function<T> & fb) : Transform<T>(fb), _jit_function(nullptr)

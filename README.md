@@ -1,4 +1,4 @@
-# SymbolicMath [![Build Status](https://travis-ci.org/dschwen/mathparse.svg?branch=master)](https://travis-ci.org/dschwen/mathparse)
+# SymbolicMath [![Build Status](https://travis-ci.com/dschwen/mathparse.svg?branch=master)](https://travis-ci.org/dschwen/mathparse)
 Abstract syntax tree (AST) based symbolic math system with an expression parser.
 
 It consists of
