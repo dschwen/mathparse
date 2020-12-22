@@ -63,7 +63,7 @@ public:
   // virtual void checkIndex(const std::vector<unsigned int> & index);
 
   // apply a transform visitor
-  virtual void apply(Transform<T> & transform) = 0;
+  virtual void apply(Node<T> & node, Transform<T> & transform) = 0;
 
   virtual Node<T> D(const ValueProvider<T> & vp) = 0;
 
@@ -94,7 +94,7 @@ public:
   Node<T> getArg(unsigned int i) override { fatalError("invalid node"); }
   Node<T> D(const ValueProvider<T> & vp) override { fatalError("invalid node"); }
 
-  void apply(Transform<T> & transform) override;
+  void apply(Node<T> & node, Transform<T> & transform) override;
 };
 
 /**
@@ -179,7 +179,6 @@ public:
 
   void stackDepth(std::pair<int, int> & current_max) const override { current_max.first++; }
 
-protected:
   std::string _name;
 
   // we roll our own typeid system to avoid relying on RTTI
@@ -231,7 +230,7 @@ public:
   std::size_t hash() const override { return std::hash<const void *>{}(this); }
 
   Node<T> D(const ValueProvider<T> & vp) override { fatalError("Not implemented"); };
-  void apply(Transform<T> & transform) override;
+  void apply(Node<T> & node, Transform<T> & transform) override;
 
   std::size_t _id;
 };
@@ -254,7 +253,7 @@ public:
   std::size_t hash() const override { return std::hash<std::string>{}(_name); }
 
   Node<T> D(const ValueProvider<T> & vp) override;
-  void apply(Transform<T> & transform) override;
+  void apply(Node<T> & node, Transform<T> & transform) override;
 };
 
 /**
@@ -277,7 +276,7 @@ public:
   std::size_t hash() const override { return std::hash<const Real *>{}(&_ref); }
 
   Node<T> D(const ValueProvider<T> & vp) override;
-  void apply(Transform<T> & transform) override;
+  void apply(Node<T> & node, Transform<T> & transform) override;
 
   const Real & _ref;
 };
@@ -309,7 +308,7 @@ public:
   }
 
   Node<T> D(const ValueProvider<T> & vp) override;
-  void apply(Transform<T> & transform) override;
+  void apply(Node<T> & node, Transform<T> & transform) override;
 
   const Real & _ref;
   const int & _index;
@@ -355,7 +354,7 @@ public:
   bool is(T value) const override { return value == _value; };
 
   void setValue(T value) { _value = value; }
-  void apply(Transform<T> & transform) override;
+  void apply(Node<T> & node, Transform<T> & transform) override;
 
   Real _value;
 };
@@ -379,7 +378,7 @@ public:
   NodeDataPtr<T> clone() override;
 
   Node<T> D(const ValueProvider<T> &) override;
-  void apply(Transform<T> & transform) override;
+  void apply(Node<T> & node, Transform<T> & transform) override;
 
   unsigned short precedence() const override { return 3; }
 };
@@ -404,7 +403,7 @@ public:
   NodeDataPtr<T> clone() override;
 
   Node<T> D(const ValueProvider<T> &) override;
-  void apply(Transform<T> & transform) override;
+  void apply(Node<T> & node, Transform<T> & transform) override;
 
   unsigned short precedence() const override;
 };
@@ -430,7 +429,7 @@ public:
   Node<T> D(const ValueProvider<T> & vp) override;
 
   unsigned short precedence() const override;
-  void apply(Transform<T> & transform) override;
+  void apply(Node<T> & node, Transform<T> & transform) override;
 };
 
 /**
@@ -454,7 +453,7 @@ public:
   Node<T> D(const ValueProvider<T> &) override;
 
   unsigned short precedence() const override { return 3; }
-  void apply(Transform<T> & transform) override;
+  void apply(Node<T> & node, Transform<T> & transform) override;
 };
 
 /**
@@ -476,7 +475,7 @@ public:
   NodeDataPtr<T> clone() override;
 
   Node<T> D(const ValueProvider<T> &) override;
-  void apply(Transform<T> & transform) override;
+  void apply(Node<T> & node, Transform<T> & transform) override;
 };
 
 /**
@@ -501,7 +500,7 @@ public:
   Node<T> D(const ValueProvider<T> &) override;
 
   void stackDepth(std::pair<int, int> & current_max) const override;
-  void apply(Transform<T> & transform) override;
+  void apply(Node<T> & node, Transform<T> & transform) override;
 };
 
 /**
@@ -532,7 +531,7 @@ public:
   {
     _arg.stackDepth(current_max);
   }
-  void apply(Transform<T> & transform) override;
+  void apply(Node<T> & node, Transform<T> & transform) override;
 
   Node<T> _arg;
   int _exponent;

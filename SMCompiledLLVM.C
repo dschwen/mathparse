@@ -211,18 +211,18 @@ CompiledLLVM<T>::~CompiledLLVM()
 
 template <typename T>
 void
-CompiledLLVM<T>::operator()(SymbolData<T> * n)
+CompiledLLVM<T>::operator()(Node<T> & node, SymbolData<T> & data)
 {
   fatalError("Symbol in compiled function");
 }
 
 template <typename T>
 void
-CompiledLLVM<T>::operator()(UnaryOperatorData<T> * n)
+CompiledLLVM<T>::operator()(Node<T> & node, UnaryOperatorData<T> & data)
 {
-  n->_args[0].apply(*this);
+  data._args[0].apply(*this);
 
-  switch (n->_type)
+  switch (data._type)
   {
     case UnaryOperatorType::PLUS:
       return;
@@ -238,14 +238,14 @@ CompiledLLVM<T>::operator()(UnaryOperatorData<T> * n)
 
 template <typename T>
 void
-CompiledLLVM<T>::operator()(BinaryOperatorData<T> * n)
+CompiledLLVM<T>::operator()(Node<T> & node, BinaryOperatorData<T> & data)
 {
-  n->_args[0].apply(*this);
+  data._args[0].apply(*this);
   const auto A = _value;
-  n->_args[1].apply(*this);
+  data._args[1].apply(*this);
   const auto B = _value;
 
-  switch (n->_type)
+  switch (data._type)
   {
     case BinaryOperatorType::SUBTRACTION:
       _value = _state->builder.CreateFSub(A, B);
@@ -329,20 +329,20 @@ CompiledLLVM<T>::operator()(BinaryOperatorData<T> * n)
 
 template <typename T>
 void
-CompiledLLVM<T>::operator()(MultinaryOperatorData<T> * n)
+CompiledLLVM<T>::operator()(Node<T> & node, MultinaryOperatorData<T> & data)
 {
-  if (n->_args.size() == 0)
+  if (data._args.size() == 0)
     fatalError("No child nodes in multinary operator");
 
-  n->_args[0].apply(*this);
-  if (n->_args.size() == 1)
+  data._args[0].apply(*this);
+  if (data._args.size() == 1)
     return;
 
   auto tmp = _value;
-  for (std::size_t i = 1; i < n->_args.size(); ++i)
+  for (std::size_t i = 1; i < data._args.size(); ++i)
   {
-    n->_args[i].apply(*this);
-    switch (n->_type)
+    data._args[i].apply(*this);
+    switch (data._type)
     {
       case MultinaryOperatorType::ADDITION:
         tmp = _state->builder.CreateFAdd(tmp, _value);
@@ -361,12 +361,12 @@ CompiledLLVM<T>::operator()(MultinaryOperatorData<T> * n)
 
 template <>
 void
-CompiledLLVM<Real>::operator()(UnaryFunctionData<Real> * n)
+CompiledLLVM<Real>::operator()(Node<Real> & node, UnaryFunctionData<Real> & data)
 {
   llvm::Intrinsic::ID func;
-  n->_args[0].apply(*this);
+  data._args[0].apply(*this);
 
-  switch (n->_type)
+  switch (data._type)
   {
     case UnaryFunctionType::ABS:
       func = llvm::Intrinsic::fabs;
@@ -504,16 +504,16 @@ CompiledLLVM<Real>::operator()(UnaryFunctionData<Real> * n)
 
 template <typename T>
 void
-CompiledLLVM<T>::operator()(BinaryFunctionData<T> * n)
+CompiledLLVM<T>::operator()(Node<T> & node, BinaryFunctionData<T> & data)
 {
-  n->_args[0].apply(*this);
+  data._args[0].apply(*this);
   const auto A = _value;
-  n->_args[1].apply(*this);
+  data._args[1].apply(*this);
   const auto B = _value;
 
   llvm::Intrinsic::ID func;
 
-  switch (n->_type)
+  switch (data._type)
   {
     case BinaryFunctionType::ATAN2:
       _value = _state->builder.CreateCall(_native[Native::atan2], {A, B});
@@ -548,16 +548,16 @@ CompiledLLVM<T>::operator()(BinaryFunctionData<T> * n)
 
 template <>
 void
-CompiledLLVM<Real>::operator()(RealNumberData<Real> * n)
+CompiledLLVM<Real>::operator()(Node<Real> & node, RealNumberData<Real> & data)
 {
-  _value = ConstantFP::get(_state->builder.getDoubleTy(), n->_value);
+  _value = ConstantFP::get(_state->builder.getDoubleTy(), data._value);
 }
 
 template <>
 void
-CompiledLLVM<Real>::operator()(RealReferenceData<Real> * n)
+CompiledLLVM<Real>::operator()(Node<Real> & node, RealReferenceData<Real> & data)
 {
-  auto adr = ConstantInt::get(_state->builder.getInt64Ty(), (int64_t)&n->_ref);
+  auto adr = ConstantInt::get(_state->builder.getInt64Ty(), (int64_t)&data._ref);
   auto ptr = llvm::ConstantExpr::getIntToPtr(
       adr, llvm::PointerType::getUnqual(_state->builder.getDoubleTy()));
   _value = _state->builder.CreateLoad(ptr);
@@ -565,27 +565,27 @@ CompiledLLVM<Real>::operator()(RealReferenceData<Real> * n)
 
 template <typename T>
 void
-CompiledLLVM<T>::operator()(RealArrayReferenceData<T> * n)
+CompiledLLVM<T>::operator()(Node<T> & node, RealArrayReferenceData<T> & data)
 {
   fatalError("Not implemented yet");
 }
 
 template <typename T>
 void
-CompiledLLVM<T>::operator()(LocalVariableData<T> * n)
+CompiledLLVM<T>::operator()(Node<T> & node, LocalVariableData<T> & data)
 {
   fatalError("Not implemented");
 }
 
 template <typename T>
 void
-CompiledLLVM<T>::operator()(ConditionalData<T> * n)
+CompiledLLVM<T>::operator()(Node<T> & node, ConditionalData<T> & data)
 {
-  n->_args[0].apply(*this);
+  data._args[0].apply(*this);
   const auto A = _value;
-  n->_args[1].apply(*this);
+  data._args[1].apply(*this);
   const auto B = _value;
-  n->_args[2].apply(*this);
+  data._args[2].apply(*this);
   const auto C = _value;
 
   _value = _state->builder.CreateSelect(
@@ -594,14 +594,14 @@ CompiledLLVM<T>::operator()(ConditionalData<T> * n)
 
 template <>
 void
-CompiledLLVM<Real>::operator()(IntegerPowerData<Real> * n)
+CompiledLLVM<Real>::operator()(Node<Real> & node, IntegerPowerData<Real> & data)
 {
-  n->_arg.apply(*this);
+  data._arg.apply(*this);
   auto A = _value;
 
   _value = ConstantFP::get(_state->builder.getDoubleTy(), 1.0);
 
-  int e = n->_exponent > 0 ? n->_exponent : -n->_exponent;
+  int e = data._exponent > 0 ? data._exponent : -data._exponent;
   while (e)
   {
     // if bit 0 is set multiply the current power of two factor of the exponent
@@ -615,7 +615,7 @@ CompiledLLVM<Real>::operator()(IntegerPowerData<Real> * n)
     e >>= 1;
   }
 
-  if (n->_exponent < 0)
+  if (data._exponent < 0)
     _value =
         _state->builder.CreateFDiv(ConstantFP::get(_state->builder.getDoubleTy(), 1.0), _value);
 }

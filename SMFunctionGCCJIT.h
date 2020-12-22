@@ -18,7 +18,7 @@ class Function : public Function
 {
 public:
   /// Construct form given node
-  Function(const Node & root) : Function(root) { _state.ctxt = nullptr; }
+  Function(const Node<T> & root) : Function(root) { _state.ctxt = nullptr; }
 
   /// tear down function (release JIT context)
   ~Function();

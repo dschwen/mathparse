@@ -6,26 +6,21 @@
 #pragma once
 
 #include "SMTransform.h"
-#include "SMEvaluable.h"
-
-#include "contrib/sljit_src/sljitLir.h"
-
-#include <list>
 
 namespace SymbolicMath
 {
 
 /**
- * SLJIT compiler transform
+ * Hashing visitor
  */
 template <typename T>
-class CompiledSLJIT : public Transform<T>, public Evaluable<T>
+class Hash : public Transform<T>
 {
+  using Transform<T>::set;
   using Transform<T>::apply;
 
 public:
-  CompiledSLJIT(Function<T> &);
-  ~CompiledSLJIT() override;
+  Hash(Function<T> & fb);
 
   void operator()(Node<T> &, SymbolData<T> &) override;
 
@@ -44,32 +39,11 @@ public:
   void operator()(Node<T> &, ConditionalData<T> &) override;
   void operator()(Node<T> &, IntegerPowerData<T> &) override;
 
-  T operator()() override { return _jit_function(); }
-
 protected:
-  void stackPush();
-  void stackPop(sljit_s32);
+  void setHash(Node<T> &, std::size_t);
 
-  void unaryFunctionCall(T (*func)(T));
-  void binaryFunctionCall(T (*func)(T, T));
-
-  void emitFcmp(sljit_s32);
-
-  static T truncWrapper(T);
-  static T plog(T, T);
-
-  /// current stack entry (as array index)
-  int _sp;
-
-  /// SLJIT compiler context
-  struct sljit_compiler * _ctx;
-
-  /// store immediates in a "pointer stable" way
-  std::list<T> _immediate;
-
-  /// compiled function (TODO: pass result by reference)
-  using JITFunctionPtr = T SLJIT_FUNC (*)();
-  JITFunctionPtr _jit_function;
+  std::size_t _hash;
+  std::multimap<std::size_t, Node<T> *> _hash_map;
 };
 
 } // namespace SymbolicMath

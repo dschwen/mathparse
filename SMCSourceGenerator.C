@@ -33,20 +33,20 @@ CSourceGenerator<T>::CSourceGenerator(Function<T> & fb) : Transform<T>(fb), _tmp
 
 template <typename T>
 void
-CSourceGenerator<T>::operator()(SymbolData<T> * n)
+CSourceGenerator<T>::operator()(Node<T> & node, SymbolData<T> & data)
 {
   fatalError("Symbol in compiled function");
 }
 
 template <typename T>
 void
-CSourceGenerator<T>::operator()(UnaryOperatorData<T> * n)
+CSourceGenerator<T>::operator()(Node<T> & node, UnaryOperatorData<T> & data)
 {
-  n->_args[0].apply(*this);
-  auto Ap = n->_args[0].precedence();
-  auto Ab = bracket(_source, Ap, n->precedence());
+  data._args[0].apply(*this);
+  auto Ap = data._args[0].precedence();
+  auto Ab = bracket(_source, Ap, data.precedence());
 
-  switch (n->_type)
+  switch (data._type)
   {
     case UnaryOperatorType::PLUS:
       return;
@@ -62,22 +62,22 @@ CSourceGenerator<T>::operator()(UnaryOperatorData<T> * n)
 
 template <typename T>
 void
-CSourceGenerator<T>::operator()(BinaryOperatorData<T> * n)
+CSourceGenerator<T>::operator()(Node<T> & node, BinaryOperatorData<T> & data)
 {
-  n->_args[0].apply(*this);
+  data._args[0].apply(*this);
   std::string A;
   std::swap(_source, A);
 
-  n->_args[1].apply(*this);
+  data._args[1].apply(*this);
   const auto & B = _source;
 
-  auto Ap = n->_args[0].precedence();
-  auto Bp = n->_args[1].precedence();
+  auto Ap = data._args[0].precedence();
+  auto Bp = data._args[1].precedence();
 
-  auto Ab = bracket(A, Ap, n->precedence());
-  auto Bb = bracket(B, Bp, n->precedence());
+  auto Ab = bracket(A, Ap, data.precedence());
+  auto Bb = bracket(B, Bp, data.precedence());
 
-  switch (n->_type)
+  switch (data._type)
   {
     case BinaryOperatorType::SUBTRACTION:
       _source = Ab + " - " + Bb;
@@ -134,15 +134,15 @@ CSourceGenerator<T>::operator()(BinaryOperatorData<T> * n)
 
 template <typename T>
 void
-CSourceGenerator<T>::operator()(MultinaryOperatorData<T> * n)
+CSourceGenerator<T>::operator()(Node<T> & node, MultinaryOperatorData<T> & data)
 {
-  auto nargs = n->_args.size();
+  auto nargs = data._args.size();
   if (nargs == 0)
     fatalError("No child nodes in multinary operator");
 
   char op;
   short precedence;
-  switch (n->_type)
+  switch (data._type)
   {
     case MultinaryOperatorType::ADDITION:
       op = '+';
@@ -159,16 +159,16 @@ CSourceGenerator<T>::operator()(MultinaryOperatorData<T> * n)
   }
 
   if (nargs == 1)
-    n->_args[0].apply(*this);
+    data._args[0].apply(*this);
   else
   {
     std::string out;
     for (std::size_t i = 0; i < nargs; ++i)
     {
-      n->_args[i].apply(*this);
+      data._args[i].apply(*this);
       if (i)
         out += op;
-      out += bracket(_source, n->_args[i].precedence(), precedence);
+      out += bracket(_source, data._args[i].precedence(), precedence);
       _source = "";
     }
     _source = out;
@@ -177,12 +177,12 @@ CSourceGenerator<T>::operator()(MultinaryOperatorData<T> * n)
 
 template <typename T>
 void
-CSourceGenerator<T>::operator()(UnaryFunctionData<T> * n)
+CSourceGenerator<T>::operator()(Node<T> & node, UnaryFunctionData<T> & data)
 {
-  n->_args[0].apply(*this);
+  data._args[0].apply(*this);
   const auto & A = _source;
 
-  switch (n->_type)
+  switch (data._type)
   {
     case UnaryFunctionType::ABS:
       _source = "std::abs(" + A + ")";
@@ -322,16 +322,16 @@ CSourceGenerator<T>::operator()(UnaryFunctionData<T> * n)
 
 template <typename T>
 void
-CSourceGenerator<T>::operator()(BinaryFunctionData<T> * n)
+CSourceGenerator<T>::operator()(Node<T> & node, BinaryFunctionData<T> & data)
 {
-  n->_args[0].apply(*this);
+  data._args[0].apply(*this);
   std::string A;
   std::swap(_source, A);
 
-  n->_args[1].apply(*this);
+  data._args[1].apply(*this);
   const auto & B = _source;
 
-  switch (n->_type)
+  switch (data._type)
   {
     case BinaryFunctionType::ATAN2:
       _source = "std::atan2(" + A + ", " + B + ")";
@@ -339,8 +339,8 @@ CSourceGenerator<T>::operator()(BinaryFunctionData<T> * n)
 
     case BinaryFunctionType::HYPOT:
     {
-      auto Ap = n->_args[0].precedence();
-      auto Bp = n->_args[1].precedence();
+      auto Ap = data._args[0].precedence();
+      auto Bp = data._args[1].precedence();
       auto Ab = bracket(A, Ap, 5 /* MULTIPLICATION */);
       auto Bb = bracket(B, Bp, 5 /* MULTIPLICATION */);
       _source = "std::sqrt(" + Ab + "*" + Ab + "+" + Bb + "*" + Bb + ")";
@@ -374,57 +374,57 @@ CSourceGenerator<T>::operator()(BinaryFunctionData<T> * n)
 
 template <typename T>
 void
-CSourceGenerator<T>::operator()(RealNumberData<T> * n)
+CSourceGenerator<T>::operator()(Node<T> & node, RealNumberData<T> & data)
 {
-  _source = stringify(n->_value);
+  _source = stringify(data._value);
 }
 
 template <typename T>
 void
-CSourceGenerator<T>::operator()(RealReferenceData<T> * n)
+CSourceGenerator<T>::operator()(Node<T> & node, RealReferenceData<T> & data)
 {
   for (int i = 0; i < _vars.size(); ++i)
-    if (_vars[i] == &n->_ref)
+    if (_vars[i] == &data._ref)
     {
       _source = "v" + stringify(i);
       return;
     }
 
-  _vars.emplace_back(&n->_ref);
+  _vars.emplace_back(&data._ref);
   auto var = "v" + stringify(_vars.size() - 1);
 
   _prologue += "const " + typeName() + ' ' + var + " = *(reinterpret_cast<" + typeName() + " *>(" +
-               std::to_string(reinterpret_cast<long>(&n->_ref)) + "));\n";
+               std::to_string(reinterpret_cast<long>(&data._ref)) + "));\n";
   _source = var;
 }
 
 template <typename T>
 void
-CSourceGenerator<T>::operator()(RealArrayReferenceData<T> * n)
+CSourceGenerator<T>::operator()(Node<T> & node, RealArrayReferenceData<T> & data)
 {
   fatalError("Not implemented");
 }
 
 template <typename T>
 void
-CSourceGenerator<T>::operator()(LocalVariableData<T> * n)
+CSourceGenerator<T>::operator()(Node<T> & node, LocalVariableData<T> & data)
 {
   fatalError("Not implemented");
 }
 
 template <typename T>
 void
-CSourceGenerator<T>::operator()(ConditionalData<T> * n)
+CSourceGenerator<T>::operator()(Node<T> & node, ConditionalData<T> & data)
 {
-  n->_args[0].apply(*this);
+  data._args[0].apply(*this);
   std::string A;
   std::swap(_source, A);
 
-  n->_args[1].apply(*this);
+  data._args[1].apply(*this);
   std::string B;
   std::swap(_source, B);
 
-  n->_args[1].apply(*this);
+  data._args[1].apply(*this);
   const auto & C = _source;
 
   _source = "((" + A + ") ? (" + B + ") : (" + C + "))";
@@ -432,16 +432,16 @@ CSourceGenerator<T>::operator()(ConditionalData<T> * n)
 
 template <typename T>
 void
-CSourceGenerator<T>::operator()(IntegerPowerData<T> * n)
+CSourceGenerator<T>::operator()(Node<T> & node, IntegerPowerData<T> & data)
 {
   // replace this with a template
-  n->_arg.apply(*this);
+  data._arg.apply(*this);
   std::string t0 = "t" + stringify(_tmp_id++);
   std::string t1 = "t" + stringify(_tmp_id++);
   _prologue += typeName() + " " + t0 + " = " + _source + ";\n";
   _prologue += typeName() + " " + t1 + " = 1.0;\n";
 
-  int e = std::abs(n->_exponent);
+  int e = std::abs(data._exponent);
   while (true)
   {
     if (e & 1)
@@ -452,7 +452,7 @@ CSourceGenerator<T>::operator()(IntegerPowerData<T> * n)
     _prologue += t0 + " *= " + t0 + ";\n";
   }
 
-  if (n->_exponent < 0)
+  if (data._exponent < 0)
     _source = "(1.0/" + t1 + ")";
   else
     _source = t1;

@@ -3,7 +3,8 @@ CXXFLAGS ?= -O2
 
 OBJS := SMToken.o SMTokenizer.o SMParser.o SMSymbols.o \
 				SMNode.o SMNodeData.o SMUtils.o \
-				SMTransform.o SMTransformSimplify.o SMCompiledByteCode.o \
+				SMTransform.o SMTransformSimplify.o SMTransformHash.o\
+				SMCompiledByteCode.o \
 				SMCompiledCCode.o SMCompiledSLJIT.o SMCompiledLibJIT.o \
 				SMCSourceGenerator.o SMCompiledLightning.o
 

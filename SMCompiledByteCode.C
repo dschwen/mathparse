@@ -25,14 +25,14 @@ CompiledByteCode<T>::CompiledByteCode(Function<T> & fb) : Transform<T>(fb)
 
 template <typename T>
 void
-CompiledByteCode<T>::operator()(SymbolData<T> * n)
+CompiledByteCode<T>::operator()(Node<T> & node, SymbolData<T> & data)
 {
   fatalError("Symbol in compiled function");
 }
 
 template <typename T>
 void
-CompiledByteCode<T>::operator()(UnaryOperatorData<T> * n)
+CompiledByteCode<T>::operator()(Node<T> & node, UnaryOperatorData<T> & data)
 {
   static const std::map<UnaryOperatorType, VMInstruction> map = {
       {UnaryOperatorType::PLUS, VMInstruction::UO_PLUS},
@@ -40,9 +40,9 @@ CompiledByteCode<T>::operator()(UnaryOperatorData<T> * n)
       {UnaryOperatorType::FACULTY, VMInstruction::UO_FACULTY},
       {UnaryOperatorType::NOT, VMInstruction::UO_NOT}};
 
-  n->_args[0].apply(*this);
+  data._args[0].apply(*this);
 
-  auto vi = map.find(n->_type);
+  auto vi = map.find(data._type);
   if (vi == map.end())
     fatalError("Invalid instruction");
   _byte_code.emplace_back(static_cast<int>(vi->second));
@@ -50,7 +50,7 @@ CompiledByteCode<T>::operator()(UnaryOperatorData<T> * n)
 
 template <typename T>
 void
-CompiledByteCode<T>::operator()(BinaryOperatorData<T> * n)
+CompiledByteCode<T>::operator()(Node<T> & node, BinaryOperatorData<T> & data)
 {
   static const std::map<BinaryOperatorType, VMInstruction> map = {
       {BinaryOperatorType::SUBTRACTION, VMInstruction::BO_SUBTRACTION},
@@ -68,10 +68,10 @@ CompiledByteCode<T>::operator()(BinaryOperatorData<T> * n)
       {BinaryOperatorType::ASSIGNMENT, VMInstruction::BO_ASSIGNMENT},
       {BinaryOperatorType::LIST, VMInstruction::BO_LIST}};
 
-  n->_args[0].apply(*this);
-  n->_args[1].apply(*this);
+  data._args[0].apply(*this);
+  data._args[1].apply(*this);
 
-  auto vi = map.find(n->_type);
+  auto vi = map.find(data._type);
   if (vi == map.end())
     fatalError("Invalid instruction");
   _byte_code.emplace_back(static_cast<int>(vi->second));
@@ -79,7 +79,7 @@ CompiledByteCode<T>::operator()(BinaryOperatorData<T> * n)
 
 template <typename T>
 void
-CompiledByteCode<T>::operator()(MultinaryOperatorData<T> * n)
+CompiledByteCode<T>::operator()(Node<T> & node, MultinaryOperatorData<T> & data)
 {
   static const std::map<MultinaryOperatorType, VMInstruction> map = {
       {MultinaryOperatorType::ADDITION, VMInstruction::MO_ADDITION},
@@ -87,24 +87,24 @@ CompiledByteCode<T>::operator()(MultinaryOperatorData<T> * n)
       {MultinaryOperatorType::COMPONENT, VMInstruction::MO_COMPONENT},
       {MultinaryOperatorType::LIST, VMInstruction::MO_LIST}};
 
-  const int nargs = static_cast<int>(n->_args.size());
-  for (auto arg : n->_args)
+  const int nargs = static_cast<int>(data._args.size());
+  for (auto arg : data._args)
     arg.apply(*this);
 
   if (nargs < 2)
     return;
 
-  if (n->_type == MultinaryOperatorType::ADDITION && nargs == 2)
+  if (data._type == MultinaryOperatorType::ADDITION && nargs == 2)
     _byte_code.emplace_back(static_cast<int>(VMInstruction::ADD2));
-  else if (n->_type == MultinaryOperatorType::ADDITION && nargs == 3)
+  else if (data._type == MultinaryOperatorType::ADDITION && nargs == 3)
     _byte_code.emplace_back(static_cast<int>(VMInstruction::ADD3));
-  else if (n->_type == MultinaryOperatorType::MULTIPLICATION && nargs == 2)
+  else if (data._type == MultinaryOperatorType::MULTIPLICATION && nargs == 2)
     _byte_code.emplace_back(static_cast<int>(VMInstruction::MUL2));
-  else if (n->_type == MultinaryOperatorType::MULTIPLICATION && nargs == 3)
+  else if (data._type == MultinaryOperatorType::MULTIPLICATION && nargs == 3)
     _byte_code.emplace_back(static_cast<int>(VMInstruction::MUL3));
   else
   {
-    auto vi = map.find(n->_type);
+    auto vi = map.find(data._type);
     if (vi == map.end())
       fatalError("Invalid instruction");
     _byte_code.emplace_back(static_cast<int>(vi->second));
@@ -114,7 +114,7 @@ CompiledByteCode<T>::operator()(MultinaryOperatorData<T> * n)
 
 template <typename T>
 void
-CompiledByteCode<T>::operator()(UnaryFunctionData<T> * n)
+CompiledByteCode<T>::operator()(Node<T> & node, UnaryFunctionData<T> & data)
 {
   static const std::map<UnaryFunctionType, VMInstruction> map = {
       {UnaryFunctionType::ABS, VMInstruction::UF_ABS},
@@ -152,9 +152,9 @@ CompiledByteCode<T>::operator()(UnaryFunctionData<T> * n)
       {UnaryFunctionType::TANH, VMInstruction::UF_TANH},
       {UnaryFunctionType::TRUNC, VMInstruction::UF_TRUNC}};
 
-  n->_args[0].apply(*this);
+  data._args[0].apply(*this);
 
-  auto vi = map.find(n->_type);
+  auto vi = map.find(data._type);
   if (vi == map.end())
     fatalError("Invalid instruction");
   _byte_code.emplace_back(static_cast<int>(vi->second));
@@ -162,7 +162,7 @@ CompiledByteCode<T>::operator()(UnaryFunctionData<T> * n)
 
 template <typename T>
 void
-CompiledByteCode<T>::operator()(BinaryFunctionData<T> * n)
+CompiledByteCode<T>::operator()(Node<T> & node, BinaryFunctionData<T> & data)
 {
   static const std::map<BinaryFunctionType, VMInstruction> map = {
       {BinaryFunctionType::ATAN2, VMInstruction::BF_ATAN2},
@@ -173,10 +173,10 @@ CompiledByteCode<T>::operator()(BinaryFunctionData<T> * n)
       {BinaryFunctionType::POLAR, VMInstruction::BF_POLAR},
       {BinaryFunctionType::POW, VMInstruction::BF_POW}};
 
-  n->_args[0].apply(*this);
-  n->_args[1].apply(*this);
+  data._args[0].apply(*this);
+  data._args[1].apply(*this);
 
-  auto vi = map.find(n->_type);
+  auto vi = map.find(data._type);
   if (vi == map.end())
     fatalError("Invalid instruction");
   _byte_code.emplace_back(static_cast<int>(vi->second));
@@ -184,63 +184,63 @@ CompiledByteCode<T>::operator()(BinaryFunctionData<T> * n)
 
 template <typename T>
 void
-CompiledByteCode<T>::operator()(RealNumberData<T> * n)
+CompiledByteCode<T>::operator()(Node<T> & node, RealNumberData<T> & data)
 {
   _byte_code.emplace_back(static_cast<int>(VMInstruction::LOAD_IMMEDIATE_REAL));
 
   // find pointer in _immed, or add if not found
   for (int i = 0; i < _immed.size(); ++i)
-    if (_immed[i] == n->_value)
+    if (_immed[i] == data._value)
     {
       _byte_code.emplace_back(i);
       return;
     }
-  _immed.emplace_back(n->_value);
+  _immed.emplace_back(data._value);
   _byte_code.emplace_back(_immed.size() - 1);
 }
 
 template <typename T>
 void
-CompiledByteCode<T>::operator()(RealReferenceData<T> * n)
+CompiledByteCode<T>::operator()(Node<T> & node, RealReferenceData<T> & data)
 {
   _byte_code.emplace_back(static_cast<int>(VMInstruction::LOAD_VARIABLE_REAL));
 
   // find pointer in _vars, or add if not found
   for (int i = 0; i < _vars.size(); ++i)
-    if (_vars[i] == &n->_ref)
+    if (_vars[i] == &data._ref)
     {
       _byte_code.emplace_back(i);
       return;
     }
-  _vars.emplace_back(&n->_ref);
+  _vars.emplace_back(&data._ref);
   _byte_code.emplace_back(_vars.size() - 1);
 }
 
 template <typename T>
 void
-CompiledByteCode<T>::operator()(RealArrayReferenceData<T> * n)
+CompiledByteCode<T>::operator()(Node<T> & node, RealArrayReferenceData<T> & data)
 {
   fatalError("Not implemented");
 }
 
 template <typename T>
 void
-CompiledByteCode<T>::operator()(LocalVariableData<T> * n)
+CompiledByteCode<T>::operator()(Node<T> & node, LocalVariableData<T> & data)
 {
   fatalError("Not implemented");
 }
 
 template <typename T>
 void
-CompiledByteCode<T>::operator()(ConditionalData<T> * n)
+CompiledByteCode<T>::operator()(Node<T> & node, ConditionalData<T> & data)
 {
-  n->_args[0].apply(*this);
+  data._args[0].apply(*this);
   _byte_code.emplace_back(static_cast<int>(VMInstruction::CONDITIONAL));
   // jump label placeholder
   const auto conditional_ip = _byte_code.size();
   _byte_code.emplace_back(0);
   // true branch
-  n->_args[1].apply(*this);
+  data._args[1].apply(*this);
   // jump past false at the end of the true branch
   _byte_code.emplace_back(static_cast<int>(VMInstruction::JUMP));
   // jump label placeholder
@@ -249,28 +249,28 @@ CompiledByteCode<T>::operator()(ConditionalData<T> * n)
   // set jump to false ip on conditional instruction
   _byte_code[conditional_ip] = _byte_code.size();
   // false branch
-  n->_args[2].apply(*this);
+  data._args[2].apply(*this);
   // set jump past false target
   _byte_code[jump_past_false_ip] = _byte_code.size();
 }
 
 template <typename T>
 void
-CompiledByteCode<T>::operator()(IntegerPowerData<T> * n)
+CompiledByteCode<T>::operator()(Node<T> & node, IntegerPowerData<T> & data)
 {
-  n->_arg.apply(*this);
-  if (n->_exponent == 2)
+  data._arg.apply(*this);
+  if (data._exponent == 2)
     _byte_code.emplace_back(static_cast<int>(VMInstruction::POW2));
-  else if (n->_exponent == 3)
+  else if (data._exponent == 3)
     _byte_code.emplace_back(static_cast<int>(VMInstruction::POW3));
-  else if (n->_exponent == 4)
+  else if (data._exponent == 4)
     _byte_code.emplace_back(static_cast<int>(VMInstruction::POW4));
-  else if (n->_exponent == 5)
+  else if (data._exponent == 5)
     _byte_code.emplace_back(static_cast<int>(VMInstruction::POW5));
   else
   {
     _byte_code.emplace_back(static_cast<int>(VMInstruction::INTEGER_POWER));
-    _byte_code.emplace_back(n->_exponent);
+    _byte_code.emplace_back(data._exponent);
   }
 }
 
