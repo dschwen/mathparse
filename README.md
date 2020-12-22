@@ -1,7 +1,10 @@
 # SymbolicMath [![Build Status](https://travis-ci.com/dschwen/mathparse.svg?branch=master)](https://travis-ci.org/dschwen/mathparse)
 Abstract syntax tree (AST) based symbolic math system with an expression parser.
 
-It consists of
+- [API Docs](docs/API.md)
+- [Design Docs](docs/DESIGN.md)
+
+The library provides
 
 - a tokenizer in `SymbolicMathTokenize`
 - an infix to prefix tree converter in `SymbolicMathParser`
