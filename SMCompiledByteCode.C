@@ -10,7 +10,7 @@
 namespace SymbolicMath
 {
 
-registerCompiler(CompiledByteCode, "CompiledByteCode", Real);
+registerCompiler(CompiledByteCode, "CompiledByteCode", Real, 1);
 
 template <typename T>
 CompiledByteCode<T>::CompiledByteCode(Function<T> & fb) : Transform<T>(fb)

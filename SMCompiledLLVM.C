@@ -79,7 +79,7 @@ extern "C" double sm_llvm_plog(double a, double b) { return a < b ? std::log(b) 
 namespace SymbolicMath
 {
 
-registerCompiler(CompiledLLVM, "CompiledLLVM", Real);
+registerCompiler(CompiledLLVM, "CompiledLLVM", Real, 200);
 
 template <typename T>
 CompiledLLVM<T>::CompiledLLVM(Function<T> & fb) : Transform<T>(fb), _jit_function(nullptr)

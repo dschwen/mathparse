@@ -10,7 +10,7 @@
 namespace SymbolicMath
 {
 
-registerCompiler(CompiledSLJIT, "CompiledSLJIT", Real);
+registerCompiler(CompiledSLJIT, "CompiledSLJIT", Real, 20);
 
 const double sljit_one = 1.0;
 const double sljit_zero = 0.0;

@@ -15,7 +15,7 @@ extern "C"
 namespace SymbolicMath
 {
 
-registerCompiler(CompiledLightning, "CompiledLightning", Real);
+registerCompiler(CompiledLightning, "CompiledLightning", Real, 50);
 
 template <typename T>
 CompiledLightning<T>::CompiledLightning(Function<T> & fb)

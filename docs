@@ -7,7 +7,7 @@ The symbolic math module has the following requirements
 
 - Register _value providers_ to a symbolic math object
     - user settable variables
-    - MOOSE non-linear variables (requires connecting Assemby/FEProblem to a symbolic math object)
+    - MOOSE non-linear variables (requires connecting Assembly/FEProblem to a symbolic math object)
     - Gradients of MOOSE variables
     - MOOSE scalar variables
     - MOOSE Postprocessors
@@ -40,8 +40,8 @@ on the AST (i.e. no round-trip conversions like in FParser).
 The tokenizer splits a character string in to semantic units such as operators,
 numbers and function/variable names. It assigns tags to operators, variables, and
 functions. If an operator, variable, or function is not recognized it is marked
-with an _invalid_ tag. Thi requires the tokenizer to know valid operators (static
-list), valid function names (ststic list), and valid variables (dynamic list).
+with an _invalid_ tag. This requires the tokenizer to know valid operators (static
+list), valid function names (static list), and valid variables (dynamic list).
 
 Variables (or more generally value providers) need to be registered after the
 construction of a symbolic math object, but before parsing (this registration is
@@ -53,13 +53,13 @@ the formatting of error messages.
 ### Prefix stack
 
 The prefix notation is built using the shunting yard algorithm. The shunting yard
-loop has the current and last token avialable. In a preprcessing step using the
+loop has the current and last token available. In a preprocessing step using the
 last token we discriminate between binary and unary plus and minus. Then validation
 is performed. We check
 
 - Bracket balancing
-- Invalid tags (unknown funxtions, variables, or operators)
-- Consecutive symbols or operators (well-formedness)
+- Invalid tags (unknown functions, variables, or operators)
+- Consecutive symbols or operators (wellformedness)
 - Correct number of arguments for functions
 
 ### Abstract Syntax Tree (AST) builder

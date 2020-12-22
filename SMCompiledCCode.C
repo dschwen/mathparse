@@ -20,7 +20,7 @@
 namespace SymbolicMath
 {
 
-registerCompiler(CompiledCCode, "CompiledCCode", Real);
+registerCompiler(CompiledCCode, "CompiledCCode", Real, 10);
 
 template <>
 const std::string

@@ -10,7 +10,7 @@
 namespace SymbolicMath
 {
 
-registerCompiler(CompiledLibJIT, "CompiledLibJIT", Real);
+registerCompiler(CompiledLibJIT, "CompiledLibJIT", Real, 100);
 
 template <typename T>
 CompiledLibJIT<T>::CompiledLibJIT(Function<T> & fb) : Transform<T>(fb), _jit_function(nullptr)
