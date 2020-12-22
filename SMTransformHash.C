@@ -6,6 +6,8 @@
 #include "SMTransformHash.h"
 #include "SMFunction.h"
 
+#include <functional>
+
 namespace SymbolicMath
 {
 
