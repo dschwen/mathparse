@@ -5,9 +5,12 @@
 
 #include "SMFunction.h"
 #include "SMCompiledByteCode.h"
+#include "SMCompilerFactory.h"
 
 namespace SymbolicMath
 {
+
+registerCompiler(CompiledByteCode, "CompiledByteCode", Real, 1);
 
 template <typename T>
 CompiledByteCode<T>::CompiledByteCode(Function<T> & fb) : Transform<T>(fb)

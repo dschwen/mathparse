@@ -8,14 +8,7 @@
 #include "SMHelpers.h"
 #include "SMTransformSimplify.h"
 
-#include "SMCompiledByteCode.h"
-#include "SMCompiledCCode.h"
-#include "SMCompiledSLJIT.h"
-#include "SMCompiledLibJIT.h"
-#include "SMCompiledLightning.h"
-#ifdef SYMBOLICMATH_USE_LLVMIR
-#include "SMCompiledLLVM.h"
-#endif
+#include "SMCompilerFactory.h"
 
 #include <iostream>
 #include <functional>
@@ -196,9 +189,8 @@ const std::vector<DiffTest> difftests = {
 
 int total = 0, fail = 0;
 
-template <class C>
 void
-test()
+test(const std::string & C_name)
 {
   double norm;
 
@@ -245,14 +237,16 @@ test()
       std::cerr << "Evaluating expression '" << test.expression << "' simplified to '"
                 << func.format() << "'\n";
 #endif
-      C compiled(func);
+
+      auto compiled =
+          SymbolicMath::CompilerFactory<SymbolicMath::Real>::buildCompiler(C_name, func);
 
       // evaluate for various values of c
       norm = 0.0;
       std::stringstream mes;
       for (c = -1.0; c <= 1.0; c += 0.3)
       {
-        auto a = compiled();
+        auto a = (*compiled)();
         auto b = test.native(c);
         auto n = std::abs(a - b);
         if (n > 1e-9 || std::isnan(norm))
@@ -287,11 +281,13 @@ test()
 
       auto func = parser.parse(test.expression);
       SymbolicMath::Simplify<SymbolicMath::Real> simplify1(func);
-      C compiled(func);
+      auto compiled =
+          SymbolicMath::CompilerFactory<SymbolicMath::Real>::buildCompiler(C_name, func);
 
       auto diff = func.D(c_var);
       SymbolicMath::Simplify<SymbolicMath::Real> simplify2(diff);
-      C dcompiled(diff);
+      auto dcompiled =
+          SymbolicMath::CompilerFactory<SymbolicMath::Real>::buildCompiler(C_name, diff);
 
 #ifdef DEBUG
       std::cerr << "Evaluating expression '" << diff.format() << "'\n";
@@ -303,12 +299,12 @@ test()
       std::stringstream mes;
       for (c = test.cmin; c <= test.cmax; c += test.dc)
       {
-        auto a = compiled();
+        auto a = (*compiled)();
         c += test.epsilon;
-        auto b = compiled();
+        auto b = (*compiled)();
         c -= test.epsilon;
 
-        auto d = dcompiled();
+        auto d = (*dcompiled)();
 
         if (std::abs(d - diff()) > 1e-9)
         {
@@ -356,21 +352,15 @@ test()
 int
 main(int argc, char * argv[])
 {
-  // test various compilers
-  std::cout << "SymbolicMath::CompiledByteCode...\n";
-  test<SymbolicMath::CompiledByteCode<SymbolicMath::Real>>();
-  std::cout << "SymbolicMath::CompiledCCode...\n";
-  test<SymbolicMath::CompiledCCode<SymbolicMath::Real>>();
-  std::cout << "SymbolicMath::CompiledSLJIT...\n";
-  test<SymbolicMath::CompiledSLJIT<SymbolicMath::Real>>();
-  std::cout << "SymbolicMath::CompiledLibJIT...\n";
-  test<SymbolicMath::CompiledLibJIT<SymbolicMath::Real>>();
-  std::cout << "SymbolicMath::CompiledLightning...\n";
-  test<SymbolicMath::CompiledLightning<SymbolicMath::Real>>();
-#ifdef SYMBOLICMATH_USE_LLVMIR
-  std::cout << "SymbolicMath::CompiledLLVM...\n";
-  test<SymbolicMath::CompiledLLVM<SymbolicMath::Real>>();
-#endif
+  // get all registered compilers
+  auto compilers = SymbolicMath::CompilerFactory<SymbolicMath::Real>::listCompilers();
+
+  // test them all
+  for (const auto & compiler : compilers)
+  {
+    std::cout << "SymbolicMath::" << compiler << "...\n";
+    test(compiler);
+  }
 
   // Final output
   if (fail)

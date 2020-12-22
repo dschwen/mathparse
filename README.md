@@ -1,20 +1,22 @@
-# SymbolicMath [![Build Status](https://travis-ci.org/dschwen/mathparse.svg?branch=master)](https://travis-ci.org/dschwen/mathparse)
+# SymbolicMath [![Build Status](https://travis-ci.com/dschwen/mathparse.svg?branch=master)](https://travis-ci.org/dschwen/mathparse)
 Abstract syntax tree (AST) based symbolic math system with an expression parser.
 
-It consists of
+- [API Docs](docs/API.md)
+- [Design Docs](docs/DESIGN.md)
+
+The library provides
 
 - a tokenizer in `SymbolicMathTokenize`
 - an infix to prefix tree converter in `SymbolicMathParser`
 - an automatic differentiation component
 - Just-in-time compilation
+
 ## Building SymbolicMath
 
 Build using
 ```
-make JIT=backend
+make
 ```
-
-Where `backend` is one of the options in the table below.
 
 ## Features
 
@@ -22,15 +24,17 @@ Where `backend` is one of the options in the table below.
 
 SymbolicMath features just-in-time (JIT) compilation of expression trees. Available JIT backends are:
 
-`JIT=` parameter|Project | Description
+Backend |Project | Description
 ---------|-------------|------------
 `llvmir` |[LLVM](http://llvm.org) | Builds LLVM intermediate representation, optimizes it, and compiles it with LLVM Orc JIT
-`gccjit`|[libgccjit](https://gcc.gnu.org/onlinedocs/jit/)| Uses _libggcjit_ from the GNU Compiler Collection (gcc) to build _-O3_ optimized code in memory
 `ccode` | - | Launches an external compiler to compile generated C code and links in the generated object using _dlopen_
 `libjit`| [GNU LibJIT](https://www.gnu.org/software/libjit/) | JIT library originally developed for the Mono project. Limited architecture support
 `lightning`| [GNU Lightning](https://www.gnu.org/software/lightning/) | Low level assembly generator. Good architecture support
 `sljit`| [SLJIT](http://sljit.sourceforge.net/) | Low level assembly generator. Broad architecture support, no external dependencies
 `vm`   | - | Builds byte code for a stack based virtual machine. This is a _fallback_ backend in case none of the proper JIT backends work
+
+<!--
+`gccjit`|[libgccjit](https://gcc.gnu.org/onlinedocs/jit/)| Uses _libggcjit_ from the GNU Compiler Collection (gcc) to build _-O3_ optimized code in memory-->
 
 Research is ongoing as to which backend is best used. See [performance comparison](PERFORMANCE.md) for details.
 

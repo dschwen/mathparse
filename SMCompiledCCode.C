@@ -5,6 +5,7 @@
 
 #include "SMCompiledCCode.h"
 #include "SMCSourceGenerator.h"
+#include "SMCompilerFactory.h"
 
 #include <stdio.h>
 #include <fstream>
@@ -18,6 +19,8 @@
 
 namespace SymbolicMath
 {
+
+registerCompiler(CompiledCCode, "CompiledCCode", Real, 10);
 
 template <>
 const std::string

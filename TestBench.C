@@ -21,11 +21,24 @@
 #endif
 #include <iostream>
 
+#include "SMCompilerFactory.h"
+
 #include "performance_expression.h"
 
 int
 main(int argc, char * argv[])
 {
+  // check the factory system
+  auto compilers = SymbolicMath::CompilerFactory<SymbolicMath::Real>::listCompilers();
+  std::cout << "Registerd compilers:";
+  for (auto & c : compilers)
+    std::cout << ' ' << c;
+  std::cout << '\n';
+
+  std::cout << "Best compiler:" << SymbolicMath::CompilerFactory<SymbolicMath::Real>::bestCompiler()
+            << '\n';
+
+  // parse example expression
   SymbolicMath::Parser<SymbolicMath::Real> parser;
 
   SymbolicMath::Real c, T;
@@ -97,6 +110,9 @@ main(int argc, char * argv[])
   SymbolicMath::CompiledLLVM<SymbolicMath::Real> llvm(func);
   std::cout << "llvm value = " << llvm() << '\n';
 #endif
+
+  auto best_comp = SymbolicMath::CompilerFactory<SymbolicMath::Real>::buildBestCompiler(func);
+  std::cout << "[best compiler] = " << (*best_comp)() << '\n';
 
   // func.compile();
   //

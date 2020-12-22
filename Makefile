@@ -46,22 +46,22 @@ endif
 # Applications
 
 mathparse: main.C $(OBJS)
-	$(CXX) -std=c++11 $(CONFIG) $(CPPFLAGS) $(CXXFLAGS) -o mathparse main.C $(OBJS) $(LDFLAGS)
+	$(CXX) -std=c++14 $(CONFIG) $(CPPFLAGS) $(CXXFLAGS) -o mathparse main.C $(OBJS) $(LDFLAGS)
 
 performance: Performance.C $(OBJS)
-	$(CXX) -std=c++11 $(CONFIG) $(CPPFLAGS) $(CXXFLAGS) -o performance Performance.C $(OBJS) $(LDFLAGS)
+	$(CXX) -std=c++14 $(CONFIG) $(CPPFLAGS) $(CXXFLAGS) -o performance Performance.C $(OBJS) $(LDFLAGS)
 
 unittests: UnitTests.C $(OBJS)
-	$(CXX) -std=c++11 $(CONFIG) $(CPPFLAGS) $(CXXFLAGS) -o unittests UnitTests.C $(OBJS) $(LDFLAGS)
+	$(CXX) -std=c++14 $(CONFIG) $(CPPFLAGS) $(CXXFLAGS) -o unittests UnitTests.C $(OBJS) $(LDFLAGS)
 
 testbench: TestBench.C $(OBJS)
-	$(CXX) -std=c++11 $(CONFIG) $(CPPFLAGS) $(CXXFLAGS) -o testbench TestBench.C $(OBJS) $(LDFLAGS)
+	$(CXX) -std=c++14 $(CONFIG) $(CPPFLAGS) $(CXXFLAGS) -o testbench TestBench.C $(OBJS) $(LDFLAGS)
 
 -include $(OBJS:.o=.d)
 
 %.o : %.C
-	$(CXX) -std=c++11 $(CONFIG) -c $(CXXFLAGS) $(CPPFLAGS) $*.C -o $@
-	$(CXX) -std=c++11 $(CONFIG) -MM $(CXXFLAGS) $(CPPFLAGS) $*.C > $*.d
+	$(CXX) -std=c++14 $(CONFIG) -c $(CXXFLAGS) $(CPPFLAGS) $*.C -o $@
+	$(CXX) -std=c++14 $(CONFIG) -MM $(CXXFLAGS) $(CPPFLAGS) $*.C > $*.d
 
 %.o : %.c
 	$(CC) $(CONFIG) -c $(CFLAGS) $(CPPFLAGS) $*.c -o $@
@@ -75,4 +75,4 @@ clean:
 # FParser (for performance comparison)
 
 performance_fparser: PerformanceFparser.C
-	$(CXX) -std=c++11 $(CPPFLAGS) $(CXXFLAGS) -I$(LIBMESH_DIR)/include -o performance_fparser PerformanceFparser.C -Wl,-rpath,$(LIBMESH_DIR)/lib -L$(LIBMESH_DIR)/lib -lmesh_opt
+	$(CXX) -std=c++14 $(CPPFLAGS) $(CXXFLAGS) -I$(LIBMESH_DIR)/include -o performance_fparser PerformanceFparser.C -Wl,-rpath,$(LIBMESH_DIR)/lib -L$(LIBMESH_DIR)/lib -lmesh_opt
