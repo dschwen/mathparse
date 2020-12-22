@@ -12,11 +12,13 @@ addons:
       - ubuntu-toolchain-r-test
     packages:
       - libgccjit-5-dev
+      - gcc-6
+      - g++-6
       - texinfo
 
 install:
-  - export CXX="g++-5" CC="gcc-5"
-  - export LIBRARY_PATH=$LIBRARY_PATH:/usr/lib/gcc/x86_64-linux-gnu/5 #:$TRAVIS_BUILD_DIR/install/lib
+  - export CXX="g++-6" CC="gcc-6"
+  - export LIBRARY_PATH=$LIBRARY_PATH:/usr/lib/gcc/x86_64-linux-gnu/6 #:$TRAVIS_BUILD_DIR/install/lib
   - export LD_LIBRARY_PATH=$TRAVIS_BUILD_DIR/install/lib:$LD_LIBRARY_PATH
 
 before_script:
