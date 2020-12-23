@@ -296,10 +296,26 @@ SM_UNARY_FUNCTION_IMPLEMENTATION(sqrt, UnaryFunctionType::SQRT)
 SM_UNARY_FUNCTION_IMPLEMENTATION(tan, UnaryFunctionType::TAN)
 SM_UNARY_FUNCTION_IMPLEMENTATION(tanh, UnaryFunctionType::TANH)
 
+#define SM_BINARY_FUNCTION_IMPLEMENTATION(func, type)                                              \
+  template <typename T>                                                                            \
+  SymbolicMath::Node<T> func(const SymbolicMath::Node<T> & arg1,                                   \
+                             const SymbolicMath::Node<T> & arg2)                                   \
+  {                                                                                                \
+    return SymbolicMath::Node<T>(SymbolicMath::type, arg1, arg2);                                  \
+  }
+
+SM_BINARY_FUNCTION_IMPLEMENTATION(atan2, BinaryFunctionType::ATAN2)
+SM_BINARY_FUNCTION_IMPLEMENTATION(max, BinaryFunctionType::MAX)
+SM_BINARY_FUNCTION_IMPLEMENTATION(min, BinaryFunctionType::MIN)
+SM_BINARY_FUNCTION_IMPLEMENTATION(pow, BinaryFunctionType::POW)
+
 } // namespace std
 
 #define SM_UNARY_FUNCTION_INSTANTIATION(func, vtype)                                               \
-  template SymbolicMath::Node<vtype> std::func(const SymbolicMath::Node<vtype> & arg);
+  template SymbolicMath::Node<vtype> std::func(const SymbolicMath::Node<vtype> &);
+#define SM_BINARY_FUNCTION_INSTANTIATION(func, vtype)                                              \
+  template SymbolicMath::Node<vtype> std::func(const SymbolicMath::Node<vtype> &,                  \
+                                               const SymbolicMath::Node<vtype> &);
 
 #define SM_FUNCTION_INSTANTIATE_ALL(vtype)                                                         \
   SM_UNARY_FUNCTION_INSTANTIATION(abs, vtype)                                                      \
@@ -326,4 +342,8 @@ SM_UNARY_FUNCTION_IMPLEMENTATION(tanh, UnaryFunctionType::TANH)
   SM_UNARY_FUNCTION_INSTANTIATION(sinh, vtype)                                                     \
   SM_UNARY_FUNCTION_INSTANTIATION(sqrt, vtype)                                                     \
   SM_UNARY_FUNCTION_INSTANTIATION(tan, vtype)                                                      \
-  SM_UNARY_FUNCTION_INSTANTIATION(tanh, vtype)
+  SM_UNARY_FUNCTION_INSTANTIATION(tanh, vtype)                                                     \
+  SM_BINARY_FUNCTION_INSTANTIATION(atan2, vtype)                                                   \
+  SM_BINARY_FUNCTION_INSTANTIATION(max, vtype)                                                     \
+  SM_BINARY_FUNCTION_INSTANTIATION(min, vtype)                                                     \
+  SM_BINARY_FUNCTION_INSTANTIATION(pow, vtype)

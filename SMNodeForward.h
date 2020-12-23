@@ -69,4 +69,13 @@ SymbolicMath::Node<T> tan(const SymbolicMath::Node<T> &);
 template <typename T>
 SymbolicMath::Node<T> tanh(const SymbolicMath::Node<T> &);
 
+template <typename T>
+SymbolicMath::Node<T> atan2(const SymbolicMath::Node<T> &, const SymbolicMath::Node<T> &);
+template <typename T>
+SymbolicMath::Node<T> max(const SymbolicMath::Node<T> &, const SymbolicMath::Node<T> &);
+template <typename T>
+SymbolicMath::Node<T> min(const SymbolicMath::Node<T> &, const SymbolicMath::Node<T> &);
+template <typename T>
+SymbolicMath::Node<T> pow(const SymbolicMath::Node<T> &, const SymbolicMath::Node<T> &);
+
 } // namespace std

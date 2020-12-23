@@ -360,7 +360,7 @@ expression_build()
   RealNode c(3);
   RealNode pi(3.14159265359);
 
-  auto n = c + a * b + std::cos(pi);
+  auto n = std::max(a, c + a * b + std::cos(pi));
   auto val = n.value();
 
   if (val != 22)
