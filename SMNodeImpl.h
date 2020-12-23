@@ -96,7 +96,7 @@ SM_UNARY_OPERATOR_IMPLEMENTATION(~, UnaryOperatorType::NOT)
 
 #define SM_BINARY_OPERATOR_IMPLEMENTATION(op, type)                                                \
   template <typename T>                                                                            \
-  Node<T> Node<T>::operator op(Node r)                                                             \
+  Node<T> Node<T>::operator op(const Node<T> & r)                                                  \
   {                                                                                                \
     return Node(type, *this, r);                                                                   \
   }
@@ -259,3 +259,71 @@ Node<T>::apply(Transform<T> & transform)
 }
 
 } // namespace SymbolicMath
+
+namespace std
+{
+
+#define SM_UNARY_FUNCTION_IMPLEMENTATION(func, type)                                               \
+  template <typename T>                                                                            \
+  SymbolicMath::Node<T> func(const SymbolicMath::Node<T> & arg)                                    \
+  {                                                                                                \
+    return SymbolicMath::Node<T>(SymbolicMath::type, arg);                                         \
+  }
+
+SM_UNARY_FUNCTION_IMPLEMENTATION(abs, UnaryFunctionType::ABS)
+SM_UNARY_FUNCTION_IMPLEMENTATION(acos, UnaryFunctionType::ACOS)
+SM_UNARY_FUNCTION_IMPLEMENTATION(acosh, UnaryFunctionType::ACOSH)
+SM_UNARY_FUNCTION_IMPLEMENTATION(asin, UnaryFunctionType::ASIN)
+SM_UNARY_FUNCTION_IMPLEMENTATION(asinh, UnaryFunctionType::ASINH)
+SM_UNARY_FUNCTION_IMPLEMENTATION(atan, UnaryFunctionType::ATAN)
+SM_UNARY_FUNCTION_IMPLEMENTATION(atanh, UnaryFunctionType::ATANH)
+SM_UNARY_FUNCTION_IMPLEMENTATION(cbrt, UnaryFunctionType::CBRT)
+SM_UNARY_FUNCTION_IMPLEMENTATION(ceil, UnaryFunctionType::CEIL)
+SM_UNARY_FUNCTION_IMPLEMENTATION(cos, UnaryFunctionType::COS)
+SM_UNARY_FUNCTION_IMPLEMENTATION(cosh, UnaryFunctionType::COSH)
+SM_UNARY_FUNCTION_IMPLEMENTATION(erf, UnaryFunctionType::ERF)
+SM_UNARY_FUNCTION_IMPLEMENTATION(erfc, UnaryFunctionType::ERFC)
+SM_UNARY_FUNCTION_IMPLEMENTATION(exp, UnaryFunctionType::EXP)
+SM_UNARY_FUNCTION_IMPLEMENTATION(exp2, UnaryFunctionType::EXP2)
+SM_UNARY_FUNCTION_IMPLEMENTATION(floor, UnaryFunctionType::FLOOR)
+SM_UNARY_FUNCTION_IMPLEMENTATION(log, UnaryFunctionType::LOG)
+SM_UNARY_FUNCTION_IMPLEMENTATION(log10, UnaryFunctionType::LOG10)
+SM_UNARY_FUNCTION_IMPLEMENTATION(log2, UnaryFunctionType::LOG2)
+SM_UNARY_FUNCTION_IMPLEMENTATION(round, UnaryFunctionType::INT)
+SM_UNARY_FUNCTION_IMPLEMENTATION(sin, UnaryFunctionType::SIN)
+SM_UNARY_FUNCTION_IMPLEMENTATION(sinh, UnaryFunctionType::SINH)
+SM_UNARY_FUNCTION_IMPLEMENTATION(sqrt, UnaryFunctionType::SQRT)
+SM_UNARY_FUNCTION_IMPLEMENTATION(tan, UnaryFunctionType::TAN)
+SM_UNARY_FUNCTION_IMPLEMENTATION(tanh, UnaryFunctionType::TANH)
+
+} // namespace std
+
+#define SM_UNARY_FUNCTION_INSTANTIATION(func, vtype)                                               \
+  template SymbolicMath::Node<vtype> std::func(const SymbolicMath::Node<vtype> & arg);
+
+#define SM_FUNCTION_INSTANTIATE_ALL(vtype)                                                         \
+  SM_UNARY_FUNCTION_INSTANTIATION(abs, vtype)                                                      \
+  SM_UNARY_FUNCTION_INSTANTIATION(acos, vtype)                                                     \
+  SM_UNARY_FUNCTION_INSTANTIATION(acosh, vtype)                                                    \
+  SM_UNARY_FUNCTION_INSTANTIATION(asin, vtype)                                                     \
+  SM_UNARY_FUNCTION_INSTANTIATION(asinh, vtype)                                                    \
+  SM_UNARY_FUNCTION_INSTANTIATION(atan, vtype)                                                     \
+  SM_UNARY_FUNCTION_INSTANTIATION(atanh, vtype)                                                    \
+  SM_UNARY_FUNCTION_INSTANTIATION(cbrt, vtype)                                                     \
+  SM_UNARY_FUNCTION_INSTANTIATION(ceil, vtype)                                                     \
+  SM_UNARY_FUNCTION_INSTANTIATION(cos, vtype)                                                      \
+  SM_UNARY_FUNCTION_INSTANTIATION(cosh, vtype)                                                     \
+  SM_UNARY_FUNCTION_INSTANTIATION(erf, vtype)                                                      \
+  SM_UNARY_FUNCTION_INSTANTIATION(erfc, vtype)                                                     \
+  SM_UNARY_FUNCTION_INSTANTIATION(exp, vtype)                                                      \
+  SM_UNARY_FUNCTION_INSTANTIATION(exp2, vtype)                                                     \
+  SM_UNARY_FUNCTION_INSTANTIATION(floor, vtype)                                                    \
+  SM_UNARY_FUNCTION_INSTANTIATION(log, vtype)                                                      \
+  SM_UNARY_FUNCTION_INSTANTIATION(log10, vtype)                                                    \
+  SM_UNARY_FUNCTION_INSTANTIATION(log2, vtype)                                                     \
+  SM_UNARY_FUNCTION_INSTANTIATION(round, vtype)                                                    \
+  SM_UNARY_FUNCTION_INSTANTIATION(sin, vtype)                                                      \
+  SM_UNARY_FUNCTION_INSTANTIATION(sinh, vtype)                                                     \
+  SM_UNARY_FUNCTION_INSTANTIATION(sqrt, vtype)                                                     \
+  SM_UNARY_FUNCTION_INSTANTIATION(tan, vtype)                                                      \
+  SM_UNARY_FUNCTION_INSTANTIATION(tanh, vtype)

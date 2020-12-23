@@ -358,12 +358,14 @@ expression_build()
   RealNode a(4);
   RealNode b(5);
   RealNode c(3);
+  RealNode pi(3.14159265359);
 
-  auto n = c + a * b;
+  auto n = c + a * b + std::cos(pi);
+  auto val = n.value();
 
-  if (n.value() != 23)
+  if (val != 22)
   {
-    std::cout << "fail\n";
+    std::cout << "fail. val=" << val << "\n";
     fail++;
   }
   else

@@ -10,4 +10,6 @@ namespace SymbolicMath
 
 template class Node<Real>;
 
-}
+} // namespace SymbolicMath
+
+SM_FUNCTION_INSTANTIATE_ALL(SymbolicMath::Real)
