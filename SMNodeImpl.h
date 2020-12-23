@@ -49,6 +49,12 @@ Node<T>::Node(BinaryOperatorType type, Node arg0, Node arg1)
 }
 
 template <typename T>
+Node<T>::Node(MultinaryOperatorType type, Node arg0, Node arg1)
+  : _data(std::make_shared<MultinaryOperatorData<T>>(type, std::vector<Node>{arg0, arg1}))
+{
+}
+
+template <typename T>
 Node<T>::Node(MultinaryOperatorType type, std::vector<Node> args)
   : _data(std::make_shared<MultinaryOperatorData<T>>(type, args))
 {
@@ -78,81 +84,36 @@ Node<T>::Node(IntegerPowerType, Node arg, int exponent)
 {
 }
 
-template <typename T>
-Node<T>
-Node<T>::operator+(Node r)
-{
-  return Node(MultinaryOperatorType::ADDITION, {*this, r});
-}
+#define SM_UNARY_OPERATOR_IMPLEMENTATION(op, type)                                                 \
+  template <typename T>                                                                            \
+  Node<T> Node<T>::operator op()                                                                   \
+  {                                                                                                \
+    return Node(type, *this);                                                                      \
+  }
 
-template <typename T>
-Node<T>
-Node<T>::operator-(Node r)
-{
-  return Node(BinaryOperatorType::SUBTRACTION, *this, r);
-}
+SM_UNARY_OPERATOR_IMPLEMENTATION(-, UnaryOperatorType::MINUS)
+SM_UNARY_OPERATOR_IMPLEMENTATION(~, UnaryOperatorType::NOT)
 
-template <typename T>
-Node<T> Node<T>::operator*(Node r)
-{
-  return Node(MultinaryOperatorType::MULTIPLICATION, {*this, r});
-}
+#define SM_BINARY_OPERATOR_IMPLEMENTATION(op, type)                                                \
+  template <typename T>                                                                            \
+  Node<T> Node<T>::operator op(Node r)                                                             \
+  {                                                                                                \
+    return Node(type, *this, r);                                                                   \
+  }
 
-template <typename T>
-Node<T>
-Node<T>::operator/(Node r)
-{
-  return Node(BinaryOperatorType::DIVISION, *this, r);
-}
-
-template <typename T>
-Node<T>
-Node<T>::operator<(Node r)
-{
-  return Node(BinaryOperatorType::LESS_THAN, *this, r);
-}
-
-template <typename T>
-Node<T>
-Node<T>::operator<=(Node r)
-{
-  return Node(BinaryOperatorType::LESS_EQUAL, *this, r);
-}
-
-template <typename T>
-Node<T>
-Node<T>::operator>(Node r)
-{
-  return Node(BinaryOperatorType::GREATER_THAN, *this, r);
-}
-
-template <typename T>
-Node<T>
-Node<T>::operator>=(Node r)
-{
-  return Node(BinaryOperatorType::GREATER_EQUAL, *this, r);
-}
-
-template <typename T>
-Node<T>
-Node<T>::operator==(Node r)
-{
-  return Node(BinaryOperatorType::EQUAL, *this, r);
-}
-
-template <typename T>
-Node<T>
-Node<T>::operator!=(Node r)
-{
-  return Node(BinaryOperatorType::NOT_EQUAL, *this, r);
-}
-
-template <typename T>
-Node<T>
-Node<T>::operator-()
-{
-  return Node(UnaryOperatorType::MINUS, *this);
-}
+SM_BINARY_OPERATOR_IMPLEMENTATION(+, MultinaryOperatorType::ADDITION)
+SM_BINARY_OPERATOR_IMPLEMENTATION(-, BinaryOperatorType::SUBTRACTION)
+SM_BINARY_OPERATOR_IMPLEMENTATION(*, MultinaryOperatorType::MULTIPLICATION)
+SM_BINARY_OPERATOR_IMPLEMENTATION(/, BinaryOperatorType::DIVISION)
+SM_BINARY_OPERATOR_IMPLEMENTATION(%, BinaryOperatorType::MODULO)
+SM_BINARY_OPERATOR_IMPLEMENTATION(<, BinaryOperatorType::LESS_THAN)
+SM_BINARY_OPERATOR_IMPLEMENTATION(<=, BinaryOperatorType::LESS_EQUAL)
+SM_BINARY_OPERATOR_IMPLEMENTATION(>, BinaryOperatorType::GREATER_THAN)
+SM_BINARY_OPERATOR_IMPLEMENTATION(>=, BinaryOperatorType::GREATER_EQUAL)
+SM_BINARY_OPERATOR_IMPLEMENTATION(==, BinaryOperatorType::EQUAL)
+SM_BINARY_OPERATOR_IMPLEMENTATION(!=, BinaryOperatorType::NOT_EQUAL)
+SM_BINARY_OPERATOR_IMPLEMENTATION(||, BinaryOperatorType::LOGICAL_OR)
+SM_BINARY_OPERATOR_IMPLEMENTATION(&&, BinaryOperatorType::LOGICAL_AND)
 
 template <typename T>
 Node<T> Node<T>::operator[](unsigned int i)

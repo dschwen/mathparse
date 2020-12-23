@@ -265,6 +265,7 @@ test(const std::string & C_name)
     catch (std::exception & e)
     {
       std::cout << e.what() << " in " << test.expression << '\n';
+      fail++;
     }
   }
 
@@ -349,9 +350,34 @@ test(const std::string & C_name)
   std::cout << "Elapsed time: " << elapsed.count() << " s\n\n";
 }
 
+void
+expression_build()
+{
+  using RealNode = SymbolicMath::Node<SymbolicMath::Real>;
+
+  RealNode a(4);
+  RealNode b(5);
+  RealNode c(3);
+
+  auto n = c + a * b;
+
+  if (n.value() != 23)
+  {
+    std::cout << "fail\n";
+    fail++;
+  }
+  else
+    total++;
+}
+
 int
 main(int argc, char * argv[])
 {
+  // check expression building
+  std::cout << "Expression building...\n";
+  expression_build();
+  std::cout << "done.\n\n";
+
   // get all registered compilers
   auto compilers = SymbolicMath::CompilerFactory<SymbolicMath::Real>::listCompilers();
 

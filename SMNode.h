@@ -54,6 +54,7 @@ public:
   static Node<T> fromReal(Real val);
   Node(UnaryOperatorType type, Node<T> arg);
   Node(BinaryOperatorType type, Node<T> arg0, Node<T> arg1);
+  Node(MultinaryOperatorType type, Node<T> arg0, Node<T> arg1);
   Node(MultinaryOperatorType type, std::vector<Node> args);
   Node(UnaryFunctionType type, Node<T> arg);
   Node(BinaryFunctionType type, Node<T> arg0, Node<T> arg1);
@@ -62,17 +63,22 @@ public:
   ///@}
 
   ///@{ Operators to construct expression trees
+  Node<T> operator-();
+  Node<T> operator~();
+
   Node<T> operator+(Node<T> r);
   Node<T> operator-(Node<T> r);
   Node<T> operator*(Node<T> r);
   Node<T> operator/(Node<T> r);
+  Node<T> operator%(Node<T> r);
   Node<T> operator<(Node<T> r);
   Node<T> operator<=(Node<T> r);
   Node<T> operator>(Node<T> r);
   Node<T> operator>=(Node<T> r);
   Node<T> operator==(Node<T> r);
   Node<T> operator!=(Node<T> r);
-  Node<T> operator-();
+  Node<T> operator||(Node<T> r);
+  Node<T> operator&&(Node<T> r);
   ///@}
 
   /// Bracket operator for child node access
