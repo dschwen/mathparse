@@ -20,7 +20,11 @@ class Hash : public Transform<T>
   using Transform<T>::apply;
 
 public:
-  Hash(Function<T> & fb);
+  template <class U>
+  Hash(U & u) : Transform<T>(u)
+  {
+    apply();
+  }
 
   void operator()(Node<T> &, SymbolData<T> &) override;
 

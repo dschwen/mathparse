@@ -14,12 +14,6 @@ namespace SymbolicMath
 {
 
 template <typename T>
-Simplify<T>::Simplify(Function<T> & fb) : Transform<T>(fb)
-{
-  apply();
-}
-
-template <typename T>
 void
 Simplify<T>::operator()(Node<T> & node, UnaryOperatorData<T> & data)
 {

@@ -23,7 +23,8 @@ template <typename T>
 class Transform
 {
 public:
-  Transform(Function<T> & fb) : _fb(fb) {}
+  Transform(Function<T> & fb);
+  Transform(Node<T> & root);
   virtual ~Transform() {}
 
   virtual void operator()(Node<T> &, SymbolData<T> &) = 0;
@@ -47,8 +48,6 @@ public:
   static void initialize() {}
 
 protected:
-  Function<T> & _fb;
-
   void apply();
 
   void set(Node<T> & node, Real val);
@@ -59,6 +58,9 @@ protected:
   void set(Node<T> & node, BinaryFunctionType type, Node<T> arg0, Node<T> arg1);
   void set(Node<T> & node, ConditionalType type, Node<T> arg0, Node<T> arg1, Node<T> arg2);
   void set(Node<T> & node, IntegerPowerType, Node<T> arg, int exponent);
+
+private:
+  Node<T> & _root;
 };
 
 } // namespace SymbolicMath

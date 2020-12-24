@@ -10,11 +10,21 @@ namespace SymbolicMath
 {
 
 template <typename T>
+Transform<T>::Transform(Function<T> & fb) : _root(fb._root)
+{
+}
+
+template <typename T>
+Transform<T>::Transform(Node<T> & root) : _root(root)
+{
+}
+
+template <typename T>
 void
 Transform<T>::apply()
 {
   // apply self to root
-  _fb._root.apply(*this);
+  _root.apply(*this);
 }
 
 template <typename T>

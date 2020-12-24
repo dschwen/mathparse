@@ -12,12 +12,6 @@ namespace SymbolicMath
 {
 
 template <typename T>
-Hash<T>::Hash(Function<T> & fb) : Transform<T>(fb)
-{
-  apply();
-}
-
-template <typename T>
 void
 Hash<T>::operator()(Node<T> & node, SymbolData<T> & data)
 {
