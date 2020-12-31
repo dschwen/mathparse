@@ -53,6 +53,7 @@ protected:
   void set(Node<T> & node, Real val);
   void set(Node<T> & node, UnaryOperatorType type, Node<T> arg);
   void set(Node<T> & node, BinaryOperatorType type, Node<T> arg0, Node<T> arg1);
+  void set(Node<T> & node, MultinaryOperatorType type, Node<T> arg0, Node<T> arg1);
   void set(Node<T> & node, MultinaryOperatorType type, std::vector<Node<T>> args);
   void set(Node<T> & node, UnaryFunctionType type, Node<T> arg);
   void set(Node<T> & node, BinaryFunctionType type, Node<T> arg0, Node<T> arg1);

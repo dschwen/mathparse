@@ -36,7 +36,7 @@ enum class UnaryOperatorType
 {
   PLUS,
   MINUS,
-  FACULTY,
+  FACTORIAL,
   NOT,
   _ANY,
   _INVALID
@@ -45,7 +45,7 @@ enum class UnaryOperatorType
 const std::map<UnaryOperatorType, OperatorProperties> _unary_operators = {
     {UnaryOperatorType::PLUS, {3, false, "+"}},
     {UnaryOperatorType::MINUS, {3, false, "-"}},
-    {UnaryOperatorType::FACULTY, {3, false, "!"}},
+    //{UnaryOperatorType::FACTORIAL, {3, false, "!"}}, // TODO: needs to bind from the right!
     {UnaryOperatorType::NOT, {3, false, "~"}}};
 
 enum class BinaryOperatorType
@@ -123,6 +123,7 @@ enum class UnaryFunctionType
   FLOOR,
   IMAG,
   INT,
+  INVERSE,
   LOG,
   LOG10,
   LOG2,
@@ -151,12 +152,13 @@ const std::map<UnaryFunctionType, std::string> _unary_functions = {
     {UnaryFunctionType::ERFC, "erfc"},   {UnaryFunctionType::EXP, "exp"},
     {UnaryFunctionType::EXP2, "exp2"},   {UnaryFunctionType::FLOOR, "floor"},
     {UnaryFunctionType::IMAG, "imag"},   {UnaryFunctionType::INT, "int"},
-    {UnaryFunctionType::LOG, "log"},     {UnaryFunctionType::LOG10, "log10"},
-    {UnaryFunctionType::LOG2, "log2"},   {UnaryFunctionType::REAL, "real"},
-    {UnaryFunctionType::SEC, "sec"},     {UnaryFunctionType::SIN, "sin"},
-    {UnaryFunctionType::SINH, "sinh"},   {UnaryFunctionType::SQRT, "sqrt"},
-    {UnaryFunctionType::T, "T"},         {UnaryFunctionType::TAN, "tan"},
-    {UnaryFunctionType::TANH, "tanh"},   {UnaryFunctionType::TRUNC, "trunc"}};
+    {UnaryFunctionType::INVERSE, "inv"}, {UnaryFunctionType::LOG, "log"},
+    {UnaryFunctionType::LOG10, "log10"}, {UnaryFunctionType::LOG2, "log2"},
+    {UnaryFunctionType::REAL, "real"},   {UnaryFunctionType::SEC, "sec"},
+    {UnaryFunctionType::SIN, "sin"},     {UnaryFunctionType::SINH, "sinh"},
+    {UnaryFunctionType::SQRT, "sqrt"},   {UnaryFunctionType::T, "T"},
+    {UnaryFunctionType::TAN, "tan"},     {UnaryFunctionType::TANH, "tanh"},
+    {UnaryFunctionType::TRUNC, "trunc"}};
 
 enum class BinaryFunctionType
 {

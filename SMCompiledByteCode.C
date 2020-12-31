@@ -40,7 +40,7 @@ CompiledByteCode<T>::operator()(Node<T> & node, UnaryOperatorData<T> & data)
   static const std::map<UnaryOperatorType, VMInstruction> map = {
       {UnaryOperatorType::PLUS, VMInstruction::UO_PLUS},
       {UnaryOperatorType::MINUS, VMInstruction::UO_MINUS},
-      {UnaryOperatorType::FACULTY, VMInstruction::UO_FACULTY},
+      {UnaryOperatorType::FACTORIAL, VMInstruction::UO_FACTORIAL},
       {UnaryOperatorType::NOT, VMInstruction::UO_NOT}};
 
   data._args[0].apply(*this);
@@ -659,7 +659,7 @@ CompiledByteCode<T>::print()
                                                        "LOAD_VARIABLE_REAL",
                                                        "UO_PLUS",
                                                        "UO_MINUS",
-                                                       "UO_FACULTY",
+                                                       "UO_FACTORIAL",
                                                        "UO_NOT",
                                                        "BO_SUBTRACTION",
                                                        "BO_DIVISION",

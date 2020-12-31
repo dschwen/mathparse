@@ -52,7 +52,7 @@ protected:
 
     UO_PLUS,
     UO_MINUS,
-    UO_FACULTY,
+    UO_FACTORIAL,
     UO_NOT,
 
     BO_SUBTRACTION,

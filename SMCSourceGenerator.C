@@ -269,6 +269,10 @@ CSourceGenerator<T>::operator()(Node<T> & node, UnaryFunctionData<T> & data)
       _source = "std::round(" + A + ")";
       return;
 
+    case UnaryFunctionType::INVERSE:
+      _source = "(1.0/(" + A + "))";
+      return;
+
     case UnaryFunctionType::LOG:
       _source = "std::log(" + A + ")";
       return;

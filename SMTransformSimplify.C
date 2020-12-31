@@ -21,6 +21,9 @@ Simplify<T>::operator()(Node<T> & node, UnaryOperatorData<T> & data)
   data._args[0].apply(*this);
   if (data._args[0].is(NumberType::_ANY))
     set(node, data.value());
+  else if (data._type == UnaryOperatorType::MINUS && data._args[0].is(UnaryOperatorType::MINUS))
+    // two nested unary minus cancel
+    node._data = data._args[0][0]._data;
 }
 
 template <typename T>
@@ -56,6 +59,14 @@ Simplify<T>::operator()(Node<T> & node, BinaryOperatorData<T> & data)
       // 0/b = 0
       else if (data._args[0].is(0.0))
         set(node, 0.0);
+      else
+      {
+        // turn this into a multiplication by the inverse
+        set(node,
+            MultinaryOperatorType::MULTIPLICATION,
+            data._args[0],
+            Node<T>(UnaryFunctionType::INVERSE, data._args[1]));
+      }
       return;
 
     case BinaryOperatorType::POWER:

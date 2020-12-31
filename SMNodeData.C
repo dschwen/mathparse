@@ -573,6 +573,9 @@ UnaryFunctionData<T>::value() const
     case UnaryFunctionType::INT:
       return std::round(A);
 
+    case UnaryFunctionType::INVERSE:
+      return 1.0 / A;
+
     case UnaryFunctionType::LOG:
       return std::log(A);
 
@@ -715,6 +718,9 @@ UnaryFunctionData<T>::D(const ValueProvider<T> & vp)
 
     case UnaryFunctionType::INT:
       fatalError("Derivative not implemented");
+
+    case UnaryFunctionType::INVERSE: // d 1/A = dA*A^-2
+      return dA * Node<T>(IntegerPowerType::_ANY, A, -2);
 
     case UnaryFunctionType::LOG: // d log(A) = dA/A
       return dA / A;

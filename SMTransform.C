@@ -50,6 +50,13 @@ Transform<T>::set(Node<T> & node, BinaryOperatorType type, Node<T> arg0, Node<T>
 
 template <typename T>
 void
+Transform<T>::set(Node<T> & node, MultinaryOperatorType type, Node<T> arg0, Node<T> arg1)
+{
+  set(node, type, std::vector<Node<T>>{arg0, arg1});
+}
+
+template <typename T>
+void
 Transform<T>::set(Node<T> & node, MultinaryOperatorType type, std::vector<Node<T>> args)
 {
   node._data = std::make_shared<MultinaryOperatorData<T>>(type, args);
