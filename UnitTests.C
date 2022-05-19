@@ -201,6 +201,7 @@ test(const std::string & C_name)
   {
     try
     {
+      std::cout << test.expression << '\n';
       SymbolicMath::Parser<SymbolicMath::Real> parser;
 
       SymbolicMath::Real c;
@@ -355,6 +356,7 @@ main(int argc, char * argv[])
   // get all registered compilers
   auto compilers = SymbolicMath::CompilerFactory<SymbolicMath::Real>::listCompilers();
 
+  test("CompiledLightning");
   // test them all
   for (const auto & compiler : compilers)
   {
