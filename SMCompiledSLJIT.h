@@ -8,7 +8,7 @@
 #include "SMTransform.h"
 #include "SMEvaluable.h"
 
-#include "contrib/sljit_src/sljitLir.h"
+#include "contrib/sljit/sljit_src/sljitLir.h"
 
 #include <list>
 

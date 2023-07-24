@@ -19,7 +19,7 @@ ifneq (,$(findstring armv,$(shell uname -m)))
 endif
 
 # SLJIT
-OBJS += contrib/sljit_src/sljitLir.o
+OBJS += contrib/sljit/sljit_src/sljitLir.o
 CONFIG += -DSLJIT_CONFIG_AUTO=1
 
 # CCode
@@ -32,11 +32,11 @@ override LDFLAGS += -ldl
 #OBJS += SMCompiledLibJIT.o
 
 # Lightning
-ifeq ($(shell pkg-config lightning && echo go),go)
-  override LDFLAGS +=  $(shell pkg-config lightning --libs)
-  override CXXFLAGS += $(shell pkg-config lightning --cflags)
-  OBJS += SMCompiledLightning.o
-endif
+#ifeq ($(shell pkg-config lightning && echo go),go)
+#  override LDFLAGS +=  $(shell pkg-config lightning --libs)
+#  override CXXFLAGS += $(shell pkg-config lightning --cflags)
+#  OBJS += SMCompiledLightning.o
+#endif
 
 # LLVM IR
 LLVM_CONFIG ?= llvm-config

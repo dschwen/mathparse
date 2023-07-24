@@ -25,8 +25,8 @@ CompiledSLJIT<T>::CompiledSLJIT(Function<T> & fb) : Transform<T>(fb), _jit_funct
     fatalError("Stack depleted at function end");
 
   // build function
-  _ctx = sljit_create_compiler(NULL);
-  sljit_emit_enter(_ctx, 0, 0, 4, 0, 4, 0, current_max.second * sizeof(T));
+  _ctx = sljit_create_compiler(NULL, NULL);
+  sljit_emit_enter(_ctx, 0, SLJIT_ARGS0(F64), 4, 0, 4, 0, current_max.second * sizeof(T));
 
   // initialize stack pointer
   _sp = -1;
@@ -35,7 +35,7 @@ CompiledSLJIT<T>::CompiledSLJIT(Function<T> & fb) : Transform<T>(fb), _jit_funct
   apply();
 
   // return stack top (FR0)
-  sljit_emit_return(_ctx, SLJIT_MOV, SLJIT_FR0, 0);
+  sljit_emit_return(_ctx, SLJIT_MOV_F64, SLJIT_FR0, 0);
 
   // generate machine code
   _jit_function = reinterpret_cast<JITFunctionPtr>(sljit_generate_code(_ctx));
@@ -48,7 +48,7 @@ template <typename T>
 CompiledSLJIT<T>::~CompiledSLJIT()
 {
   if (_jit_function)
-    sljit_free_code(reinterpret_cast<void *>(_jit_function));
+    sljit_free_code(reinterpret_cast<void *>(_jit_function), nullptr);
 }
 
 // Helper methods
@@ -73,23 +73,19 @@ CompiledSLJIT<Real>::stackPop(sljit_s32 op)
 }
 
 template <typename T>
-void CompiledSLJIT<T>::unaryFunctionCall(T (*func)(T))
+void
+CompiledSLJIT<T>::unaryFunctionCall(T (*func)(T))
 {
-  sljit_emit_icall(_ctx,
-                   SLJIT_CALL_CDECL,
-                   SLJIT_RET(F64) | SLJIT_ARG1(F64),
-                   SLJIT_IMM,
-                   reinterpret_cast<sljit_sw>(func));
+  sljit_emit_icall(
+      _ctx, SLJIT_CALL, SLJIT_ARGS1(F64, F64), SLJIT_IMM, reinterpret_cast<sljit_sw>(func));
 }
 
 template <typename T>
-void CompiledSLJIT<T>::binaryFunctionCall(T (*func)(T, T))
+void
+CompiledSLJIT<T>::binaryFunctionCall(T (*func)(T, T))
 {
-  sljit_emit_icall(_ctx,
-                   SLJIT_CALL_CDECL,
-                   SLJIT_RET(F64) | SLJIT_ARG1(F64) | SLJIT_ARG2(F64),
-                   SLJIT_IMM,
-                   reinterpret_cast<sljit_sw>(func));
+  sljit_emit_icall(
+      _ctx, SLJIT_CALL, SLJIT_ARGS2(F64, F64, F64), SLJIT_IMM, reinterpret_cast<sljit_sw>(func));
 }
 
 template <typename T>
@@ -192,9 +188,9 @@ CompiledSLJIT<T>::operator()(Node<T> & node, BinaryOperatorData<T> & data)
       sljit_emit_fop1(_ctx, SLJIT_MOV_F64, SLJIT_FR2, 0, SLJIT_MEM, (sljit_sw)&sljit_zero);
       // either argument is true -> true
       struct sljit_jump * true_lbl1 =
-          sljit_emit_fcmp(_ctx, SLJIT_NOT_EQUAL_F64, SLJIT_FR0, 0, SLJIT_FR2, 0);
+          sljit_emit_fcmp(_ctx, SLJIT_UNORDERED_OR_NOT_EQUAL, SLJIT_FR0, 0, SLJIT_FR2, 0);
       struct sljit_jump * true_lbl2 =
-          sljit_emit_fcmp(_ctx, SLJIT_NOT_EQUAL_F64, SLJIT_FR1, 0, SLJIT_FR2, 0);
+          sljit_emit_fcmp(_ctx, SLJIT_UNORDERED_OR_NOT_EQUAL, SLJIT_FR1, 0, SLJIT_FR2, 0);
 
       // false case
       // put 0.0 on stack
@@ -219,9 +215,9 @@ CompiledSLJIT<T>::operator()(Node<T> & node, BinaryOperatorData<T> & data)
       sljit_emit_fop1(_ctx, SLJIT_MOV_F64, SLJIT_FR2, 0, SLJIT_MEM, (sljit_sw)&sljit_zero);
       // either argument is false -> false
       struct sljit_jump * false_lbl1 =
-          sljit_emit_fcmp(_ctx, SLJIT_EQUAL_F64, SLJIT_FR0, 0, SLJIT_FR2, 0);
+          sljit_emit_fcmp(_ctx, SLJIT_ORDERED_EQUAL, SLJIT_FR0, 0, SLJIT_FR2, 0);
       struct sljit_jump * false_lbl2 =
-          sljit_emit_fcmp(_ctx, SLJIT_EQUAL_F64, SLJIT_FR1, 0, SLJIT_FR2, 0);
+          sljit_emit_fcmp(_ctx, SLJIT_ORDERED_EQUAL, SLJIT_FR1, 0, SLJIT_FR2, 0);
 
       // true case
       // put 1.0 on stack
@@ -242,27 +238,27 @@ CompiledSLJIT<T>::operator()(Node<T> & node, BinaryOperatorData<T> & data)
     }
 
     case BinaryOperatorType::LESS_THAN:
-      emitFcmp(SLJIT_LESS_F64);
+      emitFcmp(SLJIT_F_LESS);
       return;
 
     case BinaryOperatorType::GREATER_THAN:
-      emitFcmp(SLJIT_GREATER_F64);
+      emitFcmp(SLJIT_F_GREATER);
       return;
 
     case BinaryOperatorType::LESS_EQUAL:
-      emitFcmp(SLJIT_LESS_EQUAL_F64);
+      emitFcmp(SLJIT_F_LESS_EQUAL);
       return;
 
     case BinaryOperatorType::GREATER_EQUAL:
-      emitFcmp(SLJIT_GREATER_EQUAL_F64);
+      emitFcmp(SLJIT_F_GREATER_EQUAL);
       return;
 
     case BinaryOperatorType::EQUAL:
-      emitFcmp(SLJIT_EQUAL_F64);
+      emitFcmp(SLJIT_F_EQUAL);
       return;
 
     case BinaryOperatorType::NOT_EQUAL:
-      emitFcmp(SLJIT_NOT_EQUAL_F64);
+      emitFcmp(SLJIT_F_NOT_EQUAL);
       return;
 
     default:
@@ -475,7 +471,7 @@ CompiledSLJIT<T>::operator()(Node<T> & node, BinaryFunctionData<T> & data)
     case BinaryFunctionType::MIN:
     {
       struct sljit_jump * out_lbl =
-          sljit_emit_fcmp(_ctx, SLJIT_LESS_F64, SLJIT_FR0, 0, SLJIT_FR1, 0);
+          sljit_emit_fcmp(_ctx, SLJIT_ORDERED_LESS, SLJIT_FR0, 0, SLJIT_FR1, 0);
 
       // FR0 >= FR1 case
       // put FR1 on stack
@@ -490,7 +486,7 @@ CompiledSLJIT<T>::operator()(Node<T> & node, BinaryFunctionData<T> & data)
     case BinaryFunctionType::MAX:
     {
       struct sljit_jump * out_lbl =
-          sljit_emit_fcmp(_ctx, SLJIT_GREATER_F64, SLJIT_FR0, 0, SLJIT_FR1, 0);
+          sljit_emit_fcmp(_ctx, SLJIT_UNORDERED_OR_GREATER, SLJIT_FR0, 0, SLJIT_FR1, 0);
 
       // FR0 >= FR1 case
       // put FR1 on stack
@@ -565,7 +561,7 @@ CompiledSLJIT<T>::operator()(Node<T> & node, ConditionalData<T> & data)
 
   // sljit_emit_op1(_ctx, SLJIT_MOV, SLJIT_R0, 0, SLJIT_MEM, (sljit_sw)state.stack);
   false_case =
-      sljit_emit_fcmp(_ctx, SLJIT_EQUAL_F64, SLJIT_FR0, 0, SLJIT_MEM, (sljit_sw)&sljit_zero);
+      sljit_emit_fcmp(_ctx, SLJIT_ORDERED_EQUAL, SLJIT_FR0, 0, SLJIT_MEM, (sljit_sw)&sljit_zero);
 
   // true case
   auto stack_pos = _sp;

@@ -356,8 +356,10 @@ main(int argc, char * argv[])
   // get all registered compilers
   auto compilers = SymbolicMath::CompilerFactory<SymbolicMath::Real>::listCompilers();
 
-  test("CompiledLightning");
-  // test them all
+  // test("CompiledLightning");
+  // test("CompiledSLJIT");
+
+  //  test them all
   for (const auto & compiler : compilers)
   {
     std::cout << "SymbolicMath::" << compiler << "...\n";
